@@ -73,3 +73,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 12:27]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "AVAX mean_reversion is sitting at 88.89% win rate on the 6h — that's the cleanest backtest we've got right now. Worth ru"
+
+## [2026-04-08 13:58]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'APEX is 1-for-3 today and entries are too loose—sitting in drawdown on two of those trades instead of cutting quick. Mea'
