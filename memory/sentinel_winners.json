@@ -1,0 +1,124 @@
+{
+  "completed": "2026-04-07T21:07:09.591443",
+  "total_experiments": 40000,
+  "elapsed_seconds": 586.6,
+  "data_source": "Coinbase public exchange API \u2014 real OHLCV",
+  "bots": [
+    {
+      "bot": "APEX",
+      "win_rate": 13.600000000000001,
+      "avg_pnl": -0.04357351000000021,
+      "winners": 20
+    },
+    {
+      "bot": "DRIFT",
+      "win_rate": 16.23,
+      "avg_pnl": -0.09246461000000017,
+      "winners": 20
+    },
+    {
+      "bot": "TITAN",
+      "win_rate": 24.709999999999997,
+      "avg_pnl": -0.0893894300000002,
+      "winners": 20
+    },
+    {
+      "bot": "SENTINEL",
+      "win_rate": 13.950000000000001,
+      "avg_pnl": -0.04507955000000002,
+      "winners": 20
+    }
+  ],
+  "top_strategies": [
+    {
+      "strategy": "mean_reversion",
+      "asset": "AVAX/USD",
+      "timeframe": "6h",
+      "win_rate": 86.11,
+      "avg_pnl": 0.9789,
+      "sharpe": 126411382638987.67,
+      "experiments": 36
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "SPY",
+      "timeframe": "4h",
+      "win_rate": 72.53,
+      "avg_pnl": 0.6688,
+      "sharpe": 1.608,
+      "experiments": 91
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "ETH/USD",
+      "timeframe": "4h",
+      "win_rate": 68.92,
+      "avg_pnl": 0.6186,
+      "sharpe": 1.46,
+      "experiments": 74
+    },
+    {
+      "strategy": "support_resistance",
+      "asset": "GBP/USD",
+      "timeframe": "1m",
+      "win_rate": 69.41,
+      "avg_pnl": 0.6166,
+      "sharpe": 1.423,
+      "experiments": 85
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "GBP/USD",
+      "timeframe": "4h",
+      "win_rate": 70.73,
+      "avg_pnl": 0.6153,
+      "sharpe": 1.466,
+      "experiments": 82
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "OIL",
+      "timeframe": "4h",
+      "win_rate": 67.9,
+      "avg_pnl": 0.6046,
+      "sharpe": 1.433,
+      "experiments": 81
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "EUR/USD",
+      "timeframe": "15m",
+      "win_rate": 66.67,
+      "avg_pnl": 0.6034,
+      "sharpe": 1.449,
+      "experiments": 84
+    },
+    {
+      "strategy": "support_resistance",
+      "asset": "QQQ",
+      "timeframe": "5m",
+      "win_rate": 67.95,
+      "avg_pnl": 0.5951,
+      "sharpe": 1.462,
+      "experiments": 78
+    },
+    {
+      "strategy": "bollinger_squeeze",
+      "asset": "OIL",
+      "timeframe": "15m",
+      "win_rate": 65.56,
+      "avg_pnl": 0.5903,
+      "sharpe": 1.391,
+      "experiments": 90
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "AAPL",
+      "timeframe": "1m",
+      "win_rate": 67.39,
+      "avg_pnl": 0.5735,
+      "sharpe": 1.346,
+      "experiments": 92
+    }
+  ]
+}
