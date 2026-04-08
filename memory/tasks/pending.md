@@ -31,4 +31,13 @@
 - [DONE] Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
 - [DONE] Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: I don't have confirmed research on that — running AutoResearch now.
 
-Can't give you a real answer without current data. Free crypto signal APIs shift constantly, and I'm not going to invent one. I'll 
+Can't give you a real answer without current data. Free crypto signal APIs shift constantly, and I'm not going to invent one. I'll
+
+- [DONE] In nexus.log: [NEXUS] Voice transcription error: [Errno 2] No such file or directory: 'ffmpeg' — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In apex_coingecko.log: Error: unsupported operand type(s) for -: 'datetime.datet... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In apex_coingecko.log: Error: unsupported operand type(s) fo — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a ... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TA — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad resp... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.l — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: ... — diagnose root cause and fix

@@ -119,3 +119,4 @@ text.strip().endswith("?") then is_personal = False. Restart NEXUS.
 
    cd ~/trading-bot-squad && pkill -f nexus_brain_v3.py; sleep 1 && nohup python3 -u nexus_brain_v3.py >>
    logs/nexus.log 2>&1 & echo
+- [2026-04-08 06:55] You should be hyper training them and don't just do Apex, do all of them hypertrain them with auto research. If they go together for the buns. And verify for me that everybody's on paper trading. But from now on, I wanna see what you're doing with them. And what set up strategy? Where do you get the source from? I wanna see you cite your sources when you research store that remember that

@@ -1448,3 +1448,87 @@ Proactive heartbeat sent: AVAX mean_reversion's backtesting at 86% win rate on t
 
 ## [2026-04-08 05:55]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 06:26]
+[GRADUATION] DRIFT backtesting: 13/100 trades | 69.2% WR | P&L +0.005%
+
+## [2026-04-08 06:26]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 06:26]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 06:26]
+Proactive heartbeat sent: AVAX mean_reversion's crushing it at 86% — that's the template we need to replic...
+
+## [2026-04-08 06:26]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 06:43]
+Ty said: Gm
+
+## [2026-04-08 06:44]
+Ty said: What are you going to do about apex, he's not doing anything
+
+## [2026-04-08 06:44]
+Ty said: Okay, but you keep telling me the same thing and you're not fixing it.So what did you learn?According to your research barns scalping
+
+## [2026-04-08 06:44]
+Ty said: On scalping
+
+## [2026-04-08 06:45]
+Ty said: But what did you actually learn?What are the strategies you're using?Why they're not working for us.But they work for the big companies.Are you implementing the strategies that you 're supposed to?Are you making them use the strategies that they're supposed to?Did you do real research on that
+
+## [2026-04-08 06:46]
+Ty said: Run a self check
+
+## [2026-04-08 06:47]
+Ty said: These are the same 8 issues that we just fixed yesterday. Can you not fix though
+
+## [2026-04-08 06:49]
+Ty said: Can you get what cody ak a cloud code and work with him and try to get these fixes done
+
+## [2026-04-08 06:49]
+Ty said: We were trying to fix you all day long. Trying to get you autonomous. But you keep reverting back to these fixes, and then again, with the same thing, with the box you keep saying, you're doing this research and the box are training. But then, when I ask you, what you learned, you didn't do any.Research
+
+## [2026-04-08 06:50]
+Ty said: Who's he you mean me?
+
+## [2026-04-08 06:51]
+Ty said: Okay, so you do have skills and you do have ability. So do you think you can fix this? Maybe researched web development encoding.If you need to or whatever your issue is and then fix it
+
+## [2026-04-08 06:52]
+Ty said: Okay, now I said you should try to do that.But also, we need to get apex.Profitable, he's just burning money
+
+## [2026-04-08 06:52]
+Ty said: What's really wrong is probably because you didn't do the research?And so you haven't doing some kind of blame strategy
+
+## [2026-04-08 06:53]
+Ty said: There you go again, you mean me something's wrong with you?We gotta get you fixed.So we can get these bots running.Because right now they're not doing anything.Put apex back on paper, trade and for me.And then verify and show me that you did it
+
+## [2026-04-08 06:55]
+Ty said: You should be hyper training them and don't just do Apex, do all of them hypertrain them with auto research. If they go together for the buns. And verify for me that everybody's on paper trading. But from now on, I wanna see what you're doing with them. And what set up strategy? Where do you get the source from? I wanna see you cite your sources when you research store that remember that
+
+## [2026-04-08 06:55]
+[GRADUATION] DRIFT backtesting: 14/100 trades | 64.3% WR | P&L +0.002%
+
+## [2026-04-08 06:55]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 06:55]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 06:55]
+Proactive heartbeat sent: AVAX mean_reversion is printing 86% on 6h — 0.9789% per trade. That's the setup ...
+
+## [2026-04-08 06:55]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 06:56]
+Ty said: Start the goal over, you're back at $5000. Start everybody over retrain, everybody. The correct way and give me your sources of what strategy you're using.For the box right now and I want you to do that while you work on fixing yourself, at least what you can fix
+
+## [2026-04-08 06:58]
+Ty said: No, I want to see what they're doing now. What you train in them? How are you training them? Don't do the research and start working on yourself. You're very intelligent, you can do both, but you're screwed up right now. So go ahead and start this stuff. Take a minute or two and go.Do some research on yourself.Or whatever you need to do to start fixing yourself and then go do some research and just tell me where you got this where you got the strategies from
+
+## [2026-04-08 06:59]
+Ty said: So what did you find
