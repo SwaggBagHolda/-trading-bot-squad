@@ -301,3 +301,59 @@ Invalid API key · Fix external API key
 **Output:**
 Invalid API key · Fix external API key
 
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] Running: In apex_coingecko.log: Error: unsupported operand type(s) for -: 'datetime.datet... — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] [FAILED] In apex_coingecko.log: Error: unsupported operand type(s) fo — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a ... — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TA — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad resp... — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.l — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: ... — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+
+---
+## 2026-04-08 12:07 | ❌ FAILED
+**Task:** In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_co — diagnose root cause and fix
+
+**Output:**
+Invalid API key · Fix external API key
+

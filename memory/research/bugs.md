@@ -70,3 +70,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 11:57]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'BTC broke $71K on 4.62% volume — ETH and SOL both riding it up past 6%. APEX is choking on the momentum (1 winner in 3 t'
+
+## [2026-04-08 12:27]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "AVAX mean_reversion is sitting at 88.89% win rate on the 6h — that's the cleanest backtest we've got right now. Worth ru"
