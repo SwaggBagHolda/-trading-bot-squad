@@ -1730,3 +1730,33 @@ Proactive heartbeat sent: APEX is fighting a bull market—BTC up 5.22%, ETH up 
 
 ## [2026-04-08 08:56]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 09:26]
+[GRADUATION] DRIFT backtesting: 17/100 trades | 58.8% WR | P&L +0.000%
+
+## [2026-04-08 09:26]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 09:26]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 09:26]
+Proactive heartbeat sent: Market's ripping today (+5-8% across the board) and APEX is getting smoked at 33...
+
+## [2026-04-08 09:26]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 09:57]
+[GRADUATION] DRIFT backtesting: 19/100 trades | 63.2% WR | P&L +0.006%
+
+## [2026-04-08 09:57]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 09:57]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 09:57]
+Proactive heartbeat sent: BTC hitting $71.6K with 5% 24h vol on $48.5B — that's institutional money moving...
+
+## [2026-04-08 09:57]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
