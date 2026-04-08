@@ -64,3 +64,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 10:27]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX is losing while the whole market's up 5-7%. BTC $71K, ETH up 7%, and we're -$0.71 on 3 trades at 33% win rate. Entr"
+
+## [2026-04-08 11:27]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "BTC just broke $71K and eth's outpacing it at +6.16% — that's your mean reversion setup right there. AVAX is lagging the"
+
+## [2026-04-08 11:57]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'BTC broke $71K on 4.62% volume — ETH and SOL both riding it up past 6%. APEX is choking on the momentum (1 winner in 3 t'

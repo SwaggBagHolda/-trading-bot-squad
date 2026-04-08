@@ -1790,3 +1790,45 @@ Proactive heartbeat sent: APEX is bleeding on small moves—33% today while the 
 
 ## [2026-04-08 10:57]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 11:27]
+[GRADUATION] DRIFT backtesting: 22/100 trades | 54.5% WR | P&L -0.024%
+
+## [2026-04-08 11:27]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 11:27]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 11:27]
+Proactive heartbeat sent: BTC just broke $71K and eth's outpacing it at +6.16% — that's your mean reversio...
+
+## [2026-04-08 11:27]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 11:28]
+AutoResearch started PID 68291 at 2026-04-08T11:28:21.915945
+
+## [2026-04-08 11:43]
+AutoResearch started PID 68503 at 2026-04-08T11:43:24.329551
+
+## [2026-04-08 11:57]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-08 11:57]
+[GRADUATION] DRIFT backtesting: 22/100 trades | 54.5% WR | P&L -0.024%
+
+## [2026-04-08 11:57]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 11:57]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 11:57]
+Proactive heartbeat sent: BTC broke $71K on 4.62% volume — ETH and SOL both riding it up past 6%. APEX is ...
+
+## [2026-04-08 11:57]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-08 11:58]
+AutoResearch started PID 68723 at 2026-04-08T11:58:30.817361
