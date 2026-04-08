@@ -61,3 +61,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 09:26]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "Market's ripping today (+5-8% across the board) and APEX is getting smoked at 33% WR on BTC. But that mean_reversion str"
+
+## [2026-04-08 10:27]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX is losing while the whole market's up 5-7%. BTC $71K, ETH up 7%, and we're -$0.71 on 3 trades at 33% win rate. Entr"
