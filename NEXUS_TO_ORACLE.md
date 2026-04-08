@@ -2090,3 +2090,51 @@ Proactive heartbeat sent: APEX is stuck in choppy water — 3 trades today, only
 
 ## [2026-04-08 16:59]
 Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-08 17:00]
+AutoResearch started PID 73718 at 2026-04-08T17:00:41.605859
+
+## [2026-04-08 17:15]
+AutoResearch started PID 73940 at 2026-04-08T17:15:43.831436
+
+## [2026-04-08 17:29]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-08 17:29]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-08 17:29]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 17:29]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 17:29]
+Proactive heartbeat sent: BTC just hit $71,693 and the vol's sitting at $51.4B — that's the kind of setup ...
+
+## [2026-04-08 17:29]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-08 17:30]
+AutoResearch started PID 74164 at 2026-04-08T17:30:51.030234
+
+## [2026-04-08 17:45]
+AutoResearch started PID 74385 at 2026-04-08T17:45:53.201071
+
+## [2026-04-08 17:59]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-08 17:59]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-08 17:59]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 17:59]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 17:59]
+Proactive heartbeat sent: APEX is entering too tight — 33% today on 3 trades. But BTC's up 2.3% and we're ...
+
+## [2026-04-08 17:59]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
