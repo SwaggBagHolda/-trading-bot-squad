@@ -1994,3 +1994,51 @@ Proactive heartbeat sent: Mean reversion on AVAX is backtesting at 87.5% win rat
 
 ## [2026-04-08 14:58]
 Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-08 15:00]
+AutoResearch started PID 71897 at 2026-04-08T15:00:06.592524
+
+## [2026-04-08 15:15]
+AutoResearch started PID 72114 at 2026-04-08T15:15:08.950027
+
+## [2026-04-08 15:28]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-08 15:28]
+[GRADUATION] DRIFT backtesting: 29/100 trades | 55.2% WR | P&L -0.007%
+
+## [2026-04-08 15:28]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 15:28]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 15:28]
+Proactive heartbeat sent: BTC's up 3.78% and the market's moving, but APEX took 3 shots today and hit 1 — ...
+
+## [2026-04-08 15:28]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-08 15:30]
+AutoResearch started PID 72342 at 2026-04-08T15:30:15.626652
+
+## [2026-04-08 15:45]
+AutoResearch started PID 72546 at 2026-04-08T15:45:17.593545
+
+## [2026-04-08 15:58]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-08 15:58]
+[GRADUATION] DRIFT backtesting: 31/100 trades | 58.1% WR | P&L -0.004%
+
+## [2026-04-08 15:58]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 15:58]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 15:58]
+Proactive heartbeat sent: APEX is 1 for 3 today and it's threading the needle too tight on entries — missi...
+
+## [2026-04-08 15:58]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
