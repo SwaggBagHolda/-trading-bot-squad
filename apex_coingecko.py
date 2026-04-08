@@ -147,15 +147,16 @@ def best_signal(price_history, current_prices):
 
         move = (latest - oldest) / oldest  # signed momentum
 
-        if abs(move) > MIN_MOMENTUM and abs(move) > best_move:
-            best_move = abs(move)
-            direction = "BUY" if move > 0 else "SELL"
+        # Spot account only — longs only. SELL entries would fail (no asset held).
+        # On bearish momentum, skip. On 6 assets every 15s there's always a long setup.
+        if move > MIN_MOMENTUM and move > best_move:
+            best_move = move
             best = {
                 "symbol":    asset["symbol"],
                 "product":   product,
                 "price":     latest,
                 "momentum":  move,
-                "direction": direction,
+                "direction": "BUY",
             }
 
     return best
