@@ -1,48 +1,48 @@
 {
-  "completed": "2026-04-08T15:55:48.909853",
+  "completed": "2026-04-08T16:55:58.944575",
   "total_experiments": 40000,
-  "elapsed_seconds": 586.4,
+  "elapsed_seconds": 577.8,
   "data_source": "Coinbase public exchange API \u2014 real OHLCV",
   "bots": [
     {
       "bot": "APEX",
-      "win_rate": 13.84,
-      "avg_pnl": -0.04153970000000012,
+      "win_rate": 14.62,
+      "avg_pnl": -0.04208375999999985,
       "winners": 20,
       "top_strategy": "mean_reversion",
       "best_asset": "AVAX/USD",
       "best_timeframe": "6h",
-      "best_wr": 85.8
+      "best_wr": 84.4
     },
     {
       "bot": "DRIFT",
-      "win_rate": 18.759999999999998,
-      "avg_pnl": -0.09659392000000012,
+      "win_rate": 15.55,
+      "avg_pnl": -0.09320822999999998,
       "winners": 20,
       "top_strategy": "mean_reversion",
       "best_asset": "AVAX/USD",
       "best_timeframe": "6h",
-      "best_wr": 85.8
+      "best_wr": 84.4
     },
     {
       "bot": "TITAN",
-      "win_rate": 26.55,
-      "avg_pnl": -0.08207782000000043,
+      "win_rate": 27.060000000000002,
+      "avg_pnl": -0.08632111000000049,
       "winners": 20,
       "top_strategy": "mean_reversion",
       "best_asset": "AVAX/USD",
       "best_timeframe": "6h",
-      "best_wr": 85.8
+      "best_wr": 84.4
     },
     {
       "bot": "SENTINEL",
-      "win_rate": 14.399999999999999,
-      "avg_pnl": -0.06690396000000022,
+      "win_rate": 14.14,
+      "avg_pnl": -0.06285062000000001,
       "winners": 20,
       "top_strategy": "mean_reversion",
       "best_asset": "AVAX/USD",
       "best_timeframe": "6h",
-      "best_wr": 85.8
+      "best_wr": 84.6
     }
   ],
   "top_strategies": [
@@ -50,10 +50,10 @@
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 85.81,
-      "avg_pnl": 0.9056,
-      "sharpe": 15746746626310.475,
-      "experiments": 289
+      "win_rate": 84.55,
+      "avg_pnl": 0.8956,
+      "sharpe": 12783173525291.494,
+      "experiments": 356
     },
     {
       "strategy": "mean_reversion",

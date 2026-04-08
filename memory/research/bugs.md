@@ -85,3 +85,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 15:28]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "BTC's up 3.78% and the market's moving, but APEX took 3 shots today and hit 1 — down 71 cents. Mean reversion on AVAX's "
+
+## [2026-04-08 16:29]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "AVAX mean reversion's crushing it at 85% win rate on the 6h — way better than APEX's 33% today. Want me to spin up a liv"
