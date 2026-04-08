@@ -36,9 +36,9 @@ WATCHLIST = [
 
 # ── Scalping parameters ───────────────────────────────────────────────────────
 STARTING       = 328.29
-RISK           = 0.10    # 10% of balance per trade
+RISK           = 0.25    # 25% of balance per trade
 STOP           = 0.003   # 0.3% hard stop
-TARGET         = 0.005   # 0.5% take profit
+TARGET         = 0.008   # 0.8% take profit — clears Coinbase fees with room
 TRAIL          = 0.002   # 0.2% trailing stop (locks in gains fast)
 MAX_LOSS       = 0.05    # 5% daily kill switch
 MIN_MOMENTUM   = 0.0015  # 0.15% move in 90-second window to enter
