@@ -1282,3 +1282,33 @@ Proactive heartbeat sent: APEX is 1/3 today but we've got AVAX mean reversion ba
 
 ## [2026-04-08 00:54]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 01:24]
+[GRADUATION] DRIFT backtesting: 5/100 trades | 80.0% WR | P&L +0.004%
+
+## [2026-04-08 01:24]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 01:24]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 01:24]
+Proactive heartbeat sent: APEX is choking on entry timing today—3 trades, 1 win. Meanwhile AVAX mean rever...
+
+## [2026-04-08 01:24]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 01:54]
+[GRADUATION] DRIFT backtesting: 8/100 trades | 75.0% WR | P&L +0.002%
+
+## [2026-04-08 01:54]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 01:54]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 01:54]
+Proactive heartbeat sent: APEX is limping at 33% today while the market's ripping 4-6%. Mean reversion on ...
+
+## [2026-04-08 01:54]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
