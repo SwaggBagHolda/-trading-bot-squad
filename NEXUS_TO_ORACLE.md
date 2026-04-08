@@ -1237,3 +1237,48 @@ Ty said: flip it now, and I asked you to ensure all our bots trade both directio
 
 ## [2026-04-07 23:51]
 Ty said: you are not storing anything, nor retaining & therefor your not getting anything done
+
+## [2026-04-08 00:17]
+Ty said: any luck with the scalping strategies?
+
+## [2026-04-08 00:24]
+[GRADUATION] DRIFT backtesting: 5/100 trades | 80.0% WR | P&L +0.004%
+
+## [2026-04-08 00:24]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 00:24]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 00:24]
+Proactive heartbeat sent: APEX is bleeding on a +4.27% BTC day — three trades, zero wins, down $1.31. Mark...
+
+## [2026-04-08 00:24]
+Heartbeat safety checks: ['Live P&L pace alert: $+10.76']
+
+## [2026-04-08 00:29]
+Ty said: Why is apex stuck at a dollar thirty one in the negative?It's been stuck there all day
+
+## [2026-04-08 00:32]
+Ty said: Yes, you post a bing clothes that trade and fix him.So he's trading like a real scalping bot both directions on the one minute chart with a good strategy, you are supposed to research it what happened
+
+## [2026-04-08 00:36]
+Ty said: no, tell me what you found from research & site your sources ALWAYS
+
+## [2026-04-08 00:37]
+Ty said: well how are you researching then? I just asked you to reaerxh you said ok so now im asking you to site your sources when you research bc I now need proof youre don what your saying
+
+## [2026-04-08 00:54]
+[GRADUATION] DRIFT backtesting: 5/100 trades | 80.0% WR | P&L +0.004%
+
+## [2026-04-08 00:54]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 00:54]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 00:54]
+Proactive heartbeat sent: APEX is 1/3 today but we've got AVAX mean reversion backtesting at 86% — that's ...
+
+## [2026-04-08 00:54]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
