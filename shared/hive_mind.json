@@ -126,11 +126,12 @@
   "sentinel_last_trained": "2026-04-07T21:07:09.590425",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": -0.71,
-      "trades": 3,
-      "wins": 1,
-      "win_rate": 0.333,
-      "mode": "live_scalping"
+      "daily_pnl": 8.72,
+      "monthly_pnl": 8.72,
+      "trades": 4,
+      "win_rate": 0.5,
+      "status": "paper_trading",
+      "active_position": true
     },
     "VOLT": {
       "daily_pnl": 0.0,
@@ -151,13 +152,13 @@
       "mode": "paper"
     },
     "DRIFT": {
-      "daily_pnl": 26.006527524226968,
+      "daily_pnl": 25.945304335156077,
       "monthly_pnl": 25.72,
-      "trades": 10,
-      "win_rate": 0.7,
+      "trades": 12,
+      "win_rate": 0.6666666666666666,
       "active_position": true,
       "mode": "backtesting",
-      "wins": 7
+      "wins": 8
     },
     "TITAN": {
       "daily_pnl": 0.0,
@@ -416,9 +417,9 @@
   "graduation": {
     "DRIFT": {
       "stage": "backtesting",
-      "backtest_trades": 10,
-      "backtest_wins": 7,
-      "backtest_pnl": 0.0028652752422696774,
+      "backtest_trades": 12,
+      "backtest_wins": 8,
+      "backtest_pnl": 0.002253043351560759,
       "backtest_target": 100,
       "paper_trades": 0,
       "paper_wins": 0,
