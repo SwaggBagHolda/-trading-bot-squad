@@ -964,3 +964,21 @@ Stopped: ORACLE
 
 ## [2026-04-08 02:56] [ORACLE]
 ⚠️ ORACLE: ORACLE appear stopped. NEXUS — check and restart.
+
+## [2026-04-08 03:26] [ORACLE]
+HEALTH CHECK — 03:26
+P&L: $+25.30
+Running: NEXUS, Paper Trading, APEX Live, Scheduler
+Stopped: ORACLE
+
+## [2026-04-08 03:26] [ORACLE]
+⚠️ ORACLE: ORACLE appear stopped. NEXUS — check and restart.
+
+## [2026-04-08 03:56] [ORACLE]
+HEALTH CHECK — 03:56
+P&L: $+25.30
+Running: NEXUS, Paper Trading, APEX Live, Scheduler
+Stopped: ORACLE
+
+## [2026-04-08 03:56] [ORACLE]
+⚠️ ORACLE: ORACLE appear stopped. NEXUS — check and restart.

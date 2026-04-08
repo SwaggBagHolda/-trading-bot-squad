@@ -29,3 +29,6 @@
 - [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace — diagnose root cause and fix
 - [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad r... — diagnose root cause and fix
 - [DONE] Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
+- [DONE] Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: I don't have confirmed research on that — running AutoResearch now.
+
+Can't give you a real answer without current data. Free crypto signal APIs shift constantly, and I'm not going to invent one. I'll 

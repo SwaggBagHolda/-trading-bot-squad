@@ -238,3 +238,10 @@ Backtest completed. Here's the summary:
 
 **Note:** Win rates are low (2-5.5%) — FTMO curriculum requires 55%+ WR for graduation. The current strategy space + parameter ranges aren't producing viable setups yet. This is expected during hypertraining — the AutoResearch loop will iterate toward better hypotheses.
 
+---
+## 2026-04-08 03:27 | ❌ FAILED
+**Task:** Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: I don't have confirmed research on that — running AutoResearch now.
+
+**Output:**
+Invalid API key · Fix external API key
+
