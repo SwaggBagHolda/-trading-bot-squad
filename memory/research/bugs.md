@@ -31,3 +31,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 04:55]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "AVAX mean_reversion is pulling 86% win rate on the 6h. APEX is stuck at 33% today. I'd wire that strategy into a new bot"
+
+## [2026-04-08 05:25]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX is whiffing today—33% win rate on 3 trades, down $0.71. But BTC just ripped 4% and it's still sitting idle. Entry c"
+
+## [2026-04-08 05:55]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "AVAX mean_reversion's backtesting at 86% win rate on the 6h — that's the move we need to live test. APEX is spinning its"

@@ -1418,3 +1418,33 @@ Proactive heartbeat sent: AVAX mean_reversion is pulling 86% win rate on the 6h.
 
 ## [2026-04-08 04:55]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 05:25]
+[GRADUATION] DRIFT backtesting: 12/100 trades | 66.7% WR | P&L +0.002%
+
+## [2026-04-08 05:25]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 05:25]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 05:25]
+Proactive heartbeat sent: APEX is whiffing today—33% win rate on 3 trades, down $0.71. But BTC just ripped...
+
+## [2026-04-08 05:25]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 05:55]
+[GRADUATION] DRIFT backtesting: 12/100 trades | 66.7% WR | P&L +0.002%
+
+## [2026-04-08 05:55]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 05:55]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 05:55]
+Proactive heartbeat sent: AVAX mean_reversion's backtesting at 86% win rate on the 6h — that's the move we...
+
+## [2026-04-08 05:55]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
