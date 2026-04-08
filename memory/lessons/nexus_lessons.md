@@ -34,3 +34,6 @@
 **LESSON:** The original `max_tokens` value (500) let the model emit long filler tails that wasted tokens and sometimes cut off needed output. → Reduce `max_tokens` to a tighter limit (e.g., 60) after confirming the essential response fits, to improve efficiency and reduce noise.  
 
 **LESSON:** Conversation history was only stored for a few handlers, limiting the bot’s context awareness. → Standardize history logging by wrapping every command handler with a helper (as done with `reply()` and `_history_add()`), and increase `MAX_HISTORY` to retain more exchanges (10 → 20).
+
+## [2026-04-08 02:00] [SYSTEM]
+2am consolidation completed on 2026-04-08

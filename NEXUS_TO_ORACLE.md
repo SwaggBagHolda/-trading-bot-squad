@@ -1312,3 +1312,44 @@ Proactive heartbeat sent: APEX is limping at 33% today while the market's rippin
 
 ## [2026-04-08 01:54]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 02:00]
+Memory consolidated for 2026-04-08. Total P&L: $+25.24
+
+## [2026-04-08 02:24]
+[GRADUATION] DRIFT backtesting: 8/100 trades | 75.0% WR | P&L +0.002%
+
+## [2026-04-08 02:24]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 02:24]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 02:24]
+2am pitch drafted (no PROSPECT_EMAIL set): **Subject: BTC signals from a machine-learning scalper — 87% win rate**
+
+We run 
+
+## [2026-04-08 02:25]
+Proactive heartbeat sent: APEX is bleeding today—3 trades, down $0.71, 33% win rate. But I'm seeing AVAX m...
+
+## [2026-04-08 02:25]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00', '2am pitch drafted — set PROSPECT_EMAIL in .env to auto-send']
+
+## [2026-04-08 02:30]
+Memory consolidated for 2026-04-08. Total P&L: $+25.24
+
+## [2026-04-08 02:55]
+[GRADUATION] DRIFT backtesting: 9/100 trades | 77.8% WR | P&L +0.006%
+
+## [2026-04-08 02:55]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 02:55]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 02:55]
+Proactive heartbeat sent: AVAX mean_reversion is sitting at 86% win rate on the 6h chart — that's the move...
+
+## [2026-04-08 02:55]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']

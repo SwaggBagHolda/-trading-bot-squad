@@ -151,13 +151,13 @@
       "mode": "paper"
     },
     "DRIFT": {
-      "daily_pnl": 25.94519086562482,
+      "daily_pnl": 26.34960098926897,
       "monthly_pnl": 25.72,
-      "trades": 8,
-      "win_rate": 0.75,
+      "trades": 9,
+      "win_rate": 0.7777777777777778,
       "active_position": true,
       "mode": "backtesting",
-      "wins": 6
+      "wins": 7
     },
     "TITAN": {
       "daily_pnl": 0.0,
@@ -416,9 +416,9 @@
   "graduation": {
     "DRIFT": {
       "stage": "backtesting",
-      "backtest_trades": 8,
-      "backtest_wins": 6,
-      "backtest_pnl": 0.0022519086562481977,
+      "backtest_trades": 9,
+      "backtest_wins": 7,
+      "backtest_pnl": 0.006296009892689721,
       "backtest_target": 100,
       "paper_trades": 0,
       "paper_wins": 0,
