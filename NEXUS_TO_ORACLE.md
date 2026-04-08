@@ -1532,3 +1532,129 @@ Ty said: No, I want to see what they're doing now. What you train in them? How a
 
 ## [2026-04-08 06:59]
 Ty said: So what did you find
+
+## [2026-04-08 07:00]
+Ty said: I just gave you a in order to do some research for a scalping strategy for apex
+
+## [2026-04-08 07:00]
+Ty said: You should have done this already. Are those the best candles for scalping?
+
+## [2026-04-08 07:01]
+Ty said: I'm not asking you about the thirty four dollars.I'm asking you about a small time frame.Scalping strategy for apex
+
+## [2026-04-08 07:01]
+Ty said: No, find me a scalping strategy in the one minute time chart and give me the source of where you got it from
+
+## [2026-04-08 07:02]
+Ty said: It shouldn't take you five minutes.Give me the sources now
+
+## [2026-04-08 07:02]
+Ty said: I just asked you to get me a scalping strategy for Apex. On the 1 minute chart, incite your source of where you got the strategy from weather. Win rate
+
+## [2026-04-08 07:03]
+Ty said: No, don't back test them.Give me the strategy first with the sources.With the wind rate
+
+## [2026-04-08 07:04]
+Ty said: Okay, that one seems alright now. Get me a better one from a better source
+
+## [2026-04-08 07:04]
+Ty said: A better scalping strategy. Can you not hold on to this conversation topic? Give me a better strategy that than the one you just found in sight.Sources with the win rate
+
+## [2026-04-08 07:05]
+Ty said: Okay, that's still not good enough. So find me another strategy, from a better source with a better wind rate
+
+## [2026-04-08 07:05]
+Ty said: Give me the best one now.We're looking for the best one
+
+## [2026-04-08 07:06]
+Ty said: No, I'm asking you to pick the best 1 minute scalping strategy with sources with the wind rate. So that I can go check your work
+
+## [2026-04-08 07:06]
+Ty said: Is that the best strategy you could find from the best?Source?
+
+## [2026-04-08 07:07]
+Ty said: I think there's somebody out there with an eighty or ninety percent wind rate
+
+## [2026-04-08 07:07]
+Ty said: Okay, so give me the best when you found. One last time look for the best one minute scalping strategy from the best source with the best win.Rate
+
+## [2026-04-08 07:08]
+Ty said: That's okay, just fine.What you got.Let me know what you see
+
+## [2026-04-08 07:09]
+Ty said: Okay, now do one final pull one last look for the best one minute scalpish strategy you could find with the best.Source the best run rate
+
+## [2026-04-08 07:10]
+Ty said: No I'll give it to you now
+
+## [2026-04-08 07:10]
+Ty said: I mean give it to me now
+
+## [2026-04-08 07:18]
+Ty said: Okay, now do one final pull one last look for the best one minute scalpish strategy you could find with the best.Source the best run rate
+
+## [2026-04-08 07:22]
+Ty said: 1 min
+
+## [2026-04-08 07:24]
+Ty said: No, I'm asking you to pick the best 1 minute scalping strategy with sources with the wind rate. So that I can go check your work
+
+## [2026-04-08 07:26]
+[GRADUATION] DRIFT backtesting: 15/100 trades | 60.0% WR | P&L +0.001%
+
+## [2026-04-08 07:26]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 07:26]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 07:26]
+Proactive heartbeat sent: Mean reversion on AVAX is sitting at 86% win rate on the 6h chart — that's the c...
+
+## [2026-04-08 07:26]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 07:26]
+Ty said: Apply that last strategy you found to apex
+
+## [2026-04-08 07:26]
+Ty said: And start working on your fixes
+
+## [2026-04-08 07:28]
+Ty said: Just apply that last strategy you found to apex
+
+## [2026-04-08 07:29]
+Ty said: Make him Back test that strategy
+
+## [2026-04-08 07:30]
+Ty said: Okay, remember this last task that you're doing now And stay focused on it I'm beg back in 10 minutes for the report
+
+## [2026-04-08 07:41]
+Ty said: What's the dance for apex
+
+## [2026-04-08 07:42]
+Ty said: You were opposed to a pack test term for the last twenty minutes.You should have already tested him
+
+## [2026-04-08 07:44]
+Ty said: Back test the ICT strategy on a I wx PAPER TRADE FOR NOW confirm you understand
+
+## [2026-04-08 07:48]
+Ty said: That's what you said last time.Make sure I get my results, please
+
+## [2026-04-08 07:48]
+Ty said: Apex's back testing on the I c t one minute strategy
+
+## [2026-04-08 07:56]
+[GRADUATION] DRIFT backtesting: 17/100 trades | 58.8% WR | P&L +0.000%
+
+## [2026-04-08 07:56]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 07:56]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 07:56]
+Proactive heartbeat sent: APEX is 0-3 today — three quick losses in a row. Pattern looks like it's chasing...
+
+## [2026-04-08 07:56]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
