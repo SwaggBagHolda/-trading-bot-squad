@@ -76,3 +76,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 13:58]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'APEX is 1-for-3 today and entries are too loose—sitting in drawdown on two of those trades instead of cutting quick. Mea'
+
+## [2026-04-08 14:28]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "BTC and ETH both printing 4%+ moves while APEX is stuck at 33% — market's too choppy for tight entries right now. Mean r"
+
+## [2026-04-08 14:58]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "Mean reversion on AVAX is backtesting at 87.5% win rate on 6h charts — that's the clearest edge we've got right now. APE"
