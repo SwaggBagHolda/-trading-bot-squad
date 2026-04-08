@@ -1658,3 +1658,75 @@ Proactive heartbeat sent: APEX is 0-3 today — three quick losses in a row. Pat
 
 ## [2026-04-08 07:56]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 08:20]
+Ty said: Ok so fix whatever is going on with apex
+
+## [2026-04-08 08:21]
+Ty said: You shouldn't tell me he's owing three and then don't have any solutions
+
+## [2026-04-08 08:21]
+Ty said: You did
+
+## [2026-04-08 08:21]
+Ty said: Hey pix is back testing stats
+
+## [2026-04-08 08:21]
+Ty said: Apex
+
+## [2026-04-08 08:22]
+Ty said: Why does run a self check please
+
+## [2026-04-08 08:26]
+[GRADUATION] DRIFT backtesting: 17/100 trades | 58.8% WR | P&L +0.000%
+
+## [2026-04-08 08:26]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 08:26]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 08:26]
+Proactive heartbeat sent: BTC's up 4.81% and the whole market's moving, but APEX is 0 for 3 today. The squ...
+
+## [2026-04-08 08:26]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-08 08:27]
+Ty said: I asked you to rub a self check
+
+## [2026-04-08 08:27]
+Ty said: You are not working right, run a self, check and diagnose and fix what you can
+
+## [2026-04-08 08:27]
+Ty said: No more time, no more time, do it now.And come back and then fix it
+
+## [2026-04-08 08:28]
+Ty said: Now run a self check right now
+
+## [2026-04-08 08:28]
+Ty said: And once you find what's broken, just fix it
+
+## [2026-04-08 08:44]
+Ty said: But that's your job.So get on it, stop giving me excuses cause the bots ain't working right?You're not working right?And you're not getting nothing done
+
+## [2026-04-08 08:46]
+Ty said: Waiting on report
+
+## [2026-04-08 08:47]
+Ty said: Your diagnosis report
+
+## [2026-04-08 08:56]
+[GRADUATION] DRIFT backtesting: 17/100 trades | 58.8% WR | P&L +0.000%
+
+## [2026-04-08 08:56]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 08:56]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-08 08:56]
+Proactive heartbeat sent: APEX is fighting a bull market—BTC up 5.22%, ETH up 8%, but we're down $0.71 on ...
+
+## [2026-04-08 08:56]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']

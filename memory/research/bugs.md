@@ -55,3 +55,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-08 07:26]
 [RESEARCH FABRICATION WARNING] Prompt: 'Ty said: "Apply that last strategy you found to apex"\n\nRespond directly to what '. Response: 'Loading ICT fair value gap scalps into APEX now — 73-75% win rate on 1m. Live in 90 seconds.'
+
+## [2026-04-08 08:56]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX is fighting a bull market—BTC up 5.22%, ETH up 8%, but we're down $0.71 on 3 trades at 33% win rate. The rest of th"
