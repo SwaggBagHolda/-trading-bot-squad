@@ -2573,3 +2573,24 @@ Heartbeat safety checks: ['AutoResearch callback delivered', 'APEX idle 0.0h (no
 
 ## [2026-04-09 15:01]
 AutoResearch started PID 96663 at 2026-04-09T15:01:07.458150
+
+## [2026-04-09 15:19]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 15:19]
+Proactive heartbeat sent: APEX has fired exactly one trade all day — that SELL on TAO at $339.19 — and it'...
+
+## [2026-04-09 15:19]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 15:31]
+AutoResearch started PID 97090 at 2026-04-09T15:31:23.719621
+
+## [2026-04-09 15:49]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 15:49]
+Proactive heartbeat sent: ZEC's sitting at $362.24 and hasn't moved enough to matter yet — but that SPY me...
+
+## [2026-04-09 15:49]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']

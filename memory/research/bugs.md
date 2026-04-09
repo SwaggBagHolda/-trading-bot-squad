@@ -124,3 +124,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 14:49]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'BTC and SOL are both up ~0.7% today but ETH is slightly red — that divergence is worth watching. When ETH lags like this'
+
+## [2026-04-09 15:49]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "ZEC's sitting at $362.24 and hasn't moved enough to matter yet — but that SPY mean reversion signal is hitting 72.53% WR"

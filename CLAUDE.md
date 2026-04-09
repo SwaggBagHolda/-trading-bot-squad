@@ -4,7 +4,7 @@
 
 ## PERMANENT SESSION RULES (non-negotiable)
 
-1. **Read first.** Always read CLAUDE.md AND memory/tasks/next_session.md before doing anything else.
+1. **Read first.** Always read CLAUDE.md, memory/tasks/claude_briefing.md, AND memory/tasks/next_session.md before doing anything else.
 2. **Research before building.** Check if the file/function/feature already exists before writing new code.
 3. **Single-line commands only.** No multiline shell strings. Use \n escaping in .env. No heredocs in .env.
 4. **Free models only.** Never use paid API calls. OpenRouter free tier always. Never hit Anthropic direct unless OPENROUTER_API_KEY is exhausted and Ty explicitly approves.
