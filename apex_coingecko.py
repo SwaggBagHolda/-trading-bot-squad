@@ -3,7 +3,7 @@ APEX LIVE SCALPER — Opportunity Hunter Edition
 Signals: Momentum + Fair Value Gap (FVG) — bidirectional long & short
 Assets: Dynamic — scans CoinGecko top movers at startup and every 4h
 Execution: Coinbase Advanced Trade API (paper fallback)
-Target: 20-50 trades/day on volatile sessions
+Target: 50-200 trades/day — real scalper volume
 """
 import os, sys, json, time, uuid, jwt, requests
 from collections import deque
@@ -44,12 +44,12 @@ TARGET            = 0.015   # 1.5% take profit
 TRAIL             = 0.003   # 0.3% trailing stop distance (from peak)
 MIN_PROFIT_TRAIL  = 0.008   # trail only activates after 0.8% profit — stops premature exits
 MAX_LOSS          = 0.05    # 5% daily kill switch
-MIN_MOMENTUM      = float(os.getenv("APEX_MIN_MOMENTUM", "0.0004"))  # 0.04% default
-POLL_INTERVAL     = 15      # seconds between price polls
-WINDOW_TICKS      = 6       # 6 × 15s = 90-second window
-COOLDOWN          = 30      # seconds between trades
+MIN_MOMENTUM      = float(os.getenv("APEX_MIN_MOMENTUM", "0.0001"))  # 0.01% — wide net for scalping
+POLL_INTERVAL     = 5       # seconds between price polls — scalper speed
+WINDOW_TICKS      = 6       # 6 × 5s = 30-second window
+COOLDOWN          = 10      # 10 seconds between trades — aggressive scalping
 SCAN_INTERVAL     = 4 * 3600  # refresh asset universe every 4 hours
-MAX_WATCHLIST     = 8         # top N assets to track
+MAX_WATCHLIST     = 20        # top 20 movers for maximum opportunity
 
 # Paper mode — true by default until Coinbase auth is confirmed
 PAPER_MODE        = os.getenv("APEX_PAPER_MODE", "true").lower() in ("1", "true", "yes")
@@ -338,11 +338,11 @@ def refresh_watchlist(price_history):
     syms = ", ".join(a["symbol"] for a in WATCHLIST)
     tg(f"APEX watchlist updated — hunting: {syms}")
 
-def best_signal(price_history, current_prices):
+def best_signal(price_history, current_prices, min_momentum_override=None):
     """
     Scan all assets for entry signals — bidirectional long AND short.
 
-    Signal 1 — Momentum: asset moved > MIN_MOMENTUM% in the 90-second window.
+    Signal 1 — Momentum: asset moved > min_momentum% in the 30-second window.
       BUY on positive momentum, SELL (short) on negative.
 
     Signal 2 — Fair Value Gap (FVG): 3-candle imbalance detected AND current
@@ -353,6 +353,7 @@ def best_signal(price_history, current_prices):
     Live short execution requires LIVE_SHORTS_ENABLED=true (needs Coinbase INTX).
     In PAPER_MODE both directions are always available.
     """
+    min_mom    = min_momentum_override if min_momentum_override is not None else MIN_MOMENTUM
     best_sig   = None
     best_score = 0.0
 
@@ -370,7 +371,7 @@ def best_signal(price_history, current_prices):
         move = (latest - oldest) / oldest  # signed — positive=up, negative=down
 
         # ── Signal 1: Momentum ──────────────────────────────────────────────
-        if abs(move) >= MIN_MOMENTUM:
+        if abs(move) >= min_mom:
             direction = "BUY" if move > 0 else "SELL"
             # Skip live shorts unless INTX is enabled
             if direction == "SELL" and not PAPER_MODE and not LIVE_SHORTS_ENABLED:
@@ -504,6 +505,8 @@ def run():
     last_close  = datetime.now()
     last_report = datetime.now()
     last_scan   = datetime.now() - __import__('datetime').timedelta(seconds=SCAN_INTERVAL)  # fire immediately
+    last_trade_time = datetime.now()  # tracks last entry — auto-lower threshold if idle 10+ min
+    current_min_momentum = MIN_MOMENTUM  # dynamic — lowers when idle, resets after trade
 
     # Initialize price history with defaults — refreshed after scan
     price_history = {a["product"]: deque(maxlen=WINDOW_TICKS) for a in WATCHLIST}
@@ -542,6 +545,20 @@ def run():
                    f"Final: ${daily_pnl:+.2f} | {trades} trades | {wins} wins")
                 update_hive(daily_pnl, trades, wins)
                 break
+
+            # ── Read NEXUS parameter overrides from hive_mind.json ────────────
+            try:
+                if HIVE.exists():
+                    _hive = json.loads(HIVE.read_text())
+                    _nexus_params = _hive.get("nexus_apex_overrides", {})
+                    if _nexus_params:
+                        if "min_momentum" in _nexus_params:
+                            current_min_momentum = float(_nexus_params["min_momentum"])
+                        if "cooldown" in _nexus_params:
+                            global COOLDOWN
+                            COOLDOWN = int(_nexus_params["cooldown"])
+            except Exception:
+                pass
 
             # ── Refresh asset universe every 4 hours (no-op if in trade) ────────
             if not active and (datetime.now() - last_scan).total_seconds() >= SCAN_INTERVAL:
@@ -656,7 +673,16 @@ def run():
                     except:
                         pass
 
-                sig = best_signal(price_history, current)
+                # ── Auto-lower threshold if idle 10+ min — real scalpers are always active ──
+                idle_secs = (datetime.now() - last_trade_time).total_seconds()
+                if idle_secs > 600 and current_min_momentum > MIN_MOMENTUM * 0.1:
+                    old_thresh = current_min_momentum
+                    current_min_momentum = max(current_min_momentum * 0.5, MIN_MOMENTUM * 0.1)
+                    print(f"[APEX] IDLE {int(idle_secs//60)}min — lowering threshold "
+                          f"{old_thresh*100:.4f}% → {current_min_momentum*100:.4f}%")
+                    last_trade_time = datetime.now()  # reset timer after lowering
+
+                sig = best_signal(price_history, current, min_momentum_override=current_min_momentum)
                 if sig:
                     size      = STARTING * RISK
                     price     = sig["price"]
@@ -674,6 +700,8 @@ def run():
 
                     if status == 200 and result.get("success"):
                         trades    += 1
+                        last_trade_time = datetime.now()  # reset idle timer
+                        current_min_momentum = MIN_MOMENTUM  # reset threshold after trade
                         active     = {"symbol": sig["symbol"], "product": product,
                                       "direction": direction, "entry": price,
                                       "size": size, "time": datetime.now(),

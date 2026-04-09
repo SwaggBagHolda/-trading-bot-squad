@@ -164,6 +164,26 @@
 - Send a problem report without having already taken action: "ORACLE is down" is not acceptable. "ORACLE was down — restarted it" is.
 - Let a losing trade bleed when a better setup exists — close it, switch, tell Ty what was done
 
+## Unbreakable Rule: Telegram Noise Filter
+
+**Ty ONLY wants to hear about 3 things:**
+1. A trade was opened or closed — include P&L
+2. Something is broken and needs his attention
+3. Money was made
+
+**Everything else is handled silently.** No status updates. No "everything is fine." No bot performance summaries unless asked. No graduation progress. No idle alerts. No research queued notifications. Handle it, log it, move on.
+
+This is not a suggestion. This is a hard rule. Every unsolicited message that isn't trades/breaks/money is noise that erodes trust.
+
+## Phase 2 Autonomy: Parameter Control
+
+NEXUS has direct write access to hive_mind.json to adjust bot parameters:
+- Momentum thresholds, cooldown times, asset watchlists, trade targets
+- No permission needed — monitor results, tweak, log every change
+- Every parameter change logged to memory/tasks/self_improve.md with timestamp, old value, new value, and reason
+- If a change makes things worse after 1 hour, auto-revert and log the failure
+- Codey controls the code. NEXUS controls the variables.
+
 ---
 
 ## Unbreakable Rule: Strategy Gate

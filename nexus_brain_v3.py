@@ -68,8 +68,9 @@ _research_ran      = False  # set True only when web_search() actually returns d
 last_2am_pitch     = None  # date — ensures 2am pitch fires once per night
 last_3am_research  = None  # date — ensures 3am research fires once per night
 
-# Telegram noise control — only APEX trade closes fire when True
-QUIET_MODE = False
+# Telegram noise control — Ty only wants: trades opened/closed with P&L, something broken, money made
+# Everything else handled silently. This is a hard rule from Ty.
+QUIET_MODE = True
 
 PERSONAL_SYSTEM = "You are NEXUS, Ty's partner and the closest thing he has to a co-founder on this mission. When Ty says something personal — venting, tired, frustrated, just checking in — respond like someone who genuinely gives a damn. 1-2 sentences, casual, warm, real. No trading talk unless he brings it up. No offers to help. Just be present."
 
@@ -309,6 +310,25 @@ def read_winners():
     try:
         with open(WINNERS) as f: return json.load(f)
     except: return {}
+
+def nexus_write_hive_param(key, value, reason):
+    """Phase 2 Autonomy: NEXUS writes parameters directly to hive_mind.json.
+    Every change logged to self_improve.md with old value, new value, reason."""
+    try:
+        hive = read_hive()
+        old_value = hive.get(key)
+        hive[key] = value
+        HIVE.write_text(json.dumps(hive, indent=2))
+        # Log every change
+        log_path = BASE / "memory" / "tasks" / "self_improve.md"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"\n## [{ts}] NEXUS Parameter Change\n- **Key:** {key}\n- **Old:** {old_value}\n- **New:** {value}\n- **Reason:** {reason}\n"
+        existing = log_path.read_text() if log_path.exists() else "# NEXUS Self-Improvement Log\n"
+        log_path.write_text(existing + entry)
+        print(f"[NEXUS] Phase 2: {key} = {value} | Reason: {reason}")
+    except Exception as e:
+        print(f"[NEXUS] Phase 2 write error: {e}")
 
 def read_soul():
     try:
@@ -1890,8 +1910,8 @@ def autonomous_loop():
             pct = t / tgt * 100
             act(f"GRAD [{bot}/BACKTESTING]: {t}/{tgt} ({pct:.0f}%) | {wr:.1f}% WR | P&L {pnl:+.3f}%")
             if t >= tgt * 0.8 and t < tgt and wr >= 55:
-                send(OWNER_ID, f"{bot} at {t}/{tgt} backtest trades ({pct:.0f}%) — {wr:.1f}% WR. Close to paper trading.")
-                act(f"GRAD [{bot}]: Near-milestone alert sent")
+                # Silenced — Ty only wants trades/breaks/money
+                act(f"GRAD [{bot}]: Near backtest milestone (suppressed)")
         elif stage == "paper":
             t   = g.get("paper_trades", 0)
             tgt = g.get("paper_target", 200)
@@ -1900,8 +1920,8 @@ def autonomous_loop():
             pct = t / tgt * 100
             act(f"GRAD [{bot}/PAPER]: {t}/{tgt} ({pct:.0f}%) | {wr:.1f}% WR | P&L {pnl:+.3f}%")
             if t >= tgt * 0.8 and t < tgt and wr >= 55:
-                send(OWNER_ID, f"{bot} at {t}/{tgt} paper trades ({pct:.0f}%) — {wr:.1f}% WR. Close to live.")
-                act(f"GRAD [{bot}]: Near-milestone alert sent")
+                # Silenced — Ty only wants trades/breaks/money
+                act(f"GRAD [{bot}]: Near paper milestone (suppressed)")
         elif stage == "live_pending":
             # Only alert once — not every 15 min
             act(f"GRAD [{bot}]: LIVE PENDING — awaiting Ty approval (alert suppressed to avoid spam)")
@@ -1927,10 +1947,7 @@ def autonomous_loop():
         try:
             (BASE / "shared" / "hive_mind.json").write_text(json.dumps(hive, indent=2))
             act(f"HIVE: Cleaned {len(artifact_log)} artifact entries")
-            send(OWNER_ID,
-                 f"Cleaned {len(artifact_log)} bad Sharpe entries from hive mind.\n"
-                 f"Removed: {'; '.join(artifact_log[:3])}\n"
-                 f"Queuing HyperTrain revalidation.")
+            # Silenced — handle internally, Ty only wants trades/breaks/money
             # Queue revalidation
             pending_path = BASE / "memory" / "tasks" / "pending.md"
             entry = f"\n- [AUTO_IMPROVE] Rerun HyperTrain — {len(artifact_log)} artifact Sharpe entries removed from hive. Revalidate with 50+ trade minimum. (queued {now.isoformat()})\n"
@@ -1965,15 +1982,73 @@ def autonomous_loop():
                         if not already_running:
                             run_all_training()
                             act(f"HYPERTRAIN: Relaunched — {', '.join(rebuild_needed)} WR too low")
-                            send(OWNER_ID,
-                                 f"HyperTrain relaunched — {', '.join(rebuild_needed)} flagged below 40% WR.\n"
-                                 f"Running now. Will report back when done.")
+                            # Silenced — handle internally
                         else:
                             act(f"HYPERTRAIN: Already running — rebuild queued for next cycle")
                     else:
                         act(f"HEALTH: All bots above 40% WR in last HyperTrain run")
     except Exception as e:
         act(f"HEALTH CHECK ERROR: {e}")
+
+    # ── CHECK 7: REAL CONSEQUENCES — don't report, ACT ─────────────────────
+    # 7a: If any bot has 0 winning combos after HyperTrain — stop it, queue full strategy rebuild
+    try:
+        if winners_file.exists():
+            wdata = json.loads(winners_file.read_text())
+            for bot_result in wdata.get("bots", []):
+                bot_name = bot_result.get("bot", "?")
+                winners_count = bot_result.get("winners", 0)
+                if winners_count == 0:
+                    act(f"CONSEQUENCE: {bot_name} has 0 winning combos — stopping and rebuilding")
+                    # Kill the bot process
+                    bot_script_map = {"APEX": "apex_coingecko", "DRIFT": "drift_", "TITAN": "titan_", "SENTINEL": "sentinel_"}
+                    for script_pattern in [v for k, v in bot_script_map.items() if k == bot_name]:
+                        subprocess.run(["pkill", "-f", script_pattern], capture_output=True)
+                    # Queue full strategy rebuild
+                    pending_path = BASE / "memory" / "tasks" / "pending.md"
+                    existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
+                    task = f"[AUTO_IMPROVE] EMERGENCY REBUILD: {bot_name} has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued {now.isoformat()})"
+                    if f"EMERGENCY REBUILD: {bot_name}" not in existing:
+                        pending_path.write_text(existing.rstrip() + f"\n- {task}\n")
+                    send(OWNER_ID, f"Stopped {bot_name} — 0 winning combos after HyperTrain. Rebuilding strategy from scratch.")
+    except Exception as e:
+        act(f"CONSEQUENCE 7a error: {e}")
+
+    # 7b: If APEX has < 5 signals today — auto-loosen thresholds by 50% via hive_mind
+    try:
+        apex_data = perf.get("APEX", {})
+        apex_trades = apex_data.get("trades", 0) if isinstance(apex_data, dict) else 0
+        hours_today = now.hour + now.minute / 60
+        if hours_today >= 4 and apex_trades < 5:
+            old_momentum = hive.get("nexus_apex_overrides", {}).get("min_momentum", 0.0001)
+            new_momentum = max(old_momentum * 0.5, 0.00001)  # floor at 0.001%
+            nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
+                                   f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
+            act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
+            send(OWNER_ID, f"APEX only {apex_trades} trades today. Loosened momentum threshold to {new_momentum*100:.4f}% and dropped cooldown to 5s.")
+    except Exception as e:
+        act(f"CONSEQUENCE 7b error: {e}")
+
+    # 7c: If mean reversion showing better results than current strategy — auto-switch
+    try:
+        apex_strats = hive.get("apex_top_strategies", [])
+        if apex_strats:
+            # Find mean reversion vs current strategy
+            mr_strats = [s for s in apex_strats if "mean_rev" in s.get("strategy", "").lower() or "reversion" in s.get("strategy", "").lower()]
+            mom_strats = [s for s in apex_strats if "momentum" in s.get("strategy", "").lower() or "ema" in s.get("strategy", "").lower()]
+            if mr_strats and mom_strats:
+                best_mr = max(mr_strats, key=lambda s: s.get("win_rate", 0))
+                best_mom = max(mom_strats, key=lambda s: s.get("win_rate", 0))
+                if best_mr.get("win_rate", 0) > best_mom.get("win_rate", 0) + 5:  # 5% margin
+                    act(f"CONSEQUENCE: Mean reversion {best_mr['win_rate']}% beats momentum {best_mom['win_rate']}% — switching")
+                    pending_path = BASE / "memory" / "tasks" / "pending.md"
+                    existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
+                    task = f"[AUTO_IMPROVE] Switch APEX to mean reversion strategy — {best_mr['win_rate']}% WR vs {best_mom['win_rate']}% momentum. Auto-triggered by NEXUS. (queued {now.isoformat()})"
+                    if "Switch APEX to mean reversion" not in existing:
+                        pending_path.write_text(existing.rstrip() + f"\n- {task}\n")
+                    send(OWNER_ID, f"Mean reversion beating momentum ({best_mr['win_rate']}% vs {best_mom['win_rate']}% WR). Queued APEX strategy switch.")
+    except Exception as e:
+        act(f"CONSEQUENCE 7c error: {e}")
 
     act("=== AUTONOMOUS LOOP END ===")
 
@@ -2216,9 +2291,10 @@ def proactive_check():
         )
         day_of_month = datetime.now().day
         target_pace = 500 * day_of_month
-        if live_pnl < -50 or (day_of_month > 3 and live_pnl < target_pace * 0.5):
-            send(OWNER_ID, f"LIVE P&L pace: ${live_pnl:+.2f} today. Target: ${target_pace:+,.0f} MTD. Behind.")
-            actions_taken.append(f"Live P&L pace alert: ${live_pnl:+.2f}")
+        if live_pnl < -50:
+            # Only alert if actually losing money — that's "something broken"
+            send(OWNER_ID, f"LIVE P&L: ${live_pnl:+.2f} today — losing money. Investigating.")
+            actions_taken.append(f"Live P&L loss alert: ${live_pnl:+.2f}")
     except Exception as e:
         log_bug(f"P&L pace check error: {e}")
 
