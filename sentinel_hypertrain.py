@@ -202,12 +202,7 @@ def run_hypertrain():
 
     init_db()
 
-    send_telegram(
-        "🎯 SENTINEL HYPERTRAINING STARTED\n"
-        "Running 10,000 FTMO experiments in compressed time.\n"
-        "Will report every 2,500 experiments.\n"
-        "Stand by for results."
-    )
+    # No start message — Ty only wants final summary
 
     conn = sqlite3.connect(LOG_DB)
     start_time = time.time()
@@ -263,7 +258,7 @@ def run_hypertrain():
                 msg += f" | WR: {winners[0][3]*100:.1f}% | Avg P&L: {winners[0][4]:.4f}%"
 
             print(msg)
-            send_telegram(msg)
+            # No checkpoint message — Ty only wants final summary
 
     # Final analysis
     elapsed = time.time() - start_time

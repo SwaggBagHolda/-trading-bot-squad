@@ -45,7 +45,7 @@ class Zeus:
         self.session_start = datetime.now()
         (BASE / "logs").mkdir(parents=True, exist_ok=True)
         print(f"[{BOT_NAME}] Online. All systems under supervision.")
-        self.send_telegram("⚡ ZEUS is online. Monitoring all bots. Running tight ship.")
+        # No startup noise — Ty only wants actionable messages
 
     def send_telegram(self, message, urgent=False):
         if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
@@ -185,7 +185,7 @@ class Zeus:
     def trigger_hypertraining(self, bot_name="all"):
         """Tell bots to run their AutoResearch/HyperTraining loops"""
         bots_to_train = self.bots if bot_name == "all" else [bot_name]
-        self.send_telegram(f"🔬 Triggering HyperTraining on: {', '.join(bots_to_train)}")
+        # No Telegram noise for HyperTrain triggers — Ty only wants final summaries
 
         for bot in bots_to_train:
             bot_script = BASE / "bots" / bot.lower() / f"{bot.lower()}.py"

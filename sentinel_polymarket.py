@@ -707,7 +707,7 @@ def run():
     print(f"Scan interval: {SCAN_INTERVAL}s")
     print("=" * 55)
 
-    send_telegram(f"SENTINEL online. Paper mode. Balance: ${PAPER_BALANCE:.2f}. Scanning Polymarket crypto markets.")
+    # No startup noise — Ty only wants trade notifications
 
     while True:
         try:
