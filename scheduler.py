@@ -530,13 +530,7 @@ def main():
     log(f"PID: {os.getpid()}")
     log("=" * 55)
 
-    send_telegram(
-        "⚡ NEXUS Scheduler online.\n"
-        "All bots now: paper trading + continuous HyperTraining.\n"
-        "HyperTrain runs at 3am + noon daily.\n"
-        "6am report incoming. WARDEN checks every 6hrs.\n"
-        "When not trading — always training. 🤖"
-    )
+    # Startup message removed — no Telegram noise on boot
 
     tick = 0
     last_6hr = datetime.now() - timedelta(hours=6)  # Force first 6hr report soon

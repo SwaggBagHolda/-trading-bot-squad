@@ -2231,7 +2231,7 @@ def autonomous_loop():
                 nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
                                        f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
                 act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
-            send(OWNER_ID, f"APEX only {apex_trades} trades today. Loosened momentum threshold to {new_momentum*100:.4f}% and dropped cooldown to 5s.")
+            # Removed — no Telegram noise for threshold adjustments (CEO loop handles reporting)
     except Exception as e:
         act(f"CONSEQUENCE 7b error: {e}")
 
