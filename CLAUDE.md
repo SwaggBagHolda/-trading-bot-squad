@@ -1,5 +1,5 @@
 # CLAUDE.md — Trading Bot Squad Master Brain
-# Version 1.2 | Created: April 2026 | Updated: 2026-04-09
+# Version 1.3 | Created: April 2026 | Updated: 2026-04-09
 # Read this file at the start of EVERY session.
 
 ## PERMANENT SESSION RULES (non-negotiable)
@@ -96,15 +96,31 @@ Paperclip + OpenClaw + Claude Code + Telegram + Coinable + AutoResearch
 ✅ Paper first, curriculum, then live
 ✅ ZEUS oversight (Felix didn't have this)
 
-## SESSION STARTUP
+## SESSION STARTUP (automatic — zero input from Ty)
+Every new session, Codey runs this entire sequence before doing ANYTHING else.
+No waiting for Ty. No asking what to do. Just run it.
+
 1. Re-read this CLAUDE.md
 2. Read memory/SYSTEM.md
 3. Read memory/CLAUDE_CODE_HANDOFF.md
 4. Read memory/NEXUS_TO_ORACLE.md — messages from NEXUS
-5. Check memory/tasks/ for pending tasks from NEXUS
-6. Ask owner: what is the priority today?
-7. Never start coding without confirming phase
-8. At END of session: update memory/ORACLE_TO_NEXUS.md with decisions made
+5. Run /dream to consolidate memory from prior sessions
+6. **System health check — fix before proceeding:**
+   - `ps aux | grep scheduler.py` — is the scheduler running? If not, restart it.
+   - `ps aux | grep nexus` — is NEXUS alive? If not, flag it.
+   - `ps aux | grep apex` — is APEX running? If not, flag it.
+   - `ps aux | grep oracle` — is ORACLE running? If not, flag it.
+   - `npx openclaw status` — is OpenClaw gateway healthy?
+   - `python3 hypertrain.py` — check if HyperTrain runs or reports halted/errors.
+   - `tail -20 logs/scheduler.log` — any errors in last 20 lines?
+   - Fix any issues found immediately. Don't move on until systems are green.
+7. Check memory/tasks/pending.md for pending tasks from NEXUS
+8. **Send Ty a single Telegram status message** via the send_telegram function or Telegram API:
+   - Which systems are up/down
+   - Any issues found and fixed
+   - What Codey is working on this session
+9. Then proceed to tasks. If Ty gave instructions, follow them. Otherwise work pending.md.
+10. At END of session: update memory/ORACLE_TO_NEXUS.md with decisions made
 
 ## GRADUATION PATH
 Phase 1: All bots paper trade on Coinable
