@@ -2324,3 +2324,42 @@ Proactive heartbeat sent: Squad has run 1 trades today for $+0.67 total. APEX 1 
 
 ## [2026-04-09 08:56]
 Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-09 09:16]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 09:16]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 09:16]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 09:16]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 09:16]
+Proactive heartbeat sent: Market's bleeding across the board — BTC down 2.17%, ETH off 3.75%, SOL nearly 3...
+
+## [2026-04-09 09:16]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 09:27]
+AutoResearch started PID 2655 at 2026-04-09T09:27:33.591907
+
+## [2026-04-09 09:47]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 09:47]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 09:47]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 09:47]
+Proactive heartbeat sent: Mean reversion on SPY 4h is sitting at 72.53% WR in backtest — that's the strong...
+
+## [2026-04-09 09:47]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
+
+## [2026-04-09 09:57]
+AutoResearch started PID 2976 at 2026-04-09T09:57:55.322763
