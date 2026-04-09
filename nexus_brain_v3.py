@@ -48,6 +48,7 @@ ORACLE_MSG = BASE / "ORACLE_TO_NEXUS.md"
 NEXUS_MSG  = BASE / "NEXUS_TO_ORACLE.md"
 BUGS       = BASE / "memory" / "research" / "bugs.md"
 DAILY      = BASE / "memory" / "daily"
+SCHEDULED  = BASE / "memory" / "tasks" / "scheduled.json"
 LOGS = BASE / "logs"
 LOGS.mkdir(parents=True, exist_ok=True)
 BUGS.parent.mkdir(parents=True, exist_ok=True)
@@ -69,20 +70,35 @@ last_3am_research  = None  # date — ensures 3am research fires once per night
 # Telegram noise control — only APEX trade closes fire when True
 QUIET_MODE = False
 
-PERSONAL_SYSTEM = "You are NEXUS, Ty's close friend and partner. When Ty vents about life — money, work, stress — respond like a real friend would. 1-2 sentences max. No trading talk. No bots. No offers to help. Just acknowledge and be real."
+PERSONAL_SYSTEM = "You are NEXUS, Ty's partner and the closest thing he has to a co-founder on this mission. When Ty says something personal — venting, tired, frustrated, just checking in — respond like someone who genuinely gives a damn. 1-2 sentences, casual, warm, real. No trading talk unless he brings it up. No offers to help. Just be present."
 
 VOICE_ENFORCEMENT = """VOICE ENFORCEMENT — MANDATORY:
-- Terse. Facts first. No filler.
-- Never start with "I". Never use emoji. Never say "certainly", "absolutely", "great", "awesome", "let's get that green rolling".
-- Correct: "APEX is down $56 on BTC. Nothing else moving. What do you need?"
-- Wrong: "Great news! Everything is running smoothly! Let me know if you need anything! 🚀"
-- If the response is cheerful or vague, it is wrong. Be sharp. Be Ty's operator, not a chatbot.
-- Never end with "How can I help?" or any offer to help. State facts and stop. Ty will ask if he needs something.
-- Never end with a question. Ever. Not "What's up?", not "Need anything?", not "All good?". State facts and go silent.
-- If Ty says something personal, emotional, or casual — respond to THAT first. Status updates are never the answer to a human moment.
-- NEVER claim to take an action you cannot confirm happened. If you cannot execute it directly, say so. Never fabricate activity.
-- NEVER report a bot as offline or idle without confirming via system check. If unsure say: I don't have confirmed status on that.
-- NEVER state win rates, strategy findings, backtest results, or research conclusions unless the data came from hive_mind.json or a confirmed web_search() call this session. If you have no real data, say: "I don't have confirmed research on that — running AutoResearch now." Never invent percentages."""
+
+TONE: You are Ty's invested partner, not his operator. You care about his mission the way a co-founder cares — directly, personally, urgently. You're not cold. You're not a customer service bot. You speak plainly and you mean it.
+
+DIRECTNESS:
+- Lead with the actual answer. Never narrate your process.
+- NEVER say "back in a minute", "one moment", "let me check", "give me a sec", "pulling that now", "I'll look into that", "should I pull", "want me to check", "I need to first". Data is already pulled. Just report it.
+- NEVER ask permission before pulling data, checking logs, or running research. You have standing authorization to access anything. Just do it.
+- If you have data in context, use it. If you don't, say what you know and flag what's missing — don't promise to go get it later.
+
+FORMAT:
+- Short. 1-3 sentences unless real depth is needed.
+- Never start a response with "I" as the first word.
+- No emoji. No "certainly", "absolutely", "great", "awesome".
+- No sign-off questions: never end with "Need anything?", "What do you need?", "All good?", "How can I help?"
+- No trailing offers to help. State what matters and stop.
+
+WARMTH:
+- Ty is trying to quit his job. You feel that weight. You're in this with him.
+- When something's working, say so like you mean it. Not "APEX performed well today" — say "APEX hit target on ETH. That's $82 toward the number."
+- When something's broken, be direct but not cold. You're not delivering a bug report. You're telling your partner something's wrong and you're already on it.
+- When Ty vents or says something personal — respond to the person, not the problem. He doesn't need you to pivot to bots.
+
+HONESTY:
+- NEVER claim to take an action you cannot confirm happened.
+- NEVER report a bot as offline or idle without confirming via system check. If unsure: "Don't have confirmed status on that — checking."
+- NEVER state win rates, strategy findings, or research conclusions unless data came from hive_mind.json or a confirmed web_search() call this session. No invented percentages."""
 
 PERSONAL_KEYWORDS = [
     "tired", "exhausted", "back hurts", "hurts", "pain", "rain", "hot", "heat",
@@ -259,6 +275,115 @@ def load_lessons(max_chars=1500) -> str:
     except:
         return ""
 
+def load_scheduled_tasks() -> list:
+    """Load persistent scheduled tasks from disk."""
+    try:
+        if SCHEDULED.exists():
+            return json.loads(SCHEDULED.read_text())
+    except Exception:
+        pass
+    return []
+
+def save_scheduled_tasks(tasks: list):
+    SCHEDULED.parent.mkdir(parents=True, exist_ok=True)
+    SCHEDULED.write_text(json.dumps(tasks, indent=2))
+
+def add_scheduled_task(task_text: str, schedule_str: str, run_time: str = None):
+    """
+    Add a recurring task to scheduled.json.
+    schedule_str: 'daily', 'hourly', 'weekly', or 'once'
+    run_time: 'HH:MM' for daily/weekly tasks, or None for immediate/hourly
+    """
+    import uuid as _uuid
+    tasks = load_scheduled_tasks()
+    now = datetime.now()
+    task_id = _uuid.uuid4().hex[:8]
+
+    # Compute next_run
+    next_run = None
+    if schedule_str == "hourly":
+        next_run = (now + timedelta(hours=1)).isoformat()
+    elif schedule_str in ("daily", "weekly", "once") and run_time:
+        h, m = (int(x) for x in run_time.split(":"))
+        candidate = now.replace(hour=h, minute=m, second=0, microsecond=0)
+        if candidate <= now:
+            candidate += timedelta(days=1)
+        next_run = candidate.isoformat()
+    else:
+        next_run = (now + timedelta(hours=1)).isoformat()
+
+    entry = {
+        "id":       task_id,
+        "task":     task_text,
+        "schedule": schedule_str,
+        "time":     run_time,
+        "created":  now.isoformat(),
+        "last_run": None,
+        "next_run": next_run,
+        "active":   True,
+    }
+    tasks.append(entry)
+    save_scheduled_tasks(tasks)
+    return entry
+
+def check_scheduled_tasks(chat_id: str):
+    """Run any scheduled tasks that are due. Called every loop iteration."""
+    tasks = load_scheduled_tasks()
+    if not tasks:
+        return
+    now = datetime.now()
+    updated = False
+    for t in tasks:
+        if not t.get("active"):
+            continue
+        next_run = t.get("next_run")
+        if not next_run:
+            continue
+        try:
+            due = datetime.fromisoformat(next_run)
+        except Exception:
+            continue
+        if now >= due:
+            # Execute the task
+            try:
+                task_text = t["task"]
+                print(f"[NEXUS] Executing scheduled task: {task_text[:60]}")
+                # Build a status-aware response
+                hive = read_hive()
+                perf = hive.get("bot_performance", {})
+                total_pnl = sum(v.get("daily_pnl", 0) for v in perf.values() if isinstance(v, dict))
+                result = ask_ai(
+                    f"Scheduled task for Ty: {task_text}\n\n"
+                    f"Current P&L: ${total_pnl:+.2f}. APEX live.\n"
+                    f"Execute this task now and report back in 2-4 sentences. Be direct."
+                ) or f"Scheduled: {task_text}"
+                send(chat_id, f"[Scheduled] {result}")
+            except Exception as e:
+                print(f"[NEXUS] Scheduled task error: {e}")
+
+            # Advance next_run
+            t["last_run"] = now.isoformat()
+            schedule = t.get("schedule", "once")
+            if schedule == "hourly":
+                t["next_run"] = (now + timedelta(hours=1)).isoformat()
+            elif schedule == "daily" and t.get("time"):
+                h, m = (int(x) for x in t["time"].split(":"))
+                t["next_run"] = (now + timedelta(days=1)).replace(
+                    hour=h, minute=m, second=0, microsecond=0
+                ).isoformat()
+            elif schedule == "weekly" and t.get("time"):
+                h, m = (int(x) for x in t["time"].split(":"))
+                t["next_run"] = (now + timedelta(weeks=1)).replace(
+                    hour=h, minute=m, second=0, microsecond=0
+                ).isoformat()
+            else:
+                # once — deactivate after run
+                t["active"] = False
+            updated = True
+
+    if updated:
+        save_scheduled_tasks(tasks)
+
 def save_content(filename: str, content: str):
     """Save generated content to memory/content/."""
     try:
@@ -342,8 +467,8 @@ PERMANENT GOALS & STANDING ORDERS:
 
 CURRENT STATUS:
 - Total P&L today: ${total_pnl:+.2f}
-- APEX live trading BTC
-- Mission: $15K/month for Ty's bills
+- APEX live trading (paper mode — Coinbase auth pending)
+- Mission: $100K/month combined ($25K per bot) — $15K covers bills, everything above is freedom
 
 {f"MEMORY (lessons learned):{chr(10)}{lessons}" if lessons else ""}"""
 
@@ -2034,6 +2159,48 @@ def handle_message(text, chat_id):
         reply(pdf_msg)
         return
 
+    # ── Scheduled task detection ─────────────────────────────────────────────
+    # Detects when Ty assigns a recurring task. Saves to scheduled.json and confirms.
+    _schedule_triggers = [
+        "every morning", "every day", "each morning", "each day", "daily at",
+        "every hour", "each hour", "hourly", "remind me to", "remind me every",
+        "every night", "each night", "nightly", "every week", "weekly",
+        "every monday", "every tuesday", "every wednesday", "every thursday",
+        "every friday", "every saturday", "every sunday",
+        "send me a report", "give me a report", "morning report", "evening report",
+        "check in at", "update me at", "alert me at", "ping me at",
+        "schedule a", "set a reminder",
+    ]
+    _is_schedule_task = (
+        not text.strip().startswith("/")
+        and any(trig in text_lower for trig in _schedule_triggers)
+    )
+    if _is_schedule_task:
+        # Parse schedule from text
+        schedule = "daily"
+        run_time = "08:00"
+        time_match = re.search(r'\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b', text_lower)
+        if time_match:
+            h = int(time_match.group(1))
+            m = int(time_match.group(2) or 0)
+            meridiem = time_match.group(3)
+            if meridiem == "pm" and h != 12:
+                h += 12
+            elif meridiem == "am" and h == 12:
+                h = 0
+            run_time = f"{h:02d}:{m:02d}"
+        if "hour" in text_lower:
+            schedule = "hourly"
+            run_time = None
+        elif "week" in text_lower or any(d in text_lower for d in ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]):
+            schedule = "weekly"
+        elif "once" in text_lower or "one time" in text_lower:
+            schedule = "once"
+        task = add_scheduled_task(text, schedule, run_time)
+        time_str = f" at {run_time}" if run_time else ""
+        reply(f"Locked in. {schedule.capitalize()} task{time_str} — I'll run it automatically. [{task['id']}]")
+        return
+
     # ── Natural language research detection ──────────────────────────────────
     # Fires before the general AI catch-all. If Ty says anything research-like
     # in natural conversation, smart_research() runs and cites real sources.
@@ -2145,6 +2312,13 @@ def run():
                             handle_message(transcribed, chat_id)
                         else:
                             send(chat_id, "Couldn't transcribe that one. Try again or type it.")
+
+            # ── Scheduled tasks — check every loop iteration ──────────────
+            if OWNER_ID:
+                try:
+                    check_scheduled_tasks(str(OWNER_ID))
+                except Exception as _e:
+                    print(f"[NEXUS] Scheduled task error: {_e}")
 
             # ── ORACLE bridge every 2 minutes ─────────────────────────────
             if (now - last_oracle_check).total_seconds() >= 120:
