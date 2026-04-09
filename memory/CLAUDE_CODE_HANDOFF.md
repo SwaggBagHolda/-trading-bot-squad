@@ -46,8 +46,13 @@ All bugs go in memory/research/bugs.md. Don't repeat them.
 - Alerts: Telegram bot (NEXUS sends; QUIET_MODE=False = night shift active)
 
 ## RECENT DECISIONS (as of 2026-04-09)
-- **OpenRouter removed** — all models were 401. NEXUS runs Anthropic API directly (`claude-haiku-4-5-20251001`, upgrading to `claude-sonnet-4-6`).
+- **NEXUS model: `claude-sonnet-4-6`** — upgraded from Haiku. Runs on Anthropic API directly.
+- **HyperTrain HALTED** — `TRAINING_ENABLED=False` in hypertrain.py. Backtest model broken (13-24% WR heuristic). Do NOT re-enable until VectorBT backtest rebuilt.
+- **Scheduler stable** — PID-locked, 5-min tick, signal handlers. Root cause of missed HyperTrain was 30-min sleep bug (fixed).
+- **All bots crypto-only** — No stocks/forex/commodities. Coinbase exchange only.
+- **HyperTrain schedule: 3am + noon** — 2x daily when re-enabled. MAX_DAILY_RUNS=2 hard limit.
 - **Key entry: `set_key_silent.py` only** — macOS osascript dialog, never touches stdout/logs.
 - **`run_paper_trading_tick()` PERMANENTLY disabled** — was fabricating random P&L. Do not re-enable.
-- **`load_dotenv(override=True)` is critical** — system env has corrupted key (`sk-sk-ant-api03-...`). Override ensures .env key wins.
-- **RESEARCH FABRICATION is a known NEXUS bug** — haiku model hallucinates stats in proactive messages. Do not trust unverified WR claims from logs.
+- **`load_dotenv(override=True)` is critical** — system env has corrupted key. Override ensures .env key wins.
+- **Voice input works** — Ty can send Telegram voice notes, NEXUS transcribes via Whisper.
+- **OpenClaw plugins active** — memory-wiki, webhooks, brave, firecrawl, perplexity, lobster, llm-task, voice-call.
