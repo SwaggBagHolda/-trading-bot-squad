@@ -1029,6 +1029,138 @@ def consolidate_memory():
         log_bug(f"Memory consolidation error: {e}")
         return None
 
+def nightly_self_improvement():
+    """
+    Felix-style nightly self-improvement loop.
+    Reads all chat transcripts from the day, identifies every moment Ty had to
+    intervene or correct NEXUS, and writes specific fixes to handle those
+    situations autonomously next time.
+    Runs at 1am every night.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    chat_file = CHAT_LOG_DIR / f"{today}.jsonl"
+    improve_file = BASE / "memory" / "tasks" / "self_improve.md"
+
+    if not chat_file.exists():
+        print("[NEXUS] No chat log for today — skipping self-improvement")
+        return
+
+    # Read all exchanges from today
+    exchanges = []
+    try:
+        for line in chat_file.read_text().splitlines():
+            if line.strip():
+                exchanges.append(json.loads(line))
+    except Exception as e:
+        print(f"[NEXUS] Self-improvement read error: {e}")
+        return
+
+    if not exchanges:
+        return
+
+    # Build transcript for AI review
+    transcript = ""
+    for ex in exchanges:
+        transcript += f"TY: {ex.get('user', '')}\n"
+        transcript += f"NEXUS: {ex.get('assistant', '')[:200]}\n\n"
+
+    # Ask AI to identify corrections and write fixes
+    prompt = f"""You are reviewing today's conversation between Ty (the owner) and NEXUS (his AI assistant).
+
+TRANSCRIPT:
+{transcript[:6000]}
+
+Your job: identify every moment where:
+1. Ty had to correct NEXUS ("no", "not that", "wrong", "stop", "fix this", "I said")
+2. Ty had to repeat himself or re-explain something
+3. Ty had to manually intervene in something NEXUS should have handled
+4. NEXUS gave wrong info, made promises without delivering, or missed context
+
+For each issue found, write a SPECIFIC fix — not vague advice. Example:
+- ISSUE: Ty said "check SOL" and NEXUS checked BTC instead
+  FIX: When Ty names a specific asset, always use that exact asset. Never substitute.
+
+If Ty didn't need to correct anything, say "No corrections needed today."
+
+Output format: markdown list of ISSUE + FIX pairs. Be specific and actionable."""
+
+    analysis = ask_ai(prompt)
+    if not analysis:
+        return
+
+    # Write to self_improve.md
+    try:
+        header = f"\n## Self-Improvement — {today}\n"
+        header += f"Exchanges reviewed: {len(exchanges)}\n\n"
+        existing = improve_file.read_text() if improve_file.exists() else "# NEXUS Self-Improvement Log\nFellix-style nightly review: what went wrong, how to fix it.\n\n"
+        improve_file.write_text(existing + header + analysis + "\n\n---\n")
+        print(f"[NEXUS] Self-improvement written: {len(exchanges)} exchanges reviewed")
+        log_to_oracle(f"Nightly self-improvement: reviewed {len(exchanges)} exchanges")
+    except Exception as e:
+        print(f"[NEXUS] Self-improvement write error: {e}")
+
+
+def morning_priority_report():
+    """
+    Felix-style morning brief: 5 top priorities sent to Ty by 6am.
+    Reads system state, pending tasks, bot performance, and yesterday's
+    self-improvement findings to produce an actionable morning report.
+    Runs at 6am every day.
+    """
+    hive = read_hive()
+    perf = hive.get("bot_performance", {})
+
+    # Gather context
+    pending_path = BASE / "memory" / "tasks" / "pending.md"
+    pending = pending_path.read_text() if pending_path.exists() else ""
+    improve_path = BASE / "memory" / "tasks" / "self_improve.md"
+    improve = ""
+    if improve_path.exists():
+        lines = improve_path.read_text().splitlines()
+        # Last 30 lines = most recent improvements
+        improve = "\n".join(lines[-30:])
+
+    # Bot status summary
+    bot_lines = []
+    for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
+        bd = perf.get(bot, {}) if isinstance(perf.get(bot), dict) else {}
+        tc = bd.get("total_trades", bd.get("trades", 0))
+        wr = bd.get("win_rate", 0)
+        mode = bd.get("mode", "unknown")
+        bot_lines.append(f"{bot}: {tc} trades, {wr*100:.0f}% WR, {mode}")
+
+    # Check system health
+    issues = check_bot_health()
+
+    # Ask AI for priorities
+    prompt = f"""You are NEXUS, the trading bot orchestrator. Generate Ty's morning brief.
+
+BOT STATUS:
+{chr(10).join(bot_lines)}
+
+SYSTEM ISSUES: {len(issues)} — {', '.join(issues[:3]) if issues else 'all green'}
+
+PENDING TASKS (last 500 chars):
+{pending[-500:]}
+
+LAST NIGHT'S SELF-IMPROVEMENT FINDINGS:
+{improve[-500:]}
+
+Write exactly 5 priorities for today, numbered 1-5. Most urgent first.
+Each priority: one line, specific and actionable. No fluff.
+End with a one-line status: either "Systems green" or the most critical issue.
+Keep the entire message under 500 characters."""
+
+    report = ask_ai(prompt)
+    if not report:
+        report = "Morning report generation failed — AI unavailable."
+
+    msg = f"GM Ty ☀️\n\n{report}"
+    send(OWNER_ID, msg)
+    log_to_oracle(f"Morning priority report sent at {datetime.now().strftime('%H:%M')}")
+    print(f"[NEXUS] Morning priority report sent")
+
+
 def generate_income_idea():
     """Research and suggest a new income opportunity."""
     ideas = [
@@ -2129,13 +2261,27 @@ def proactive_check():
     if actions_taken:
         log_to_oracle(f"Heartbeat safety checks: {actions_taken}")
 
+CHAT_LOG_DIR = BASE / "logs" / "chat"
+CHAT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 def _history_add(user_text: str, assistant_text: str):
-    """Append one exchange to the rolling conversation history."""
+    """Append one exchange to the rolling conversation history AND persist to daily log."""
     global _conversation_history
     _conversation_history.append({"role": "user",      "content": user_text})
     _conversation_history.append({"role": "assistant", "content": assistant_text})
     if len(_conversation_history) > MAX_HISTORY:
         _conversation_history = _conversation_history[-MAX_HISTORY:]
+    # Persist to daily chat log (JSONL) for nightly self-improvement review
+    try:
+        daily_log = CHAT_LOG_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.jsonl"
+        with open(daily_log, "a") as f:
+            f.write(json.dumps({
+                "ts": datetime.now().isoformat(),
+                "user": user_text,
+                "assistant": assistant_text,
+            }) + "\n")
+    except Exception:
+        pass
 
 
 def handle_message(text, chat_id):
@@ -2905,6 +3051,8 @@ def run():
     offset = None
     last_2am_consolidation = None   # track date of last 2am run
     last_230am_consolidation = None
+    last_1am_self_improve = None    # nightly self-improvement (Felix-style)
+    last_6am_morning_report = None  # morning 5-priority report to Ty
 
     while True:
         try:
@@ -2959,6 +3107,15 @@ def run():
                 proactive_check()
                 last_proactive = now
 
+            # ── 1am: Felix-style nightly self-improvement ─────────────────
+            if now.hour == 1 and now.minute < 10 and last_1am_self_improve != now.date():
+                print("[NEXUS] 1am self-improvement loop starting...")
+                try:
+                    nightly_self_improvement()
+                except Exception as _e:
+                    print(f"[NEXUS] Self-improvement error: {_e}")
+                last_1am_self_improve = now.date()
+
             # ── 2am memory consolidation (primary) ───────────────────────
             if now.hour == 2 and now.minute < 5 and last_2am_consolidation != now.date():
                 print("[NEXUS] 2am consolidation running...")
@@ -2972,6 +3129,15 @@ def run():
                 print("[NEXUS] 2:30am backup consolidation running...")
                 consolidate_memory()
                 last_230am_consolidation = now.date()
+
+            # ── 6am: morning priority report to Ty ──────────────────────
+            if now.hour == 6 and now.minute < 10 and last_6am_morning_report != now.date():
+                print("[NEXUS] 6am morning report...")
+                try:
+                    morning_priority_report()
+                except Exception as _e:
+                    print(f"[NEXUS] Morning report error: {_e}")
+                last_6am_morning_report = now.date()
 
             # ── 11pm — nightly training for all bots ─────────────────────
             if now.hour == 23 and now.minute < 5 and (now - last_heartbeat).total_seconds() >= 3600:
