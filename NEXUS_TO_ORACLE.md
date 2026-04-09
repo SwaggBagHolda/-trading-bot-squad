@@ -2363,3 +2363,45 @@ Heartbeat safety checks: ['Live P&L pace alert: $+0.00']
 
 ## [2026-04-09 09:57]
 AutoResearch started PID 2976 at 2026-04-09T09:57:55.322763
+
+## [2026-04-09 10:17]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 10:17]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 10:17]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 10:17]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 10:17]
+Proactive heartbeat sent: Market's bleeding across the board — BTC down 1.1%, ETH down 2.7%, SOL down 2.2%...
+
+## [2026-04-09 10:17]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 10:28]
+AutoResearch started PID 3316 at 2026-04-09T10:28:17.892875
+
+## [2026-04-09 10:47]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 10:47]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 10:47]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 10:47]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 10:47]
+Proactive heartbeat sent: APEX's sitting at 50% WR today with $0.67 on two trades — that BLUR short is the...
+
+## [2026-04-09 10:47]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 10:58]
+AutoResearch started PID 3615 at 2026-04-09T10:58:41.679084

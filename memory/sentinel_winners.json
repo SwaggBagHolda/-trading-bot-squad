@@ -1,35 +1,31 @@
 {
-  "completed": "2026-04-09T09:50:24.221886",
+  "completed": "2026-04-09T10:51:02.423307",
   "total_experiments": 40000,
-  "elapsed_seconds": 1351.2,
+  "elapsed_seconds": 1344.9,
   "data_source": "Coinbase public exchange API \u2014 real OHLCV",
   "bots": [
     {
-      "bot": "DRIFT",
-      "win_rate": 16.28,
-      "avg_pnl": -0.06428243000000003,
+      "bot": "SENTINEL",
+      "win_rate": 13.69,
+      "avg_pnl": -0.028181769999999853,
       "winners": 0
     },
     {
       "bot": "TITAN",
-      "win_rate": 25.39,
-      "avg_pnl": -0.05954111999999985,
+      "win_rate": 22.45,
+      "avg_pnl": -0.06560521000000011,
       "winners": 0
     },
     {
-      "bot": "SENTINEL",
-      "win_rate": 13.669999999999998,
-      "avg_pnl": -0.013654569999999965,
-      "winners": 1,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 74.6
+      "bot": "DRIFT",
+      "win_rate": 16.21,
+      "avg_pnl": -0.06791427000000029,
+      "winners": 0
     },
     {
       "bot": "APEX",
-      "win_rate": 19.38,
-      "avg_pnl": 0.1228596100000003,
+      "win_rate": 17.66,
+      "avg_pnl": 0.11168434000000009,
       "winners": 0
     }
   ],
