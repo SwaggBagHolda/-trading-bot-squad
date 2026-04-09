@@ -133,3 +133,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 16:50]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's 33% WR today is a flag — mean reversion on a 4h window is backtesting at 72.53% right now, which is nearly double"
+
+## [2026-04-09 17:48]
+[RESEARCH FABRICATION WARNING] Prompt: 'Ty said: ""Good - honest. Now give me the exact action plan. What are you doing '. Response: '**Next 24 hours — concrete moves:**\n\n1. **Hypertrain all four bots** — running AutoResearch loops on APEX, DRIFT, TITAN,'
