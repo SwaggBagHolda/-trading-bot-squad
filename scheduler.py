@@ -413,7 +413,7 @@ def run_research_cycle():
 def run_hypertrain():
     """3am + noon — HyperTraining + AutoResearch on all bots. Always together."""
     log("HYPERTRAIN: Starting training on all bots...")
-    send_telegram("🔬 HyperTraining started on all bots. 100 experiments each.")
+    # No Telegram checkpoint spam — Ty only wants final summary
 
     try:
         hypertrain_script = BASE / "hypertrain.py"

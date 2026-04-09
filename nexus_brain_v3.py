@@ -61,6 +61,8 @@ last_oracle_check = datetime.now()
 last_proactive = datetime.now()
 last_autonomous = datetime.now() - timedelta(seconds=300)  # fire immediately on first loop
 AUTONOMOUS_INTERVAL = 300  # 5 minutes — CEO checks in constantly
+last_hypertrain_trigger = datetime.now() - timedelta(hours=6)  # allow immediate first trigger
+HYPERTRAIN_COOLDOWN = 6 * 3600  # 6 hours between CEO-triggered HyperTrain runs
 last_heartbeat = datetime.now()
 last_memory_consolidation = datetime.now()
 last_income_idea = datetime.now()
@@ -2066,28 +2068,35 @@ def autonomous_loop():
         act(f"APEX CHECK ERROR: {e}")
 
     # ══════════════════════════════════════════════════════════════════════════
-    # PHASE 4: STRATEGY — trigger research if WR is low
+    # PHASE 4: STRATEGY — trigger research if WR is low (6hr cooldown)
     # ══════════════════════════════════════════════════════════════════════════
+    global last_hypertrain_trigger
     research_triggered = False
-    for bot, data in perf.items():
-        if not isinstance(data, dict) or research_triggered:
-            continue
-        trades = data.get("trades", 0)
-        wr = data.get("win_rate", 0)
-        if trades >= 5 and wr < 0.50:
-            if AGENT_SDK_AVAILABLE:
-                try:
-                    result = agent_run_hypertrain(100)
-                    act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain via SDK → {result[:80]}")
-                    actions_taken.append(f"HyperTrain triggered ({bot} WR={wr*100:.1f}%)")
-                except Exception as e:
-                    act(f"RESEARCH: SDK error: {e}")
-            else:
-                run_all_training()
-                act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain (direct)")
-            research_triggered = True
-    if not research_triggered:
-        act("RESEARCH: No triggers — all bots WR acceptable")
+    hypertrain_on_cooldown = (now - last_hypertrain_trigger).total_seconds() < HYPERTRAIN_COOLDOWN
+    if hypertrain_on_cooldown:
+        act(f"RESEARCH: HyperTrain on cooldown (last run {int((now - last_hypertrain_trigger).total_seconds() / 60)}m ago, next in {int((HYPERTRAIN_COOLDOWN - (now - last_hypertrain_trigger).total_seconds()) / 60)}m)")
+    else:
+        for bot, data in perf.items():
+            if not isinstance(data, dict) or research_triggered:
+                continue
+            trades = data.get("trades", 0)
+            wr = data.get("win_rate", 0)
+            if trades >= 5 and wr < 0.50:
+                if AGENT_SDK_AVAILABLE:
+                    try:
+                        result = agent_run_hypertrain(100)
+                        act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain via SDK → {result[:80]}")
+                        actions_taken.append(f"HyperTrain triggered ({bot} WR={wr*100:.1f}%)")
+                        last_hypertrain_trigger = now
+                    except Exception as e:
+                        act(f"RESEARCH: SDK error: {e}")
+                else:
+                    run_all_training()
+                    act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain (direct)")
+                    last_hypertrain_trigger = now
+                research_triggered = True
+        if not research_triggered:
+            act("RESEARCH: No triggers — all bots WR acceptable")
 
     # ══════════════════════════════════════════════════════════════════════════
     # PHASE 5: REPORT — tell Ty what was done (only if actions were taken)
