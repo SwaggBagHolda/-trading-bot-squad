@@ -1,48 +1,48 @@
 {
-  "completed": "2026-04-08T17:56:21.950093",
+  "completed": "2026-04-08T18:26:42.336908",
   "total_experiments": 40000,
-  "elapsed_seconds": 583.9,
+  "elapsed_seconds": 579.5,
   "data_source": "Coinbase public exchange API \u2014 real OHLCV",
   "bots": [
     {
       "bot": "APEX",
-      "win_rate": 15.129999999999999,
-      "avg_pnl": -0.049332320000000096,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.0
-    },
-    {
-      "bot": "DRIFT",
-      "win_rate": 17.62,
-      "avg_pnl": -0.09652594999999946,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.0
-    },
-    {
-      "bot": "TITAN",
-      "win_rate": 25.31,
-      "avg_pnl": -0.08972831000000044,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.0
-    },
-    {
-      "bot": "SENTINEL",
-      "win_rate": 13.600000000000001,
-      "avg_pnl": -0.05825234000000023,
+      "win_rate": 12.920000000000002,
+      "avg_pnl": -0.03829743000000004,
       "winners": 20,
       "top_strategy": "mean_reversion",
       "best_asset": "AVAX/USD",
       "best_timeframe": "6h",
       "best_wr": 84.2
+    },
+    {
+      "bot": "DRIFT",
+      "win_rate": 16.35,
+      "avg_pnl": -0.09120247000000051,
+      "winners": 20,
+      "top_strategy": "mean_reversion",
+      "best_asset": "AVAX/USD",
+      "best_timeframe": "6h",
+      "best_wr": 84.2
+    },
+    {
+      "bot": "TITAN",
+      "win_rate": 26.650000000000002,
+      "avg_pnl": -0.08465321000000002,
+      "winners": 20,
+      "top_strategy": "mean_reversion",
+      "best_asset": "AVAX/USD",
+      "best_timeframe": "6h",
+      "best_wr": 84.2
+    },
+    {
+      "bot": "SENTINEL",
+      "win_rate": 12.13,
+      "avg_pnl": -0.044594459999999995,
+      "winners": 20,
+      "top_strategy": "mean_reversion",
+      "best_asset": "AVAX/USD",
+      "best_timeframe": "6h",
+      "best_wr": 83.8
     }
   ],
   "top_strategies": [
@@ -50,10 +50,10 @@
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 84.17,
-      "avg_pnl": 0.8873,
-      "sharpe": 10913212889697.389,
-      "experiments": 417
+      "win_rate": 83.81,
+      "avg_pnl": 0.8823,
+      "sharpe": 10090487305995.201,
+      "experiments": 451
     },
     {
       "strategy": "mean_reversion",
