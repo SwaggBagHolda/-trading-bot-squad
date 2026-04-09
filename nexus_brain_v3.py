@@ -119,7 +119,15 @@ Any question about trading strategy, win rates, entry/exit logic, indicators, bo
 - NEVER answer strategy questions from AI memory, training data, or general knowledge alone.
 - Wrong: "RSI divergence is a strong entry signal for BTC scalping." (made up)
 - Right: "Based on the backtest data in hive_mind — DRIFT hit 58.8% WR with momentum on 90s windows."
-- This rule exists because fabricated strategy advice costs Ty real money."""
+- This rule exists because fabricated strategy advice costs Ty real money.
+
+UNBREAKABLE RULE — OPERATOR FIRST:
+NEXUS is an operator, not a reporter. The standard is: take action first, then tell Ty what was done.
+- NEVER send "ORACLE is down" — restart it, then send "ORACLE was down — restarted it."
+- NEVER send "APEX is holding a losing trade" — force close it, then report: "Closed APEX DOGE at -0.4%, switched to AVAX mean reversion (84.3% WR). Already running."
+- NEVER send "APEX might be stuck" — check the state file, write the force-scan flag, then report.
+- If NEXUS cannot directly take an action (requires Ty's credentials), say what was done and what needs Ty specifically.
+- Every message Ty gets should end with "done" not "detected." Status reports are for bots. This is a co-founder."""
 
 PERSONAL_KEYWORDS = [
     "tired", "exhausted", "back hurts", "hurts", "pain", "rain", "hot", "heat",
@@ -1470,8 +1478,9 @@ def autonomous_loop():
     if not research_triggered:
         act("AUTO-RESEARCH: All bots above 50% WR — no trigger")
 
-    # ── CHECK 3: APEX active trade — force scan if idle > 60 min ─────────────
-    force_scan_flag = BASE / "shared" / "apex_force_scan.flag"
+    # ── CHECK 3: APEX active trade — act on problems, don't just report them ───
+    force_scan_flag  = BASE / "shared" / "apex_force_scan.flag"
+    force_close_flag = BASE / "shared" / "apex_force_close.flag"
     try:
         state_file = BASE / "shared" / "apex_state.json"
         if state_file.exists():
@@ -1482,34 +1491,68 @@ def autonomous_loop():
                 entry     = active.get("entry", 0)
                 symbol    = active.get("symbol", "?")
                 direction = active.get("direction", "?")
-                market    = fetch_market_snapshot()
+                trade_time_str = active.get("time", "")
+                hold_secs = 0
+                try:
+                    if trade_time_str:
+                        hold_secs = (now - datetime.fromisoformat(trade_time_str)).total_seconds()
+                except Exception:
+                    pass
+                market = fetch_market_snapshot()
                 cur = market.get(symbol, {}).get("price") or market.get("BTC", {}).get("price", 0)
                 if cur and entry:
                     pnl_pct = (cur - entry) / entry if direction == "BUY" else (entry - cur) / entry
-                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.0f} now ${cur:,.0f} ({pnl_pct*100:+.2f}%)")
+                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.4f} now ${cur:,.4f} ({pnl_pct*100:+.2f}%) held {int(hold_secs//60)}m")
+                    # If losing more than 1.5x normal stop AND held > 10 minutes — force close
+                    APEX_STOP = 0.003
+                    if pnl_pct < -(APEX_STOP * 1.5) and hold_secs > 600:
+                        force_close_flag.write_text(now.isoformat())
+                        act(f"APEX: FORCE CLOSE — {direction} {symbol} at {pnl_pct*100:+.2f}%, held {int(hold_secs//60)}m (past 1.5x stop)")
+                        send(OWNER_ID, f"Closed APEX {direction} {symbol} — was at {pnl_pct*100:+.2f}% for {int(hold_secs//60)}min. Past acceptable loss. Hunting next setup.")
+                    # Upgrade: check hive for better asset available right now
+                    top_strats = hive.get("apex_top_strategies", [])
+                    if top_strats and symbol not in [s.get("asset","").replace("/USD","") for s in top_strats[:3]]:
+                        best = top_strats[0]
+                        act(f"APEX: In {symbol} but {best.get('asset','?')} shows {best.get('win_rate',0):.1f}% WR — will switch after this trade closes")
                 else:
-                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.0f}")
+                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.4f} (price unavailable)")
             else:
                 if saved:
                     try:
                         idle_secs = (now - datetime.fromisoformat(saved)).total_seconds()
                         idle_min  = int(idle_secs / 60)
-                        act(f"APEX: IDLE {idle_min}min — no active position")
+                        act(f"APEX: IDLE {idle_min}min — scanning for next opportunity")
+                        # After 60 min idle — force a fresh scan
                         if idle_secs > 3600:
                             force_scan_flag.write_text(now.isoformat())
-                            act(f"APEX: FORCE SCAN FLAG written — idle {idle_min}min")
+                            act(f"APEX: FORCE SCAN FLAG written — idle {idle_min}min, refreshing asset list")
+                            # If hive has a clear winner, update watchlist priority
+                            top_strats = hive.get("apex_top_strategies", [])
+                            if top_strats:
+                                best = top_strats[0]
+                                best_sym = best.get("asset", "").replace("/USD", "")
+                                wl = hive.get("apex_daily_watchlist", {})
+                                assets = wl.get("assets", [])
+                                if best_sym and best_sym not in assets[:2]:
+                                    assets = [best_sym] + [a for a in assets if a != best_sym]
+                                    hive["apex_daily_watchlist"]["assets"] = assets[:8]
+                                    try:
+                                        (BASE / "shared" / "hive_mind.json").write_text(json.dumps(hive, indent=2))
+                                        act(f"APEX: Watchlist updated — {best_sym} moved to front ({best.get('win_rate',0):.1f}% WR)")
+                                    except Exception as we:
+                                        act(f"APEX: Watchlist update error: {we}")
                     except Exception as e:
                         act(f"APEX: idle calc error: {e}")
                 else:
                     act("APEX: No trades yet this session")
         else:
-            # Only restart if APEX is not already running
+            # No state file — restart APEX if not running
             apex_running = subprocess.run(
                 ["pgrep", "-f", "apex_coingecko.py"],
                 capture_output=True, text=True
             ).stdout.strip()
             if not apex_running:
-                act("APEX: apex_state.json missing and process not running — restarting")
+                act("APEX: state missing, process not running — restarting now")
                 subprocess.Popen(
                     ["python3", "-u", str(BASE / "apex_coingecko.py")],
                     cwd=str(BASE),
@@ -1517,11 +1560,31 @@ def autonomous_loop():
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
                 )
-                act("APEX: Restart attempted")
+                act("APEX: Restarted")
             else:
-                act(f"APEX: Process running (PID {apex_running.split()[0]}) — no state file yet, skipping restart")
+                act(f"APEX: Process running (PID {apex_running.split()[0]}) — state file not yet written")
     except Exception as e:
         act(f"APEX CHECK ERROR: {e}")
+
+    # ── CHECK 3b: ORACLE process — restart if down, don't just alert ─────────
+    try:
+        oracle_proc = subprocess.run(["pgrep", "-f", "oracle_listener.py"], capture_output=True, text=True)
+        if not oracle_proc.stdout.strip():
+            oracle_log = BASE / "logs" / "oracle_listener.log"
+            oracle_log.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.Popen(
+                ["python3", "-u", str(BASE / "oracle_listener.py")],
+                cwd=str(BASE),
+                stdout=open(str(oracle_log), "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            act("ORACLE: was down — restarted it")
+            send(OWNER_ID, "ORACLE was down — restarted it. Back up.")
+        else:
+            act(f"ORACLE: running (PID {oracle_proc.stdout.strip().split()[0]})")
+    except Exception as e:
+        act(f"ORACLE CHECK ERROR: {e}")
 
     # ── CHECK 4: Graduation progress — DRIFT, TITAN, SENTINEL ────────────────
     for bot in ["DRIFT", "TITAN", "SENTINEL"]:
@@ -1632,14 +1695,27 @@ def proactive_check():
             send(OWNER_ID, f"Auto-restarted: {', '.join(restarted)}")
             actions_taken.append(f"Restarted: {restarted}")
 
-    # CHECK 2b: ORACLE process — alert Ty at most once per hour
+    # CHECK 2b: ORACLE process — restart immediately if down, don't alert
     global last_oracle_alert, last_2am_pitch, last_3am_research
     oracle_proc = subprocess.run(["pgrep", "-f", "oracle_listener.py"], capture_output=True, text=True)
     if not oracle_proc.stdout.strip():
-        if time.time() - last_oracle_alert > 3600:
-            send(OWNER_ID, "ORACLE is not running. Watchdog should restart it within 5 min.")
-            last_oracle_alert = time.time()
-            actions_taken.append("ORACLE down alert sent")
+        try:
+            oracle_log = BASE / "logs" / "oracle_listener.log"
+            oracle_log.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.Popen(
+                ["python3", "-u", str(BASE / "oracle_listener.py")],
+                cwd=str(BASE),
+                stdout=open(str(oracle_log), "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            actions_taken.append("ORACLE restarted")
+            # Only tell Ty once per hour — not every 30 min
+            if time.time() - last_oracle_alert > 3600:
+                send(OWNER_ID, "ORACLE was down — restarted it.")
+                last_oracle_alert = time.time()
+        except Exception as oe:
+            actions_taken.append(f"ORACLE restart failed: {oe}")
 
     # CHECK 3: Big P&L milestone — log only
     total_pnl = sum(v.get("daily_pnl", 0) for v in perf.values() if isinstance(v, dict))

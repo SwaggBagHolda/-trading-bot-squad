@@ -126,10 +126,10 @@
   "sentinel_last_trained": "2026-04-09T03:43:56.857462",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": -0.07,
-      "trades": 1,
-      "wins": 0,
-      "win_rate": 0.0,
+      "daily_pnl": 0.39,
+      "trades": 2,
+      "wins": 1,
+      "win_rate": 0.5,
       "mode": "live_scalping"
     },
     "VOLT": {
@@ -487,5 +487,19 @@
     "paper_mode_default": true,
     "fvg_signals": true,
     "momentum_signals": true
+  },
+  "apex_daily_watchlist": {
+    "assets": [
+      "ENJ",
+      "BLUR",
+      "FARTCOIN",
+      "WLFI",
+      "FET",
+      "ENA",
+      "POL",
+      "TAO"
+    ],
+    "scanned": "2026-04-09T06:07:29.355294",
+    "sources": "CoinGecko+CoinPaprika"
   }
 }

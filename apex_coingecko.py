@@ -60,12 +60,80 @@ LIVE_SHORTS_ENABLED = os.getenv("APEX_LIVE_SHORTS", "false").lower() in ("1", "t
 def get_pem():
     return PEM.replace("\\n", "\n") if PEM else ""
 
+FINNHUB_KEY        = os.getenv("FINNHUB_API_KEY", "")
+ALPHA_VANTAGE_KEY  = os.getenv("ALPHA_VANTAGE_API_KEY", "")
+
+def scan_coinpaprika(max_assets=20):
+    """
+    CoinPaprika — no API key, 1000 req/day.
+    Returns list of {symbol, abs_change, volume} for high-movers.
+    Used as supplement/fallback when CoinGecko returns too few candidates.
+    """
+    try:
+        r = requests.get("https://api.coinpaprika.com/v1/tickers",
+                         params={"limit": 100}, timeout=10)
+        if r.status_code != 200:
+            return []
+        candidates = []
+        for c in r.json():
+            sym = c.get("symbol", "").upper()
+            q   = c.get("quotes", {}).get("USD", {})
+            chg = abs(q.get("percent_change_24h") or 0)
+            vol = q.get("volume_24h") or 0
+            if chg > 0.3 and vol > 1_000_000 and sym:
+                candidates.append({"symbol": sym, "abs_change": chg, "volume": vol})
+        candidates.sort(key=lambda x: x["abs_change"], reverse=True)
+        return candidates[:max_assets]
+    except Exception as e:
+        print(f"[APEX] CoinPaprika scan error: {e}")
+        return []
+
+def scan_stocks_top_movers(max_assets=4):
+    """
+    Finnhub — free tier, 60 req/min.
+    Scans a curated list of high-beta stocks for intraday movement.
+    Returns list of {symbol, product, abs_change, source} dicts.
+    Only runs if FINNHUB_API_KEY is set.
+    """
+    if not FINNHUB_KEY:
+        return []
+    watchlist = ["NVDA", "TSLA", "AMD", "MSTR", "COIN", "SPY", "QQQ", "META"]
+    candidates = []
+    try:
+        for sym in watchlist:
+            r = requests.get(
+                "https://finnhub.io/api/v1/quote",
+                params={"symbol": sym, "token": FINNHUB_KEY},
+                timeout=6,
+            )
+            if r.status_code != 200:
+                continue
+            d = r.json()
+            price   = d.get("c", 0)
+            prev    = d.get("pc", 0)
+            if not price or not prev:
+                continue
+            chg = abs((price - prev) / prev * 100)
+            if chg > 0.3:
+                candidates.append({
+                    "symbol": sym, "product": f"{sym}-USD",
+                    "abs_change": chg, "volume": 0, "source": "finnhub",
+                })
+        candidates.sort(key=lambda x: x["abs_change"], reverse=True)
+        return candidates[:max_assets]
+    except Exception as e:
+        print(f"[APEX] Finnhub scan error: {e}")
+        return []
+
 def scan_top_movers(max_assets=MAX_WATCHLIST):
     """
-    Query CoinGecko top 50 coins by volume. Filter to those available on Coinbase.
-    Sort by absolute 24h % change — highest volatility = best scalp opportunities.
-    Returns list of {symbol, product} dicts or None on failure.
+    Multi-source asset scanner — CoinGecko primary, CoinPaprika supplement, Finnhub for equities.
+    Filters to assets available on Coinbase. Sorts by volatility (best scalp opportunity).
+    Returns list of {symbol, product} dicts or None on total failure.
     """
+    crypto_candidates = []
+
+    # ── Source 1: CoinGecko (primary) ────────────────────────────────────────
     try:
         r = requests.get(
             "https://api.coingecko.com/api/v3/coins/markets",
@@ -73,43 +141,73 @@ def scan_top_movers(max_assets=MAX_WATCHLIST):
                     "per_page": 50, "page": 1, "sparkline": False},
             timeout=12
         )
-        if r.status_code != 200:
-            print(f"[APEX] CoinGecko scan failed: HTTP {r.status_code}")
-            return None
-        candidates = []
-        for c in r.json():
-            sym = c["symbol"].upper()
-            chg = abs(c.get("price_change_percentage_24h") or 0)
-            vol = c.get("total_volume") or 0
-            if chg > 0.3 and vol > 1_000_000:  # must have real volume and movement
-                candidates.append({"symbol": sym, "product": f"{sym}-USD",
-                                    "abs_change": chg, "volume": vol})
-        candidates.sort(key=lambda x: x["abs_change"], reverse=True)
-        # Verify Coinbase availability by fetching price (uses free unauthenticated endpoint)
-        available = []
-        for c in candidates[:30]:
-            if get_price(c["product"]):
-                available.append({"symbol": c["symbol"], "product": c["product"]})
-            if len(available) >= max_assets:
-                break
-        if available:
-            syms = ", ".join(a["symbol"] for a in available)
-            print(f"[APEX] Asset scan complete — top movers: {syms}")
-            # Log to hive_mind
-            try:
-                hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
-                hive["apex_daily_watchlist"] = {
-                    "assets": [a["symbol"] for a in available],
-                    "scanned": datetime.now().isoformat(),
-                }
-                HIVE.write_text(json.dumps(hive, indent=2))
-            except Exception:
-                pass
-            return available
-        return None
+        if r.status_code == 200:
+            for c in r.json():
+                sym = c["symbol"].upper()
+                chg = abs(c.get("price_change_percentage_24h") or 0)
+                vol = c.get("total_volume") or 0
+                if chg > 0.3 and vol > 1_000_000:
+                    crypto_candidates.append({"symbol": sym, "product": f"{sym}-USD",
+                                              "abs_change": chg, "volume": vol})
+        else:
+            print(f"[APEX] CoinGecko scan: HTTP {r.status_code}")
     except Exception as e:
-        print(f"[APEX] scan_top_movers error: {e}")
+        print(f"[APEX] CoinGecko error: {e}")
+
+    # ── Source 2: CoinPaprika supplement (no key, fills gaps) ────────────────
+    if len(crypto_candidates) < 10:
+        paprika = scan_coinpaprika()
+        existing_syms = {c["symbol"] for c in crypto_candidates}
+        for c in paprika:
+            if c["symbol"] not in existing_syms:
+                crypto_candidates.append({
+                    "symbol": c["symbol"], "product": f"{c['symbol']}-USD",
+                    "abs_change": c["abs_change"], "volume": c["volume"],
+                })
+        print(f"[APEX] CoinPaprika supplemented — {len(paprika)} extra candidates")
+
+    # ── Source 3: Finnhub equities (if key set) ───────────────────────────────
+    stock_candidates = scan_stocks_top_movers()
+    if stock_candidates:
+        print(f"[APEX] Finnhub stocks: {', '.join(s['symbol'] for s in stock_candidates)}")
+
+    crypto_candidates.sort(key=lambda x: x["abs_change"], reverse=True)
+
+    # ── Verify Coinbase availability ──────────────────────────────────────────
+    available = []
+    # Crypto first
+    for c in crypto_candidates[:30]:
+        if get_price(c["product"]):
+            available.append({"symbol": c["symbol"], "product": c["product"]})
+        if len(available) >= max(max_assets - len(stock_candidates), 4):
+            break
+    # Append verified equities (Finnhub confirmed movement; Coinbase price check)
+    for s in stock_candidates:
+        if get_price(s["product"]):
+            available.append({"symbol": s["symbol"], "product": s["product"]})
+        if len(available) >= max_assets:
+            break
+
+    if not available:
+        print("[APEX] All sources returned 0 verified assets — keeping current list")
         return None
+
+    syms = ", ".join(a["symbol"] for a in available)
+    sources = "CoinGecko+CoinPaprika" + ("+Finnhub" if stock_candidates else "")
+    print(f"[APEX] Scan complete [{sources}] — top movers: {syms}")
+
+    try:
+        hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+        hive["apex_daily_watchlist"] = {
+            "assets":  [a["symbol"] for a in available],
+            "scanned": datetime.now().isoformat(),
+            "sources": sources,
+        }
+        HIVE.write_text(json.dumps(hive, indent=2))
+    except Exception:
+        pass
+
+    return available
 
 def detect_fvg(history):
     """
@@ -359,6 +457,39 @@ def update_hive(pnl, trades, wins):
     except:
         pass
 
+def log_trade_lesson(trade_data):
+    """
+    Write a trade outcome lesson to hive_mind.json in real time.
+    All bots can read apex_trade_lessons to learn from APEX's live results.
+    """
+    try:
+        hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+        lessons = hive.get("apex_trade_lessons", [])
+        lessons.append({
+            "ts":          datetime.now().isoformat(),
+            "symbol":      trade_data.get("symbol"),
+            "product":     trade_data.get("product"),
+            "direction":   trade_data.get("direction"),
+            "signal_type": trade_data.get("signal_type", "momentum"),
+            "entry":       trade_data.get("entry"),
+            "exit":        trade_data.get("exit"),
+            "pnl_pct":     round(trade_data.get("pnl_pct", 0), 5),
+            "pnl_usd":     round(trade_data.get("pnl_usd", 0), 3),
+            "hold_secs":   trade_data.get("hold_secs", 0),
+            "reason":      trade_data.get("reason"),
+            "outcome":     "win" if trade_data.get("pnl_usd", 0) > 0 else "loss",
+            "momentum":    round(trade_data.get("momentum", 0), 6),
+            "fvg_zone":    trade_data.get("fvg_zone"),
+        })
+        # Keep last 500 lessons to prevent unbounded growth
+        if len(lessons) > 500:
+            lessons = lessons[-500:]
+        hive["apex_trade_lessons"] = lessons
+        hive["apex_lessons_updated"] = datetime.now().isoformat()
+        HIVE.write_text(json.dumps(hive, indent=2))
+    except Exception as e:
+        print(f"[APEX] log_trade_lesson error: {e}")
+
 def run():
     print("=" * 55)
     print("APEX LIVE SCALPER — Opportunity Hunter Edition")
@@ -448,6 +579,17 @@ def run():
                 print(f"[APEX] {direction} {active['symbol']} {pnl_pct*100:+.3f}% "
                       f"| entry ${entry:,.4f} now ${price:,.4f} trail ${trail_stop:,.4f}")
 
+                # ── NEXUS force-close flag — NEXUS determined trade must exit ────
+                force_close_flag = BASE / "shared" / "apex_force_close.flag"
+                if force_close_flag.exists():
+                    try:
+                        force_close_flag.unlink()
+                        should_exit = True
+                        reason_override = "nexus_close"
+                        print(f"[APEX] NEXUS force-close flag — exiting {direction} {active['symbol']}")
+                    except Exception:
+                        pass
+
                 if should_exit:
                     exit_side  = "SELL" if direction == "BUY" else "BUY"
                     result, _  = place_order(product, exit_side, active["size"])
@@ -457,8 +599,9 @@ def run():
                     if pnl_pct > 0:
                         wins += 1
                     wr     = wins / trades if trades else 0
-                    reason = "target" if pnl_pct >= TARGET else \
-                             "trail"  if pnl_pct > 0 else "stop"
+                    reason = locals().get("reason_override") or \
+                             ("target" if pnl_pct >= TARGET else
+                              "trail"  if pnl_pct > 0 else "stop")
                     tag    = "WIN" if pnl_usd > 0 else "LOSS"
 
                     # Hold time using total_seconds() — safe regardless of active["time"] type
@@ -476,6 +619,17 @@ def run():
                     tg(f"{tag} #{trades} | {direction} {active['symbol']} [{hold_str}]\n"
                        f"${entry:,.4f} -> ${price:,.4f} ({pnl_pct*100:+.3f}%) [{reason}]\n"
                        f"P&L: ${pnl_usd:+.3f} | Day: ${daily_pnl:+.2f} | WR: {wr*100:.0f}% ({wins}/{trades})")
+
+                    # Log lesson to hive_mind so all bots can learn in real time
+                    log_trade_lesson({
+                        "symbol":      active["symbol"], "product": product,
+                        "direction":   direction, "signal_type": active.get("signal_type", "momentum"),
+                        "entry":       entry, "exit": price,
+                        "pnl_pct":     pnl_pct, "pnl_usd": pnl_usd,
+                        "hold_secs":   hold_secs, "reason": reason,
+                        "momentum":    active.get("momentum", 0),
+                        "fvg_zone":    active.get("fvg_zone"),
+                    })
 
                     update_hive(daily_pnl, trades, wins)
                     active     = trail_best = None
@@ -518,7 +672,10 @@ def run():
                         trades    += 1
                         active     = {"symbol": sig["symbol"], "product": product,
                                       "direction": direction, "entry": price,
-                                      "size": size, "time": datetime.now()}
+                                      "size": size, "time": datetime.now(),
+                                      "signal_type": sig.get("signal_type", "momentum"),
+                                      "momentum": sig.get("momentum", 0),
+                                      "fvg_zone": sig.get("fvg_zone")}
                         trail_best = price
                         save_state(active, trail_best, daily_pnl, trades, wins)
 
