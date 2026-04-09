@@ -311,6 +311,43 @@ def read_winners():
         with open(WINNERS) as f: return json.load(f)
     except: return {}
 
+def add_to_checklist(task_name, owner="Codey", status="pending"):
+    """Auto-add a task to the master checklist when Ty mentions it."""
+    checklist_path = BASE / "memory" / "tasks" / "master_checklist.md"
+    if not checklist_path.exists():
+        return
+    content = checklist_path.read_text()
+    # Don't duplicate
+    if task_name.lower() in content.lower():
+        return
+    # Find highest task number
+    import re as _re
+    nums = _re.findall(r'\| (\d+) \|', content)
+    next_num = max((int(n) for n in nums), default=0) + 1
+    today = datetime.now().strftime("%Y-%m-%d")
+    new_row = f"| {next_num} | {task_name} | {owner} | {status} | {today} | — |\n"
+    # Insert before the "Ongoing" section or at end of last table
+    if "## Ongoing" in content:
+        content = content.replace("## Ongoing", new_row + "\n## Ongoing")
+    else:
+        content = content.rstrip() + "\n" + new_row
+    checklist_path.write_text(content)
+    print(f"[NEXUS] Checklist: added #{next_num} '{task_name}' [{owner}/{status}]")
+
+def mark_checklist_done(task_substring):
+    """Mark a checklist item as done by matching substring."""
+    checklist_path = BASE / "memory" / "tasks" / "master_checklist.md"
+    if not checklist_path.exists():
+        return
+    content = checklist_path.read_text()
+    today = datetime.now().strftime("%Y-%m-%d")
+    lines = content.split("\n")
+    for i, line in enumerate(lines):
+        if task_substring.lower() in line.lower() and "| pending |" in line.lower() or "| in_progress |" in line.lower():
+            lines[i] = line.replace("| pending |", "| done |").replace("| in_progress |", "| done |").replace("| — |", f"| {today} |")
+            break
+    checklist_path.write_text("\n".join(lines))
+
 def nexus_write_hive_param(key, value, reason):
     """Phase 2 Autonomy: NEXUS writes parameters directly to hive_mind.json.
     Every change logged to self_improve.md with old value, new value, reason."""
@@ -2014,12 +2051,14 @@ def autonomous_loop():
     except Exception as e:
         act(f"CONSEQUENCE 7a error: {e}")
 
-    # 7b: If APEX has < 5 signals today — auto-loosen thresholds by 50% via hive_mind
+    # 7b: APEX hourly trade count — if < 5 trades/hr, investigate + auto-loosen
     try:
         apex_data = perf.get("APEX", {})
         apex_trades = apex_data.get("trades", 0) if isinstance(apex_data, dict) else 0
-        hours_today = now.hour + now.minute / 60
-        if hours_today >= 4 and apex_trades < 5:
+        hours_today = max(now.hour + now.minute / 60, 1)
+        trades_per_hour = apex_trades / hours_today if hours_today > 0 else 0
+        act(f"APEX TRADE RATE: {apex_trades} trades / {hours_today:.1f}h = {trades_per_hour:.1f}/hr (target: 5+/hr)")
+        if hours_today >= 2 and trades_per_hour < 5:
             old_momentum = hive.get("nexus_apex_overrides", {}).get("min_momentum", 0.0001)
             new_momentum = max(old_momentum * 0.5, 0.00001)  # floor at 0.001%
             nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
@@ -2388,6 +2427,12 @@ def handle_message(text, chat_id):
     text_lower = text.strip().lower()
     print(f"[NEXUS] Received: {text}")
     log_to_oracle(f"Ty said: {text}")
+
+    # Auto-add tasks to master checklist when Ty gives instructions
+    task_triggers = ["fix", "build", "add", "wire", "make", "create", "upgrade", "implement", "lower", "raise", "give", "pivot"]
+    if any(text_lower.startswith(t) or text_lower.startswith("btw " + t) for t in task_triggers):
+        task_summary = text[:120].replace("btw ", "").strip()
+        add_to_checklist(task_summary, owner="Codey", status="pending")
     try:
         total_pnl=sum(v.get("daily_pnl",0) for v in read_hive().get("bot_performance",{}).values() if isinstance(v,dict) and v.get("mode")=="live")
     except:
@@ -2868,6 +2913,30 @@ def handle_message(text, chat_id):
         reply("\n".join(lines))
         return
 
+    # /checklist — show master checklist
+    if cmd("/checklist", "show checklist", "task list", "what's pending"):
+        checklist_path = BASE / "memory" / "tasks" / "master_checklist.md"
+        if checklist_path.exists():
+            lines = checklist_path.read_text().splitlines()
+            # Extract pending/in_progress items
+            active = [l for l in lines if "pending" in l.lower() or "in_progress" in l.lower() or "blocked" in l.lower()]
+            done_count = len([l for l in lines if "| done |" in l.lower() or "| verified |" in l.lower()])
+            total = len([l for l in lines if l.strip().startswith("|") and l.strip()[1:2].strip().isdigit()])
+            msg = f"MASTER CHECKLIST\n━━━━━━━━━━━━━━━━━━━━━\n{done_count}/{total} tasks done\n\n"
+            if active:
+                msg += "PENDING/BLOCKED:\n"
+                for l in active[:15]:
+                    # Extract task name and status from table row
+                    parts = [p.strip() for p in l.split("|") if p.strip()]
+                    if len(parts) >= 4:
+                        msg += f"• {parts[1]} [{parts[2]}] — {parts[3]}\n"
+            else:
+                msg += "All tasks complete."
+            reply(msg)
+        else:
+            reply("No checklist found. Ask Codey to build it.")
+        return
+
     # Help
     if any(x in text_lower for x in ["/help", "help", "commands", "what can you do"]):
         msg = ("NEXUS — Commands\n━━━━━━━━━━━━━━━━━━━━━\n"
@@ -2888,6 +2957,7 @@ def handle_message(text, chat_id):
                "/delegate [task] — send task to Claude Code\n"
                "/composio — use business tool integrations\n"
                "/proof — show citable proof of all training, research, and bot state\n"
+               "/checklist — master task list with status\n"
                "YouTube links — auto-summarized")
         reply(msg)
         return
