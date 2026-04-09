@@ -6,6 +6,19 @@
 
 ---
 
+## The Squad — How They Hunt
+
+*Each bot has one job: find the best opportunity for its strategy type — every single day.*
+
+- **APEX** scans every available market at startup and every 4 hours. It picks the single most volatile scalp-able asset and hunts it in both directions. Not locked to BTC. Not locked to anything. Best opportunity wins.
+- **DRIFT** scans for the cleanest 4h swing setup across all liquid crypto pairs. Highest momentum + cleanest trend structure.
+- **TITAN** scans for the strongest weekly macro trend. Position trades only on assets with real directional conviction.
+- **SENTINEL** scans for the most consistent, FTMO-compliant mover — smooth equity curve, no overnight gap risk, steady enough to pass a prop firm challenge.
+
+*No bot ever trades a fixed list. No bot is ever loyal to an asset. The market changes — the squad adapts.*
+
+---
+
 ## The Mission
 
 *Ty has $15,000/month in bills. That is the floor, not the ceiling.*

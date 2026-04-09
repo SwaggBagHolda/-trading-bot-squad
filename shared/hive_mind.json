@@ -126,12 +126,11 @@
   "sentinel_last_trained": "2026-04-09T03:43:56.857462",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": 0.0,
-      "monthly_pnl": 0.0,
-      "trades": 0,
-      "win_rate": 0,
-      "status": "paper_trading",
-      "active_position": true
+      "daily_pnl": -0.07,
+      "trades": 1,
+      "wins": 0,
+      "win_rate": 0.0,
+      "mode": "live_scalping"
     },
     "VOLT": {
       "daily_pnl": 0.0,
@@ -451,5 +450,42 @@
       "graduated_to_paper": null,
       "graduated_to_live": null
     }
+  },
+  "bot_scanning": {
+    "APEX": {
+      "strategy_type": "scalp",
+      "metric": "volatility_24h",
+      "scan_interval_hours": 4,
+      "max_assets": 8,
+      "direction": "both"
+    },
+    "DRIFT": {
+      "strategy_type": "swing",
+      "metric": "trend_strength_4h",
+      "scan_interval_hours": 24,
+      "max_assets": 5,
+      "direction": "both"
+    },
+    "TITAN": {
+      "strategy_type": "position",
+      "metric": "macro_trend_1w",
+      "scan_interval_hours": 24,
+      "max_assets": 3,
+      "direction": "both"
+    },
+    "SENTINEL": {
+      "strategy_type": "prop",
+      "metric": "consistency_sharpe",
+      "scan_interval_hours": 24,
+      "max_assets": 3,
+      "direction": "both"
+    }
+  },
+  "trading_config": {
+    "bidirectional": true,
+    "live_shorts_requires_intx": true,
+    "paper_mode_default": true,
+    "fvg_signals": true,
+    "momentum_signals": true
   }
 }

@@ -91,3 +91,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 03:20]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX is chasing today — 3 trades, one winner, down 71 cents. Entry timing's off on the losses. Meanwhile AVAX mean_rever"
+
+## [2026-04-09 05:16]
+[RESEARCH FABRICATION WARNING] Prompt: 'Ty said: ""Show me your sources for that strategy""\n\nRespond directly to what he'. Response: 'Honest answer: the strategy was built from general knowledge baked into the AI, not from cited external sources pulled t'

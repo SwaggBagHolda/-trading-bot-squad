@@ -1,5 +1,5 @@
 # CLAUDE.md — Trading Bot Squad Master Brain
-# Version 1.1 | Created: April 2026 | Updated: 2026-04-06
+# Version 1.2 | Created: April 2026 | Updated: 2026-04-09
 # Read this file at the start of EVERY session.
 
 ## PERMANENT SESSION RULES (non-negotiable)
@@ -13,6 +13,10 @@
 7. **One Telegram summary when done.** Send Ty a single summary message when a multi-task session is complete. Not updates mid-session.
 8. **Credit guard.** If OpenRouter credits drop below $1, stop all non-essential AI calls immediately and alert Ty via Telegram.
 9. **AutoResearch before strategy changes.** Before adjusting any bot strategy, entry/exit logic, stop sizes, or signal parameters — NEXUS must run AutoResearch first. No strategy changes without research data backing them. This is a hard rule, no exceptions.
+10. **Dynamic asset scanning — mandatory.** No bot is ever locked to a fixed asset list. Every bot scans ALL available markets at startup and every 4 hours to find the best opportunity matching its strategy type. APEX hunts the highest-volatility scalp asset. DRIFT hunts the cleanest swing setup. TITAN hunts the strongest macro trend. SENTINEL hunts the most FTMO-compliant consistent mover. Best opportunity for each bot's strategy type wins that session. Hard-baked — never override this with a static list.
+11. **Bidirectional trading.** Every bot trades BOTH directions — long on bullish signals, short on bearish. In paper mode, all signals are fully simulated. In live mode, shorting on spot requires Coinbase INTX (perpetual futures) — flag clearly if not yet wired. Never restrict to longs-only without documenting why.
+12. **Signals require evidence.** FVG (Fair Value Gap) and momentum are the two core entry signal types for APEX. Both are implemented in code. Any new signal type must be backtested first via AutoResearch before being added to live code.
+13. **Auto-queue suggestions.** When NEXUS or Claude Code identifies an action that should be taken (backtest, retrain, AutoResearch run), it queues it immediately in memory/tasks/pending.md as [AUTO_IMPROVE] — no permission prompt needed. Suggestions that aren't queued are noise.
 
 ## WHO I AM
 Claude = Orchestrator/Strategist only. NOT a trading bot.

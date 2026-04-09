@@ -1,7 +1,8 @@
 """
-APEX LIVE SCALPER — Micro-Momentum Edition
-Signals: Coinbase price polling, 90-second rolling window
-Execution: Coinbase Advanced Trade API
+APEX LIVE SCALPER — Opportunity Hunter Edition
+Signals: Momentum + Fair Value Gap (FVG) — bidirectional long & short
+Assets: Dynamic — scans CoinGecko top movers at startup and every 4h
+Execution: Coinbase Advanced Trade API (paper fallback)
 Target: 20-50 trades/day on volatile sessions
 """
 import os, sys, json, time, uuid, jwt, requests
@@ -24,35 +25,114 @@ CB_API   = "https://api.coinbase.com"
 KEY_NAME = os.getenv("APEX_COINBASE_API_KEY_NAME", "")
 PEM      = os.getenv("APEX_COINBASE_PRIVATE_KEY", "")
 
-# Assets to scan — ordered by liquidity
-WATCHLIST = [
+# Fallback watchlist — replaced at startup by scan_top_movers()
+_DEFAULT_WATCHLIST = [
     {"symbol": "BTC",  "product": "BTC-USD"},
     {"symbol": "ETH",  "product": "ETH-USD"},
     {"symbol": "SOL",  "product": "SOL-USD"},
     {"symbol": "XRP",  "product": "XRP-USD"},
-    {"symbol": "DOGE", "product": "DOGE-USD"},
     {"symbol": "AVAX", "product": "AVAX-USD"},
+    {"symbol": "LINK", "product": "LINK-USD"},
 ]
+WATCHLIST = list(_DEFAULT_WATCHLIST)  # mutable — refreshed by scanner
 
 # ── Scalping parameters ───────────────────────────────────────────────────────
-STARTING       = 328.29
-RISK           = 0.25    # 25% of balance per trade
-STOP           = 0.003   # 0.3% hard stop
-TARGET         = 0.015   # 1.5% take profit — clears ~1.2% round-trip Coinbase fees + profit
-TRAIL          = 0.002   # 0.2% trailing stop (locks in gains fast)
-MAX_LOSS       = 0.05    # 5% daily kill switch
-MIN_MOMENTUM   = float(os.getenv("APEX_MIN_MOMENTUM", "0.0004"))  # default 0.04% — tunable via env
-POLL_INTERVAL  = 15      # seconds between price polls
-WINDOW_TICKS   = 6       # 6 ticks × 15s = 90-second momentum window
-COOLDOWN       = 30      # seconds between trades (avoid churn)
+STARTING          = 328.29
+RISK              = 0.25    # 25% of balance per trade
+STOP              = 0.003   # 0.3% hard stop
+TARGET            = 0.015   # 1.5% take profit
+TRAIL             = 0.002   # 0.2% trailing stop
+MAX_LOSS          = 0.05    # 5% daily kill switch
+MIN_MOMENTUM      = float(os.getenv("APEX_MIN_MOMENTUM", "0.0004"))  # 0.04% default
+POLL_INTERVAL     = 15      # seconds between price polls
+WINDOW_TICKS      = 6       # 6 × 15s = 90-second window
+COOLDOWN          = 30      # seconds between trades
+SCAN_INTERVAL     = 4 * 3600  # refresh asset universe every 4 hours
+MAX_WATCHLIST     = 8         # top N assets to track
 
-# Paper mode — set APEX_PAPER_MODE=true in .env to simulate trades without real orders.
-# Auto-activates when Coinbase returns auth errors so APEX always "runs" even if API breaks.
-PAPER_MODE     = os.getenv("APEX_PAPER_MODE", "true").lower() in ("1", "true", "yes")
+# Paper mode — true by default until Coinbase auth is confirmed
+PAPER_MODE        = os.getenv("APEX_PAPER_MODE", "true").lower() in ("1", "true", "yes")
+# Live shorting requires Coinbase International (INTX) perpetual futures API.
+# Spot accounts can only sell assets they own. Enable only when INTX keys are set.
+LIVE_SHORTS_ENABLED = os.getenv("APEX_LIVE_SHORTS", "false").lower() in ("1", "true", "yes")
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_pem():
     return PEM.replace("\\n", "\n") if PEM else ""
+
+def scan_top_movers(max_assets=MAX_WATCHLIST):
+    """
+    Query CoinGecko top 50 coins by volume. Filter to those available on Coinbase.
+    Sort by absolute 24h % change — highest volatility = best scalp opportunities.
+    Returns list of {symbol, product} dicts or None on failure.
+    """
+    try:
+        r = requests.get(
+            "https://api.coingecko.com/api/v3/coins/markets",
+            params={"vs_currency": "usd", "order": "volume_desc",
+                    "per_page": 50, "page": 1, "sparkline": False},
+            timeout=12
+        )
+        if r.status_code != 200:
+            print(f"[APEX] CoinGecko scan failed: HTTP {r.status_code}")
+            return None
+        candidates = []
+        for c in r.json():
+            sym = c["symbol"].upper()
+            chg = abs(c.get("price_change_percentage_24h") or 0)
+            vol = c.get("total_volume") or 0
+            if chg > 0.3 and vol > 1_000_000:  # must have real volume and movement
+                candidates.append({"symbol": sym, "product": f"{sym}-USD",
+                                    "abs_change": chg, "volume": vol})
+        candidates.sort(key=lambda x: x["abs_change"], reverse=True)
+        # Verify Coinbase availability by fetching price (uses free unauthenticated endpoint)
+        available = []
+        for c in candidates[:30]:
+            if get_price(c["product"]):
+                available.append({"symbol": c["symbol"], "product": c["product"]})
+            if len(available) >= max_assets:
+                break
+        if available:
+            syms = ", ".join(a["symbol"] for a in available)
+            print(f"[APEX] Asset scan complete — top movers: {syms}")
+            # Log to hive_mind
+            try:
+                hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+                hive["apex_daily_watchlist"] = {
+                    "assets": [a["symbol"] for a in available],
+                    "scanned": datetime.now().isoformat(),
+                }
+                HIVE.write_text(json.dumps(hive, indent=2))
+            except Exception:
+                pass
+            return available
+        return None
+    except Exception as e:
+        print(f"[APEX] scan_top_movers error: {e}")
+        return None
+
+def detect_fvg(history):
+    """
+    Fair Value Gap detection using 3 micro-candles from last 6 ticks.
+    Each pair of consecutive ticks forms one micro-candle (high=max, low=min).
+    Bullish FVG: candle1.high < candle3.low — gap between c1 and c3 where c2 impulse left unfilled orders.
+    Bearish FVG: candle1.low > candle3.high — gap in the other direction.
+    Returns ('bullish', gap_low, gap_high), ('bearish', gap_low, gap_high), or None.
+    """
+    prices = list(history)
+    if len(prices) < 6:
+        return None
+    recent = prices[-6:]
+    candles = []
+    for i in range(0, 6, 2):
+        pair = recent[i:i+2]
+        candles.append({"high": max(pair), "low": min(pair)})
+    c1, c2, c3 = candles
+    if c1["high"] < c3["low"]:                       # bullish gap
+        return ("bullish", c1["high"], c3["low"])
+    if c1["low"] > c3["high"]:                        # bearish gap
+        return ("bearish", c3["high"], c1["low"])
+    return None
 
 def build_jwt(method, path):
     pk = load_pem_private_key(get_pem().encode(), password=None)
@@ -96,8 +176,13 @@ def get_price(product_id):
 
 def place_order(product_id, side, usd_amount):
     if PAPER_MODE:
-        # Simulate a filled order at current market price
         return {"success": True, "paper": True, "order_id": f"PAPER-{uuid.uuid4().hex[:8]}"}, 200
+
+    # Live shorts require Coinbase International (INTX) perpetual futures.
+    # Spot accounts cannot short-sell assets not held. Block until INTX is wired.
+    if side == "SELL" and not LIVE_SHORTS_ENABLED:
+        print(f"[APEX] Short entry skipped — LIVE_SHORTS_ENABLED=False (requires INTX)")
+        return {"error": "live_shorts_disabled"}, 400
 
     if side == "SELL":
         price = get_price(product_id)
@@ -114,9 +199,8 @@ def place_order(product_id, side, usd_amount):
         "order_configuration": order_config,
     }
     result, status = cb_post("/api/v3/brokerage/orders", body)
-    # Auto-fallback to paper mode on auth failure so APEX keeps running
     if status in (401, 403) or (status == 500 and "error" in result):
-        print(f"[APEX] Order auth failed ({status}) — paper mode activated for this session")
+        print(f"[APEX] Order auth failed ({status}) — paper fallback")
         return {"success": True, "paper": True, "order_id": f"PAPER-{uuid.uuid4().hex[:8]}"}, 200
     return result, status
 
@@ -128,51 +212,103 @@ def tg(msg):
         pass
 
 def poll_prices(price_history):
-    """Poll all assets and append to rolling windows. Returns current prices dict."""
+    """Poll all assets in current WATCHLIST, append to rolling windows."""
     current = {}
     for asset in WATCHLIST:
         p = get_price(asset["product"])
         if p:
+            if asset["product"] not in price_history:
+                price_history[asset["product"]] = deque(maxlen=WINDOW_TICKS)
             price_history[asset["product"]].append(p)
             current[asset["product"]] = p
     return current
 
+def refresh_watchlist(price_history):
+    """
+    Replace WATCHLIST with today's top movers from CoinGecko.
+    Initializes price_history entries for any new assets.
+    """
+    global WATCHLIST
+    new_list = scan_top_movers()
+    if not new_list:
+        print("[APEX] Watchlist refresh failed — keeping current list")
+        return
+    WATCHLIST = new_list
+    for asset in WATCHLIST:
+        if asset["product"] not in price_history:
+            price_history[asset["product"]] = deque(maxlen=WINDOW_TICKS)
+    syms = ", ".join(a["symbol"] for a in WATCHLIST)
+    tg(f"APEX watchlist updated — hunting: {syms}")
+
 def best_signal(price_history, current_prices):
     """
-    Scan all assets for micro-momentum signal.
-    Returns best signal dict or None.
-    Signal: asset moved MIN_MOMENTUM% in the last WINDOW_TICKS × POLL_INTERVAL seconds.
+    Scan all assets for entry signals — bidirectional long AND short.
+
+    Signal 1 — Momentum: asset moved > MIN_MOMENTUM% in the 90-second window.
+      BUY on positive momentum, SELL (short) on negative.
+
+    Signal 2 — Fair Value Gap (FVG): 3-candle imbalance detected AND current
+      price is inside the gap zone (retest entry for continuation trade).
+      BUY on bullish gap retest, SELL on bearish gap retest.
+
+    Returns the highest-scored signal across all assets, or None.
+    Live short execution requires LIVE_SHORTS_ENABLED=true (needs Coinbase INTX).
+    In PAPER_MODE both directions are always available.
     """
-    best      = None
-    best_move = 0.0
+    best_sig   = None
+    best_score = 0.0
 
     for asset in WATCHLIST:
         product = asset["product"]
-        history = price_history[product]
-
-        if len(history) < WINDOW_TICKS:
-            continue  # not enough data yet
-
-        oldest = history[0]
-        latest = current_prices.get(product)
-        if not oldest or not latest:
+        history = price_history.get(product)
+        if not history or len(history) < WINDOW_TICKS:
             continue
 
-        move = (latest - oldest) / oldest  # signed momentum
+        latest = current_prices.get(product)
+        oldest = history[0]
+        if not latest or not oldest:
+            continue
 
-        # Spot account only — longs only. SELL entries would fail (no asset held).
-        # On bearish momentum, skip. On 6 assets every 15s there's always a long setup.
-        if move > MIN_MOMENTUM and move > best_move:
-            best_move = move
-            best = {
-                "symbol":    asset["symbol"],
-                "product":   product,
-                "price":     latest,
-                "momentum":  move,
-                "direction": "BUY",
-            }
+        move = (latest - oldest) / oldest  # signed — positive=up, negative=down
 
-    return best
+        # ── Signal 1: Momentum ──────────────────────────────────────────────
+        if abs(move) >= MIN_MOMENTUM:
+            direction = "BUY" if move > 0 else "SELL"
+            # Skip live shorts unless INTX is enabled
+            if direction == "SELL" and not PAPER_MODE and not LIVE_SHORTS_ENABLED:
+                pass
+            else:
+                score = abs(move)
+                if score > best_score:
+                    best_score = score
+                    best_sig = {
+                        "symbol": asset["symbol"], "product": product,
+                        "price": latest, "momentum": move,
+                        "direction": direction, "signal_type": "momentum",
+                    }
+
+        # ── Signal 2: FVG retest ────────────────────────────────────────────
+        fvg = detect_fvg(history)
+        if fvg:
+            fvg_type, fvg_low, fvg_high = fvg
+            in_gap = fvg_low <= latest <= fvg_high
+            if in_gap:
+                direction = "BUY" if fvg_type == "bullish" else "SELL"
+                if direction == "SELL" and not PAPER_MODE and not LIVE_SHORTS_ENABLED:
+                    pass
+                else:
+                    gap_size = (fvg_high - fvg_low) / latest
+                    score = gap_size * 0.8  # slightly lower weight than pure momentum
+                    if score > best_score:
+                        best_score = score
+                        best_sig = {
+                            "symbol": asset["symbol"], "product": product,
+                            "price": latest, "momentum": move,
+                            "direction": direction, "signal_type": "fvg",
+                            "fvg_zone": f"${fvg_low:.4f}–${fvg_high:.4f}",
+                        }
+
+    return best_sig
 
 def save_state(active, trail_best, daily_pnl, trades, wins):
     try:
@@ -225,22 +361,29 @@ def update_hive(pnl, trades, wins):
 
 def run():
     print("=" * 55)
-    print("APEX LIVE SCALPER — Micro-Momentum Edition")
+    print("APEX LIVE SCALPER — Opportunity Hunter Edition")
+    print(f"Signals: Momentum + FVG | Bidirectional: {'YES' if PAPER_MODE or LIVE_SHORTS_ENABLED else 'LONG ONLY (live)'}")
     print(f"Poll: {POLL_INTERVAL}s | Window: {WINDOW_TICKS * POLL_INTERVAL}s | Min move: {MIN_MOMENTUM*100:.2f}%")
     print(f"Stop: {STOP*100:.1f}% | Target: {TARGET*100:.1f}% | Trail: {TRAIL*100:.1f}%")
     print("=" * 55)
 
-    daily_pnl  = 0.0
-    trades     = wins = 0
-    active     = trail_best = None
-    last_close = datetime.now()
+    daily_pnl   = 0.0
+    trades      = wins = 0
+    active      = trail_best = None
+    last_close  = datetime.now()
     last_report = datetime.now()
+    last_scan   = datetime.now() - __import__('datetime').timedelta(seconds=SCAN_INTERVAL)  # fire immediately
 
-    # Rolling price windows per asset
+    # Initialize price history with defaults — refreshed after scan
     price_history = {a["product"]: deque(maxlen=WINDOW_TICKS) for a in WATCHLIST}
 
-    # Write startup state immediately so autonomous loop doesn't duplicate this process
+    # Write startup state immediately so autonomous loop won't spawn duplicates
     save_state(None, None, 0.0, 0, 0)
+
+    # ── Startup asset scan ────────────────────────────────────────────────────
+    print("[APEX] Scanning top movers for today's opportunity list...")
+    refresh_watchlist(price_history)
+    last_scan = datetime.now()
 
     # Restore open position from disk
     saved = load_state()
@@ -253,11 +396,12 @@ def run():
         tg(f"APEX RESUMED — {active['direction']} {active['symbol']} @ ${active['entry']:,.4f}\n"
            f"Daily P&L: ${daily_pnl:+.2f} | {trades} trades")
     else:
-        tg(f"APEX SCALPER ONLINE — Micro-Momentum Edition\n"
-           f"Balance: ${STARTING:.2f} | Risk: ${STARTING*RISK:.2f}/trade\n"
-           f"Stop: {STOP*100:.1f}% | Target: {TARGET*100:.1f}% | Trail: {TRAIL*100:.1f}%\n"
-           f"Scanning BTC ETH SOL XRP DOGE AVAX every {POLL_INTERVAL}s\n"
-           f"Min move to enter: {MIN_MOMENTUM*100:.2f}% in {WINDOW_TICKS*POLL_INTERVAL}s window")
+        mode_str = "PAPER" if PAPER_MODE else "LIVE"
+        syms = " ".join(a["symbol"] for a in WATCHLIST)
+        tg(f"APEX ONLINE [{mode_str}] — Opportunity Hunter\n"
+           f"Signals: Momentum + FVG | Both directions\n"
+           f"Hunting: {syms}\n"
+           f"Min move: {MIN_MOMENTUM*100:.2f}% | Stop: {STOP*100:.1f}% | Target: {TARGET*100:.1f}%")
 
     while True:
         try:
@@ -267,6 +411,11 @@ def run():
                    f"Final: ${daily_pnl:+.2f} | {trades} trades | {wins} wins")
                 update_hive(daily_pnl, trades, wins)
                 break
+
+            # ── Refresh asset universe every 4 hours (no-op if in trade) ────────
+            if not active and (datetime.now() - last_scan).total_seconds() >= SCAN_INTERVAL:
+                refresh_watchlist(price_history)
+                last_scan = datetime.now()
 
             # ── Poll prices ───────────────────────────────────────────────────
             current = poll_prices(price_history)
@@ -358,8 +507,10 @@ def run():
                     stop_p    = price * (1 - STOP) if direction == "BUY" else price * (1 + STOP)
                     target_p  = price * (1 + TARGET) if direction == "BUY" else price * (1 - TARGET)
 
-                    print(f"[APEX] SIGNAL: {direction} {sig['symbol']} "
-                          f"momentum={sig['momentum']*100:+.3f}% @ ${price:,.4f}")
+                    sig_label = sig.get("signal_type", "momentum").upper()
+                    fvg_info  = f" FVG:{sig['fvg_zone']}" if sig.get("fvg_zone") else ""
+                    print(f"[APEX] SIGNAL [{sig_label}]: {direction} {sig['symbol']} "
+                          f"momentum={sig['momentum']*100:+.3f}% @ ${price:,.4f}{fvg_info}")
 
                     result, status = place_order(product, direction, size)
 

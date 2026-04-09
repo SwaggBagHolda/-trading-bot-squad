@@ -2216,3 +2216,39 @@ Ty said: "Why is BTC moving today? & how could we have capitalized on it?
 
 ## [2026-04-09 04:30]
 Ty said: why dont you have a catalyst?
+
+## [2026-04-09 05:00]
+Ty said: is Apex showing any promise?
+
+## [2026-04-09 05:09]
+Ty said: How are we doing today? What's APEX working on
+
+## [2026-04-09 05:13]
+Ty said: "What's our plan to hit $15K this month
+
+## [2026-04-09 05:14]
+Ty said: ok where did you get Apex's scalping strategy & why did you pick it?
+
+## [2026-04-09 05:15]
+Ty said: "Show me your sources for that strategy"
+
+## [2026-04-09 05:19]
+Ty said: im waiting
+
+## [2026-04-09 05:42]
+Ty said: What scalping strategy should APEX use right now and why
+
+## [2026-04-09 05:55]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 05:55]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 05:55]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 05:55]
+Proactive heartbeat sent: APEX's been quiet all day — 2 trades, both losers, down $0.07 on a DOGE long it'...
+
+## [2026-04-09 05:55]
+Heartbeat safety checks: ['ORACLE down alert sent', 'Live P&L pace alert: $+0.00']

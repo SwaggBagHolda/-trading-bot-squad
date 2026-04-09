@@ -1924,7 +1924,9 @@ def handle_message(text, chat_id):
         success = run_all_training()
         if success:
             # Report what's actually being tested — all 8 assets, not just BTC
-            assets = "BTC, ETH, SOL, DOGE, ADA, LINK, AVAX, MATIC"
+            # Pull actual watchlist from hive_mind if available, no hardcoded assets
+            _hive_wl = read_hive().get("apex_daily_watchlist", {}).get("assets", [])
+            assets = ", ".join(_hive_wl) if _hive_wl else "top movers (scanned daily from CoinGecko)"
             msg = (f"AutoResearch running now.\n"
                    f"All 4 bots × 10,000 experiments each.\n"
                    f"Assets: {assets}\n"
@@ -2373,6 +2375,29 @@ Context (use only if relevant): Squad P&L today ${total_pnl:+.2f}. Mission: $100
         )
 
     if response:
+        # ── Auto-queue interceptor ───────────────────────────────────────────
+        # If NEXUS suggests a concrete action (backtest, retrain, AutoResearch),
+        # queue it immediately as [AUTO_IMPROVE] in pending.md — no permission needed.
+        _action_phrases = [
+            "we should run a backtest", "should run backtest", "run a backtest",
+            "should retrain", "should run autoresearch", "should run auto research",
+            "suggest running autoresearch", "suggest a backtest", "recommend retraining",
+            "recommend running autoresearch", "queue autoresearch", "queue a backtest",
+            "run autoresearch on", "run a new backtest", "time to retrain",
+        ]
+        _resp_lower_aq = response.lower()
+        if any(p in _resp_lower_aq for p in _action_phrases):
+            try:
+                _pending = BASE / "memory" / "tasks" / "pending.md"
+                _existing = _pending.read_text() if _pending.exists() else "# Pending Tasks\n\n"
+                _task = f"AutoResearch triggered by NEXUS suggestion: {text[:120]}"
+                if _task[:40] not in _existing:
+                    with open(_pending, "a") as _f:
+                        _f.write(f"\n- [AUTO_IMPROVE] {_task}\n")
+                    print(f"[NEXUS] Auto-queued: {_task[:60]}")
+            except Exception as _eq:
+                print(f"[NEXUS] Auto-queue error: {_eq}")
+
         # ── Deferred-promise interceptor ─────────────────────────────────────
         # If the AI response contains a promise of future action, execute that
         # action NOW and replace or append real results before sending.
