@@ -1127,7 +1127,26 @@ def morning_priority_report():
         tc = bd.get("total_trades", bd.get("trades", 0))
         wr = bd.get("win_rate", 0)
         mode = bd.get("mode", "unknown")
-        bot_lines.append(f"{bot}: {tc} trades, {wr*100:.0f}% WR, {mode}")
+        extra = ""
+        if bot == "SENTINEL":
+            extra = f" | Polymarket | bal=${bd.get('paper_balance', 0):.0f} | {bd.get('open_positions', 0)} open"
+        bot_lines.append(f"{bot}: {tc} trades, {wr*100:.0f}% WR, {mode}{extra}")
+
+    # Polymarket opportunity scan
+    poly_scan = ""
+    try:
+        from sentinel_polymarket import get_crypto_prediction_markets, find_arbitrage_opportunities, find_directional_opportunities
+        markets = get_crypto_prediction_markets()
+        arb = find_arbitrage_opportunities(markets)
+        top_arb = arb[:3]
+        if top_arb:
+            poly_scan = "TOP POLYMARKET ARBITRAGE:\n"
+            for a in top_arb:
+                poly_scan += f"  {a['market']['question'][:50]} — {a['edge_pct']*100:.1f}% guaranteed\n"
+        else:
+            poly_scan = f"POLYMARKET: {len(markets)} crypto markets, no arb opportunities right now\n"
+    except Exception:
+        poly_scan = "POLYMARKET: scan failed\n"
 
     # Check system health
     issues = check_bot_health()
@@ -1138,6 +1157,8 @@ def morning_priority_report():
 BOT STATUS:
 {chr(10).join(bot_lines)}
 
+{poly_scan}
+
 SYSTEM ISSUES: {len(issues)} — {', '.join(issues[:3]) if issues else 'all green'}
 
 PENDING TASKS (last 500 chars):
@@ -1147,9 +1168,10 @@ LAST NIGHT'S SELF-IMPROVEMENT FINDINGS:
 {improve[-500:]}
 
 Write exactly 5 priorities for today, numbered 1-5. Most urgent first.
+Include SENTINEL Polymarket activity and best arb opportunities.
 Each priority: one line, specific and actionable. No fluff.
 End with a one-line status: either "Systems green" or the most critical issue.
-Keep the entire message under 500 characters."""
+Keep the entire message under 600 characters."""
 
     report = ask_ai(prompt)
     if not report:

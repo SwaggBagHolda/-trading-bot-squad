@@ -144,10 +144,14 @@ def get_crypto_prediction_markets():
                 if not prices_raw or not token_ids:
                     continue
 
-                # Parse prices
+                # Parse prices — API returns JSON strings, not lists
                 try:
+                    if isinstance(prices_raw, str):
+                        prices_raw = json.loads(prices_raw)
+                    if isinstance(token_ids, str):
+                        token_ids = json.loads(token_ids)
                     prices = [float(p) for p in prices_raw]
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, json.JSONDecodeError):
                     continue
 
                 # Identify market type
