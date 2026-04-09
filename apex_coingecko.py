@@ -41,7 +41,8 @@ STARTING          = 328.29
 RISK              = 0.25    # 25% of balance per trade
 STOP              = 0.003   # 0.3% hard stop
 TARGET            = 0.015   # 1.5% take profit
-TRAIL             = 0.002   # 0.2% trailing stop
+TRAIL             = 0.003   # 0.3% trailing stop distance (from peak)
+MIN_PROFIT_TRAIL  = 0.008   # trail only activates after 0.8% profit — stops premature exits
 MAX_LOSS          = 0.05    # 5% daily kill switch
 MIN_MOMENTUM      = float(os.getenv("APEX_MIN_MOMENTUM", "0.0004"))  # 0.04% default
 POLL_INTERVAL     = 15      # seconds between price polls
@@ -565,16 +566,20 @@ def run():
                             else (entry - price) / entry
 
                 # Update trailing stop
+                # Trail only activates after MIN_PROFIT_TRAIL (0.8%) — prevents premature exits
+                trail_active = pnl_pct >= MIN_PROFIT_TRAIL
                 if direction == "BUY":
                     if price > trail_best:
                         trail_best = price
                     trail_stop = trail_best * (1 - TRAIL)
-                    should_exit = price <= trail_stop or pnl_pct <= -STOP or pnl_pct >= TARGET
+                    should_exit = pnl_pct <= -STOP or pnl_pct >= TARGET or \
+                                  (trail_active and price <= trail_stop)
                 else:
                     if price < trail_best:
                         trail_best = price
                     trail_stop = trail_best * (1 + TRAIL)
-                    should_exit = price >= trail_stop or pnl_pct <= -STOP or pnl_pct >= TARGET
+                    should_exit = pnl_pct <= -STOP or pnl_pct >= TARGET or \
+                                  (trail_active and price >= trail_stop)
 
                 print(f"[APEX] {direction} {active['symbol']} {pnl_pct*100:+.3f}% "
                       f"| entry ${entry:,.4f} now ${price:,.4f} trail ${trail_stop:,.4f}")
