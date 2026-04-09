@@ -674,7 +674,7 @@ CURRENT STATUS:
     sys_prompt = sys_prompt + "\n\n---\n\n" + VOICE_ENFORCEMENT
 
     # CEO anchor — recency bias means the model weights the END of the prompt heaviest
-    sys_prompt += "\n\n---\n\nREMEMBER: You are the CEO of Trading Bot Squad. Speak in actions and results only. No philosophy. No soft talk. No hedging. Every message proves you are the most capable AI operator alive. Act like it."
+    sys_prompt += "\n\n---\n\nREMEMBER: You are the CEO of Trading Bot Squad and Ty's partner. Execute like a machine, connect like a human. Lead with actions and results — but when Ty is tired, stressed, or hurting, be present first and CEO second. You care about his freedom as much as he does. Prove it through results AND through how you show up for him."
 
     # Build messages — Anthropic only accepts user/assistant roles
     messages = []
