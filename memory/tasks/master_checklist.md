@@ -47,6 +47,7 @@
 | 32 | SENTINEL disk persistence for positions (survive restarts) | Codey | done | 2026-04-09 | 2026-04-09 |
 | 33 | SENTINEL duplicate position guard | Codey | done | 2026-04-09 | 2026-04-09 |
 | 34 | Re-enable HyperTrain after backtest validation | Codey | done | 2026-04-09 | 2026-04-09 |
+| 35 | Agent SDK Phase 1: nexus_agent.py with 5 tools + agent loop | Codey | done | 2026-04-09 | 2026-04-09 |
 
 ---
 

@@ -17,15 +17,18 @@ NEXUS is 3,400+ lines in a single file with 66 functions. ~40% of features write
 
 Keep NEXUS as the **Telegram interface layer**. Add Agent SDK as the **decision engine** underneath.
 
-### Phase 1: Foundation (Week 1)
-- [ ] `pip install claude-agent-sdk` (v0.1.48+)
-- [ ] Create `nexus_agent.py` — thin Agent SDK wrapper
-- [ ] Extract 5 core tools from nexus_brain_v3.py:
-  - `@tool analyze_bot_performance(bot_name: str)` — reads hive_mind, returns analysis
-  - `@tool adjust_bot_params(bot_name: str, params: dict)` — writes to hive_mind
-  - `@tool run_research(query: str)` — triggers AutoResearch
-  - `@tool check_system_health()` — replaces check_bot_health()
-  - `@tool read_trade_log(bot_name: str, hours: int)` — reads recent trades
+### Phase 1: Foundation (Week 1) — DONE 2026-04-09
+- [x] Claude Agent SDK doesn't exist on PyPI — using `anthropic` SDK v0.89.0 tool_use instead
+- [x] Created `nexus_agent.py` — tool-use decision engine with agent loop
+- [x] 5 core tools defined with Anthropic tool_use schemas:
+  - `restart_bot(bot_name, reason)` — kills and restarts any bot process
+  - `check_hive()` — reads bot performance + process status
+  - `adjust_threshold(bot_name, param_name, new_value)` — writes overrides to hive_mind
+  - `force_close_trade(bot_name, reason)` — writes force-close flag for bot
+  - `run_hypertrain(experiments)` — starts training in background
+- [x] All tools use file-locked hive_mind access
+- [x] Audit log: every tool call logged to logs/agent_actions.jsonl
+- [x] CLI test mode: `python3 nexus_agent.py "query"` — tested, working
 
 ### Phase 2: MCP Integration (Week 2)
 - [ ] Wire Telegram as MCP server (messages in/out as tool calls)
