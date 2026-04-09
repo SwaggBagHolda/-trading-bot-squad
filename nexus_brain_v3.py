@@ -2074,28 +2074,10 @@ def autonomous_loop():
         act(f"HEALTH CHECK ERROR: {e}")
 
     # ── CHECK 7: REAL CONSEQUENCES — don't report, ACT ─────────────────────
-    # 7a: If any bot has 0 winning combos after HyperTrain — stop it, queue full strategy rebuild
-    try:
-        if winners_file.exists():
-            wdata = json.loads(winners_file.read_text())
-            for bot_result in wdata.get("bots", []):
-                bot_name = bot_result.get("bot", "?")
-                winners_count = bot_result.get("winners", 0)
-                if winners_count == 0:
-                    act(f"CONSEQUENCE: {bot_name} has 0 winning combos — stopping and rebuilding")
-                    # Kill the bot process
-                    bot_script_map = {"APEX": "apex_coingecko", "DRIFT": "drift_", "TITAN": "titan_", "SENTINEL": "sentinel_"}
-                    for script_pattern in [v for k, v in bot_script_map.items() if k == bot_name]:
-                        subprocess.run(["pkill", "-f", script_pattern], capture_output=True)
-                    # Queue full strategy rebuild
-                    pending_path = BASE / "memory" / "tasks" / "pending.md"
-                    existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
-                    task = f"[AUTO_IMPROVE] EMERGENCY REBUILD: {bot_name} has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued {now.isoformat()})"
-                    if f"EMERGENCY REBUILD: {bot_name}" not in existing:
-                        pending_path.write_text(existing.rstrip() + f"\n- {task}\n")
-                    send(OWNER_ID, f"Stopped {bot_name} — 0 winning combos after HyperTrain. Rebuilding strategy from scratch.")
-    except Exception as e:
-        act(f"CONSEQUENCE 7a error: {e}")
+    # 7a: REMOVED — "stop bots on 0 winning combos" was killing bots every HyperTrain cycle.
+    # HyperTrain optimizes in background while bots keep running. 0 winners in one cycle
+    # is normal early on — HyperTrain iterates toward better params over multiple runs.
+    # Bots must never be stopped due to HyperTrain results.
 
     # 7b: APEX hourly trade count — if < 5 trades/hr, investigate + auto-loosen
     try:
