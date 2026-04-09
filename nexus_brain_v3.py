@@ -410,6 +410,10 @@ def web_search(query, max_results=5):
     Falls back to DDG instant-answer API if scraping yields nothing.
     """
     global _research_ran
+    # Sanitize query: strip surrounding quotes (DDG treats them as phrase-exact search,
+    # which drastically reduces results), and collapse extra whitespace.
+    query = query.strip().strip('"').strip("'").strip()
+    query = re.sub(r'\s+', ' ', query)
     try:
         from bs4 import BeautifulSoup
         headers = {
@@ -530,6 +534,9 @@ def smart_research(query):
     - General queries → DuckDuckGo HTML scraping
     """
     global _research_ran
+    # Clean query: remove surrounding quotes and extra whitespace
+    query = query.strip().strip('"').strip("'").strip()
+    query = re.sub(r'\s+', ' ', query)
     q_lower = query.lower()
 
     # ── Market data → CoinGecko ──────────────────────────────────────────────
