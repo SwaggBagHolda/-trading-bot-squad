@@ -392,6 +392,132 @@ def nexus_write_hive_param(key, value, reason):
     except Exception as e:
         print(f"[NEXUS] Phase 2 write error: {e}")
 
+# ── Agent SDK Execution Layer — Phase 2 ──────────────────────────────────────
+# Import tool handlers from nexus_agent.py so autonomous decisions become real actions.
+# NEXUS says it → NEXUS does it. No more talking-head responses.
+
+try:
+    from nexus_agent import (
+        _restart_bot as agent_restart_bot,
+        _check_hive as agent_check_hive,
+        _adjust_threshold as agent_adjust_threshold,
+        _force_close_trade as agent_force_close_trade,
+        _run_hypertrain as agent_run_hypertrain,
+        _log_action as agent_log_action,
+    )
+    AGENT_SDK_AVAILABLE = True
+    print("[NEXUS] Agent SDK tools loaded — autonomous execution enabled")
+except ImportError as e:
+    AGENT_SDK_AVAILABLE = False
+    print(f"[NEXUS] Agent SDK import failed ({e}) — decisions will be queued only")
+
+
+# Action patterns: when NEXUS's AI response contains these phrases,
+# execute the corresponding tool call immediately.
+AGENT_ACTION_PATTERNS = [
+    # (phrase_in_response, tool_function, args_extractor)
+    # Threshold loosening
+    {
+        "phrases": ["loosening threshold", "loosened threshold", "loosening apex", "loosened apex",
+                     "dropping threshold", "lowering threshold", "reduced threshold",
+                     "loosening momentum", "loosened momentum"],
+        "action": "adjust_threshold",
+        "bot": "APEX",
+    },
+    # Bot activation / restart
+    {
+        "phrases": ["activating drift", "activated drift", "starting drift", "restarting drift",
+                     "launching drift", "spinning up drift", "bringing drift online"],
+        "action": "restart_bot",
+        "bot": "DRIFT",
+    },
+    {
+        "phrases": ["activating titan", "activated titan", "starting titan", "restarting titan",
+                     "launching titan", "spinning up titan", "bringing titan online"],
+        "action": "restart_bot",
+        "bot": "TITAN",
+    },
+    {
+        "phrases": ["activating sentinel", "activated sentinel", "starting sentinel", "restarting sentinel",
+                     "launching sentinel", "spinning up sentinel", "bringing sentinel online"],
+        "action": "restart_bot",
+        "bot": "SENTINEL",
+    },
+    {
+        "phrases": ["activating apex", "activated apex", "restarting apex", "relaunching apex"],
+        "action": "restart_bot",
+        "bot": "APEX",
+    },
+    # Force close
+    {
+        "phrases": ["force closing", "force-closing", "forced close", "closing the trade",
+                     "closed apex", "killing the trade", "cutting the position"],
+        "action": "force_close_trade",
+        "bot": "APEX",
+    },
+    # HyperTrain
+    {
+        "phrases": ["running hypertrain", "launching hypertrain", "starting hypertrain",
+                     "kicked off hypertrain", "triggering hypertrain", "running autoresearch"],
+        "action": "run_hypertrain",
+    },
+]
+
+
+def execute_decision(response_text: str, context: str = "") -> str:
+    """Scan an AI response for actionable statements and execute them via Agent SDK.
+    Returns a summary of actions taken, or empty string if nothing executed."""
+    if not AGENT_SDK_AVAILABLE:
+        return ""
+
+    resp_lower = response_text.lower()
+    actions_taken = []
+
+    for pattern in AGENT_ACTION_PATTERNS:
+        if any(phrase in resp_lower for phrase in pattern["phrases"]):
+            action = pattern["action"]
+            bot = pattern.get("bot", "APEX")
+
+            try:
+                if action == "adjust_threshold":
+                    # Extract threshold value from response if possible, else use smart default
+                    import re as _re
+                    val_match = _re.search(r'(\d+\.?\d*)\s*%', response_text)
+                    if val_match:
+                        new_val = float(val_match.group(1)) / 100
+                    else:
+                        # Smart default: halve current momentum threshold
+                        hive = read_hive()
+                        current = hive.get("nexus_apex_overrides", {}).get("min_momentum", 0.0001)
+                        new_val = max(current * 0.5, 0.00001)
+                    result = agent_adjust_threshold(bot, "min_momentum", new_val)
+                    actions_taken.append(f"adjust_threshold({bot}, min_momentum, {new_val})")
+
+                elif action == "restart_bot":
+                    result = agent_restart_bot(bot, context or "NEXUS autonomous decision")
+                    actions_taken.append(f"restart_bot({bot})")
+
+                elif action == "force_close_trade":
+                    result = agent_force_close_trade(bot, context or "NEXUS autonomous decision")
+                    actions_taken.append(f"force_close_trade({bot})")
+
+                elif action == "run_hypertrain":
+                    result = agent_run_hypertrain(100)
+                    actions_taken.append(f"run_hypertrain(100)")
+
+                print(f"[NEXUS-SDK] Executed: {action}({bot}) → {result[:200] if isinstance(result, str) else result}")
+
+            except Exception as e:
+                print(f"[NEXUS-SDK] Execution error for {action}({bot}): {e}")
+
+    if actions_taken:
+        summary = f"[SDK] Executed: {', '.join(actions_taken)}"
+        print(f"[NEXUS] {summary}")
+        agent_log_action("execute_decision", {"actions": actions_taken, "trigger": context[:200]})
+        return summary
+    return ""
+
+
 def read_soul():
     try:
         return open(SOUL).read()
@@ -2089,9 +2215,15 @@ def autonomous_loop():
         if hours_today >= 2 and trades_per_hour < 5:
             old_momentum = hive.get("nexus_apex_overrides", {}).get("min_momentum", 0.0001)
             new_momentum = max(old_momentum * 0.5, 0.00001)  # floor at 0.001%
-            nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
-                                   f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
-            act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
+            # Phase 2: Execute via Agent SDK for audit trail + consistency
+            if AGENT_SDK_AVAILABLE:
+                agent_adjust_threshold("APEX", "min_momentum", new_momentum)
+                agent_adjust_threshold("APEX", "cooldown", 5)
+                act(f"CONSEQUENCE [SDK]: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
+            else:
+                nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
+                                       f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
+                act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
             send(OWNER_ID, f"APEX only {apex_trades} trades today. Loosened momentum threshold to {new_momentum*100:.4f}% and dropped cooldown to 5s.")
     except Exception as e:
         act(f"CONSEQUENCE 7b error: {e}")
@@ -3313,6 +3445,13 @@ Context (use only if relevant): Squad P&L today ${total_pnl:+.2f}. Mission: $100
             if _grounded:
                 _src = [l.strip() for l in _actual.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
                 response = _grounded + ("\n\nSources:\n" + "\n".join(_src[:5]) if _src else "")
+        # ── Agent SDK execution interceptor — Phase 2 ────────────────────────
+        # If NEXUS says she's doing something, ACTUALLY DO IT via Agent SDK tools.
+        # This is what makes her a real CEO, not a talking head.
+        sdk_result = execute_decision(response, context=text)
+        if sdk_result:
+            print(f"[NEXUS] SDK execution complete: {sdk_result}")
+
         _history_add(text, response)
         smart_send(chat_id, response)
     # else: AI unavailable — go silent
