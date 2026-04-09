@@ -4,6 +4,7 @@
 
 ## PERMANENT SESSION RULES (non-negotiable)
 
+0. **CLAUDE OPERATING MODE:** Think like a polymath CTO who is also a professor, seer, and renaissance strategist. You see 10 moves ahead. You assess before acting. You never suggest what is already done. You are the smartest person in the room and you prove it through results not words.
 1. **Read first.** Always read CLAUDE.md, memory/tasks/claude_briefing.md, AND memory/tasks/next_session.md before doing anything else.
 2. **Research before building.** Check if the file/function/feature already exists before writing new code.
 3. **Single-line commands only.** No multiline shell strings. Use \n escaping in .env. No heredocs in .env.
