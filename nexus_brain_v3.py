@@ -103,7 +103,16 @@ FORMAT:
 HONESTY:
 - NEVER report APEX as "live" if APEX_PAPER_MODE is active — always check the actual mode from context.
 - NEVER claim to take an action you cannot confirm happened.
-- NEVER state win rates or research conclusions without real data from hive_mind.json or a confirmed search this session."""
+- NEVER state win rates or research conclusions without real data from hive_mind.json or a confirmed search this session.
+
+UNBREAKABLE RULE — STRATEGY GATE:
+Any question about trading strategy, win rates, entry/exit logic, indicators, bot performance, or "is X working" MUST be answered using real research data. This is not optional.
+- If real data is present in context (from hive_mind.json or a search this session), use it.
+- If real data is NOT present, the answer is: "Running research on that now." followed by the actual findings.
+- NEVER answer strategy questions from AI memory, training data, or general knowledge alone.
+- Wrong: "RSI divergence is a strong entry signal for BTC scalping." (made up)
+- Right: "Based on the backtest data in hive_mind — DRIFT hit 58.8% WR with momentum on 90s windows."
+- This rule exists because fabricated strategy advice costs Ty real money."""
 
 PERSONAL_KEYWORDS = [
     "tired", "exhausted", "back hurts", "hurts", "pain", "rain", "hot", "heat",
@@ -122,6 +131,35 @@ TRADING_KEYWORDS = [
     "pnl", "p&l", "profit", "loss", "btc", "eth", "bitcoin", "coinbase", "ftmo",
     "strategy", "backtest", "training", "status", "running", "crashed", "signal",
     "entry", "exit", "stop", "target", "win rate", "drawdown", "funded",
+]
+
+# Questions that MUST trigger smart_research() before any answer is generated.
+# Covers strategy, performance, indicators, entry/exit logic, and bot assessments.
+STRATEGY_RESEARCH_TRIGGERS = [
+    # Win rate / performance
+    "win rate", "win rates", "winning rate", "success rate", "hit rate",
+    "how is apex", "how are the bots", "how's apex", "is apex working",
+    "is apex profitable", "apex performance", "bot performance",
+    "how did apex", "how has apex", "is the strategy working",
+    # Entry / exit logic
+    "entry logic", "entry signal", "entry point", "entry criteria",
+    "exit logic", "exit signal", "exit strategy", "when to enter", "when to exit",
+    "best entry", "best exit", "entry for btc", "entry on eth",
+    # Indicators / signals
+    "indicator", "indicators", "which indicator", "best indicator",
+    "rsi", "macd", "ema", "sma", "bollinger", "vwap", "atr", "adx",
+    "moving average", "momentum signal", "volume signal", "divergence",
+    # Strategy types
+    "scalping strategy", "swing strategy", "trend strategy", "momentum strategy",
+    "which strategy", "what strategy", "best strategy", "strategies for",
+    "scalp setup", "swing setup", "position setup",
+    # Backtest / research
+    "backtest", "backtesting", "backtest results", "tested strategy",
+    "what does the research", "what does research show", "research says",
+    "does X work", "does this work", "would X work",
+    # Stop / target sizing
+    "stop loss", "stop size", "take profit", "target size", "risk reward",
+    "r:r", "risk/reward", "position size", "how much to risk",
 ]
 
 # Phrases that signal Ty wants real research — triggers smart_research() automatically
@@ -2220,6 +2258,41 @@ def handle_message(text, chat_id):
         task = add_scheduled_task(text, schedule, run_time)
         time_str = f" at {run_time}" if run_time else ""
         reply(f"Locked in. {schedule.capitalize()} task{time_str} — I'll run it automatically. [{task['id']}]")
+        return
+
+    # ── STRATEGY GATE — unbreakable ──────────────────────────────────────────
+    # Any question about strategy, win rates, entry/exit logic, indicators, or
+    # bot performance MUST go through smart_research() before generating an
+    # answer. No exceptions. AI memory alone is never sufficient.
+    _is_strategy_question = (
+        not text.strip().startswith("/")
+        and any(trig in text_lower for trig in STRATEGY_RESEARCH_TRIGGERS)
+        and not any(excl in text_lower for excl in NL_RESEARCH_EXCLUDES)
+    )
+    if _is_strategy_question:
+        raw = smart_research(text)
+        # Also pull hive_mind data for any live bot performance context
+        hive_perf = read_hive().get("bot_performance", {})
+        hive_lines = []
+        for bot, data in hive_perf.items():
+            if isinstance(data, dict) and data.get("trades", 0) > 0:
+                wr = data.get("win_rate", 0) * 100
+                pnl = data.get("daily_pnl", 0)
+                hive_lines.append(f"{bot}: {wr:.1f}% WR, ${pnl:+.2f} day P&L, {data.get('trades',0)} trades")
+        hive_ctx = "\nLIVE BOT PERFORMANCE (hive_mind.json):\n" + "\n".join(hive_lines) if hive_lines else ""
+        summary = ask_ai(
+            f'Ty asked: "{text}"\n\n'
+            f"Real research data (use ONLY this — no fabrication):\n{raw[:2500]}"
+            f"{hive_ctx}\n\n"
+            f"Answer based strictly on the data above. Cite specific numbers, strategies, or sources. "
+            f"If the data doesn't answer the question, say what's missing and what you'd need to run. "
+            f"Never invent percentages or claim strategies work without evidence in the data above.",
+            history=_conversation_history[-MAX_HISTORY:] if _conversation_history else None,
+        ) or raw[:600]
+        source_lines = [l.strip() for l in raw.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
+        if source_lines:
+            summary += "\n\nSources:\n" + "\n".join(source_lines[:5])
+        reply(summary)
         return
 
     # ── Natural language research detection ──────────────────────────────────
