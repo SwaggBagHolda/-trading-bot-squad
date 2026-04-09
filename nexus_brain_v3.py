@@ -237,8 +237,21 @@ def save_content(filename: str, content: str):
         return None
 
 def transcribe_voice(file_id):
-    """Download Telegram voice message and transcribe with Whisper."""
+    """Download Telegram voice message and transcribe with Whisper.
+    Uses imageio-ffmpeg bundled binary so brew is not required.
+    """
     try:
+        # Ensure ffmpeg is in PATH — whisper requires it for audio conversion
+        try:
+            import imageio_ffmpeg as _iff
+            _ffmpeg_bin_dir = os.path.dirname(_iff.get_ffmpeg_exe())
+            _home_bin = os.path.expanduser("~/bin")
+            for _p in [_ffmpeg_bin_dir, _home_bin]:
+                if _p not in os.environ.get("PATH", ""):
+                    os.environ["PATH"] = _p + os.pathsep + os.environ.get("PATH", "")
+        except Exception:
+            pass
+
         import whisper
         # Get file path from Telegram
         r = requests.get(f"{API}/getFile", params={"file_id": file_id}, timeout=10)
