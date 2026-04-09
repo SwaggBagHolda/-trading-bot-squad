@@ -103,6 +103,42 @@ TRADING_KEYWORDS = [
     "entry", "exit", "stop", "target", "win rate", "drawdown", "funded",
 ]
 
+# Phrases that signal Ty wants real research — triggers smart_research() automatically
+# in natural conversation without requiring /research command.
+NL_RESEARCH_TRIGGERS = [
+    "what are the best", "what's the best", "whats the best",
+    "how does", "how do", "how to",
+    "why is", "why does", "why are", "why do",
+    "find me", "find a ", "find the best", "find out",
+    "look up", "search for",
+    "tell me about", "explain ",
+    "what is a ", "what is an ", "what is the ",
+    "what's a ", "what's an ", "what's the ",
+    "who is ", "who are ", "who does ",
+    "when did ", "when does ", "when is ",
+    "where can i", "where do i", "where is the",
+    "look into", "research ",
+    "show me how", "show me what",
+    "is there a way", "is there an ",
+    "are there any", "what are some",
+    "which strategy", "which strategies", "which indicator", "which broker",
+    "what strategies", "what indicators", "what signals",
+    "best way to", "best time to", "best indicator",
+    "how much does", "how long does",
+    "give me info", "i need info", "what do you know about",
+]
+
+# Phrases that look like research triggers but are actually casual/status queries —
+# skip research routing for these.
+NL_RESEARCH_EXCLUDES = [
+    "how are you", "how are we", "how are the bots", "how are they",
+    "how much did we", "how much have we", "how much are we",
+    "what's up", "what is up", "whats up",
+    "what's going on", "what is going on",
+    "why are you", "why did you", "why are we",
+    "where are we", "where is apex", "where is nexus",
+]
+
 COMMAND_PHRASES = {
     "run a self check", "self check", "selfcheck", "run selfcheck", "check yourself",
     "check the logs", "bot status", "show status", "show me status", "how are the bots",
@@ -1967,6 +2003,42 @@ def handle_message(text, chat_id):
         result = create_pdf(pdf_title, pdf_content)
         pdf_msg = f"PDF saved: {result}" if "error" not in result.lower() else f"PDF failed: {result}"
         reply(pdf_msg)
+        return
+
+    # ── Natural language research detection ──────────────────────────────────
+    # Fires before the general AI catch-all. If Ty says anything research-like
+    # in natural conversation, smart_research() runs and cites real sources.
+    # No slash command needed.
+    _word_count_pre = len(text.strip().split())
+    _is_nl_research = (
+        _word_count_pre >= 4                                       # skip one-liners like "what's up"
+        and not text.strip().startswith("/")                       # not an explicit command
+        and any(trig in text_lower for trig in NL_RESEARCH_TRIGGERS)
+        and not any(excl in text_lower for excl in NL_RESEARCH_EXCLUDES)
+        and not any(text_lower.startswith(p) for p in [           # skip already-handled commands
+            "bot status", "show status", "show me status",
+            "how are the bots", "check bots", "bot health",
+            "pnl", "profit", "how much", "show pnl",
+        ])
+    )
+    if _is_nl_research:
+        send(chat_id, f"On it...")
+        raw = smart_research(text)
+        summary = ask_ai(
+            f'Ty asked: "{text}"\n\n'
+            f"Real data from search (use ONLY this — no fabrication):\n{raw[:2500]}\n\n"
+            f"Answer his question in 3-5 sentences using the data above. "
+            f"Cite specific source URLs or names. If it's market data, include exact numbers. "
+            f"Never add facts not present in the data above. "
+            f"Sound like a knowledgeable partner, not a search engine.",
+            history=_conversation_history[-MAX_HISTORY:] if _conversation_history else None,
+        ) or raw[:600]
+        msg = summary
+        # Append source URLs so Ty can verify
+        source_lines = [l.strip() for l in raw.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
+        if source_lines:
+            msg += "\n\nSources:\n" + "\n".join(source_lines[:5])
+        reply(msg)
         return
 
     # Everything else — detect personal vs trading, route to correct prompt
