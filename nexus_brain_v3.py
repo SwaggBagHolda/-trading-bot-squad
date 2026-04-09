@@ -2758,42 +2758,103 @@ def handle_message(text, chat_id):
         reply(msg)
         return
 
-    # Proof — real timestamps, URLs, trade counts, strategy sources
+    # Proof — HARD DATA ONLY. No emotional responses. No deflection.
     if cmd("/proof", "show proof", "prove it", "show me proof"):
-        from datetime import datetime as _dt
         hive = read_hive()
         perf = hive.get("bot_performance", {})
-        msg = "PROOF OF WORK\n━━━━━━━━━━━━━━━━━━━━━\n"
-        msg += f"Timestamp: {_dt.now().strftime('%Y-%m-%d %H:%M:%S EST')}\n\n"
-        # Bot trade counts
-        for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
-            bd = perf.get(bot, {}) if isinstance(perf.get(bot), dict) else {}
-            tc = bd.get("total_trades", 0)
-            wr = bd.get("win_rate", 0)
-            mode = bd.get("mode", "unknown")
-            msg += f"{bot}: {tc} trades | WR: {wr:.0f}% | Mode: {mode}\n"
-        # Strategy sources
-        msg += "\nSTRATEGY SOURCES (verified)\n"
-        msg += "APEX: EMA 9/21 + RSI(7) 80/20 scalp\n"
-        msg += "  tadonomics.com/best-indicators-for-scalping\n"
-        msg += "DRIFT: MACD(12,26,9) + RSI(14) — 73% WR\n"
-        msg += "  quantifiedstrategies.com/macd-and-rsi-strategy\n"
-        msg += "TITAN: Multi-EMA + VWAP confluence\n"
-        msg += "  medium.com/@redsword_23261\n"
-        msg += "SENTINEL: ICT FVG + 3:1 R:R — FTMO\n"
-        msg += "  innercircletrader.net/tutorials/fair-value-gap-trading-strategy\n"
-        # Training results
+        lines = [f"PROOF OF WORK — {datetime.now().strftime('%Y-%m-%d %H:%M:%S EST')}", "━" * 40]
+
+        # 1. RUNNING PROCESSES — actual PIDs
+        lines.append("\n1. RUNNING PROCESSES")
+        for name, script in [("NEXUS", "nexus_brain_v3.py"), ("APEX", "apex_coingecko.py"),
+                              ("SENTINEL", "sentinel_polymarket.py"), ("ORACLE", "oracle_listener.py"),
+                              ("SCHEDULER", "scheduler.py")]:
+            r = subprocess.run(["pgrep", "-f", script], capture_output=True, text=True)
+            pids = r.stdout.strip().replace("\n", ",")
+            lines.append(f"  {name}: {'PID ' + pids if pids else 'NOT RUNNING'}")
+
+        # 2. LAST 5 TRADES — from apex_state.json history + sentinel history
+        lines.append("\n2. LAST 5 TRADES")
+        trades_found = []
+        # APEX trades from state
+        apex_state_file = BASE / "shared" / "apex_state.json"
+        if apex_state_file.exists():
+            try:
+                ast = json.loads(apex_state_file.read_text())
+                for t in ast.get("history", [])[-5:]:
+                    trades_found.append(f"  APEX {t.get('direction','?')} {t.get('symbol','?')} | "
+                                       f"P&L: {t.get('pnl_pct',0):+.3f}% | {t.get('close_time', t.get('time','?'))[:19]}")
+            except Exception:
+                pass
+        # SENTINEL trades from history
+        sentinel_hist = BASE / "shared" / "sentinel_history.json"
+        if sentinel_hist.exists():
+            try:
+                sh = json.loads(sentinel_hist.read_text())
+                for t in sh[-5:]:
+                    trades_found.append(f"  SENTINEL {t.get('action','?')} {t.get('market','?')[:40]} | "
+                                       f"P&L: {t.get('pnl_pct',0):+.2f}% | {t.get('closed_at', t.get('opened_at','?'))[:19]}")
+            except Exception:
+                pass
+        if trades_found:
+            for t in trades_found[-5:]:
+                lines.append(t)
+        else:
+            # Fallback: hive_mind trade counts
+            for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
+                bd = perf.get(bot, {}) if isinstance(perf.get(bot), dict) else {}
+                lines.append(f"  {bot}: {bd.get('trades',0)} trades today | WR: {bd.get('win_rate',0)*100:.1f}% | P&L: ${bd.get('daily_pnl',0):+.2f}")
+
+        # 3. HYPERTRAIN — last run timestamp + WR results
+        lines.append("\n3. HYPERTRAIN RESULTS")
         import glob as _glob
         train_files = sorted(_glob.glob(str(BASE / "logs/training/squad_training_*.json")))
         if train_files:
             last = json.loads(Path(train_files[-1]).read_text())
-            msg += f"\nLast HyperTrain: {last.get('timestamp', 'unknown')}\n"
-            msg += f"Experiments: {last.get('experiments_per_bot', 0)}/bot\n"
-        # Backtest engine
-        msg += "\nBacktest: Real Coinbase OHLCV via ccxt + vectorbt\n"
-        msg += f"Assets: {', '.join(['BTC', 'ETH', 'SOL', 'ADA', 'AVAX', 'LINK', 'DOGE', 'DOT', 'XRP'])}\n"
-        msg += f"Exchange: Coinbase (paper mode)\n"
-        reply(msg)
+            lines.append(f"  Last run: {last.get('timestamp', 'unknown')[:19]}")
+            lines.append(f"  Experiments: {last.get('experiments_per_bot', 0)}/bot")
+            for bot, res in last.get("results", {}).items():
+                if isinstance(res, dict):
+                    lines.append(f"  {bot}: WR {res.get('best_win_rate',0):.1%} | Sharpe {res.get('best_sharpe',0):.2f} | {res.get('improvements',0)} improvements")
+        else:
+            winners_file = BASE / "memory" / "sentinel_winners.json"
+            if winners_file.exists():
+                try:
+                    wdata = json.loads(winners_file.read_text())
+                    lines.append(f"  Last run: {wdata.get('completed', 'unknown')[:19]}")
+                    lines.append(f"  Total experiments: {wdata.get('total_experiments', 0)}")
+                    for b in wdata.get("bots", []):
+                        lines.append(f"  {b['bot']}: {b.get('win_rate',0):.1f}% WR | top: {b.get('top_strategy','?')} {b.get('best_asset','?')} {b.get('best_timeframe','?')}")
+                except Exception:
+                    lines.append("  (error reading results)")
+            else:
+                lines.append("  No training results found")
+
+        # 4. STRATEGY SOURCES — verified URLs
+        lines.append("\n4. STRATEGY SOURCES")
+        lines.append("  APEX: EMA 9/21 + RSI(7) scalp → tadonomics.com/best-indicators-for-scalping")
+        lines.append("  DRIFT: MACD(12,26,9) + RSI(14) → quantifiedstrategies.com/macd-and-rsi-strategy")
+        lines.append("  TITAN: Multi-EMA + VWAP → medium.com/@redsword_23261")
+        lines.append("  SENTINEL: Polymarket conviction → gamma-api.polymarket.com")
+        lines.append("  Backtest data: Coinbase OHLCV via ccxt (real candles)")
+
+        # 5. PENDING CHECKLIST ITEMS
+        lines.append("\n5. PENDING TASKS")
+        checklist_path = BASE / "memory" / "tasks" / "master_checklist.md"
+        if checklist_path.exists():
+            cl = checklist_path.read_text().splitlines()
+            pending = [l for l in cl if "| pending |" in l.lower() or "| blocked |" in l.lower() or "| in_progress |" in l.lower()]
+            if pending:
+                for l in pending[:10]:
+                    parts = [p.strip() for p in l.split("|") if p.strip()]
+                    if len(parts) >= 4:
+                        lines.append(f"  [{parts[3].upper()}] {parts[1]}")
+            else:
+                lines.append("  All tasks complete")
+        else:
+            lines.append("  No checklist found")
+
+        reply("\n".join(lines))
         return
 
     # Browse — NEXUS browses a URL and sends summary + screenshot
@@ -3069,93 +3130,7 @@ def handle_message(text, chat_id):
             reply(tools_msg)
         return
 
-    # /proof — show citable, verifiable proof of all recent activity
-    if cmd("/proof", "show proof", "prove it", "show me proof"):
-        hive = read_hive()
-        lines = ["PROOF OF WORK\n━━━━━━━━━━━━━━━━━━━━━"]
-
-        # HyperTrain last run
-        winners_file = BASE / "memory" / "sentinel_winners.json"
-        if winners_file.exists():
-            try:
-                wdata = json.loads(winners_file.read_text())
-                ts    = wdata.get("completed", "unknown")
-                total = wdata.get("total_experiments", 0)
-                etime = wdata.get("elapsed_seconds", 0)
-                lines.append(f"\nHYPERTRAIN — Last run: {ts[:19]}")
-                lines.append(f"  {total:,} experiments in {etime:.0f}s on real Coinbase OHLCV data")
-                lines.append(f"  Data source: {wdata.get('data_source','Coinbase public exchange API')}")
-                for b in wdata.get("bots", []):
-                    wr = b.get("win_rate", 0)
-                    top = b.get("top_strategy","?")
-                    asset = b.get("best_asset","?")
-                    tf = b.get("best_timeframe","?")
-                    bwr = b.get("best_wr",0)
-                    lines.append(f"  {b['bot']}: {wr:.1f}% overall WR | top: {top} {asset} {tf} → {bwr}% WR")
-                # Sample real trades from DB
-                try:
-                    import sqlite3
-                    conn = sqlite3.connect(BASE / "logs" / "sentinel_research.db")
-                    sample = conn.execute(
-                        "SELECT strategy, asset, timeframe, pnl_pct, win FROM experiments "
-                        "WHERE ftmo_compliant=1 ORDER BY RANDOM() LIMIT 3"
-                    ).fetchall()
-                    conn.close()
-                    if sample:
-                        lines.append("  Sample backtest trades:")
-                        for s in sample:
-                            outcome = "WIN" if s[4] else "LOSS"
-                            lines.append(f"    {outcome} | {s[0]} {s[1]} {s[2]} | {s[3]:+.3f}%")
-                except Exception:
-                    pass
-            except Exception as e:
-                lines.append(f"  (error reading results: {e})")
-        else:
-            lines.append("\nHYPERTRAIN — No results file found")
-
-        # Last AutoResearch
-        research_log = BASE / "memory" / "research"
-        recent_query = "[no recent search logged]"
-        try:
-            bugs_log = (BASE / "memory" / "research" / "bugs.md").read_text() if \
-                       (BASE / "memory" / "research" / "bugs.md").exists() else ""
-            lines.append("\nAUTORESEARCH METHODOLOGY (Karpathy-aligned):")
-            lines.append("  1. Random parameter sampling from defined bot-specific space")
-            lines.append("  2. Each set tested against real Coinbase 90-day OHLCV candles")
-            lines.append("  3. Winners kept (WR>50%, Sharpe>1, n>=50 trades, Sharpe<1000)")
-            lines.append("  4. Losers blacklisted — never retested")
-            lines.append("  5. Every 500 experiments: AI proposes next hypothesis via OpenRouter")
-            lines.append("  6. Process repeats 10,000x per bot nightly while Ty sleeps")
-            lines.append("  Source: sentinel_research-2.py (real Coinbase data, zero simulation)")
-        except Exception:
-            pass
-
-        # Current APEX strategy
-        apex_state_file = BASE / "shared" / "apex_state.json"
-        if apex_state_file.exists():
-            try:
-                apex_st = json.loads(apex_state_file.read_text())
-                mode_str = "PAPER" if PAPER_MODE else "LIVE"
-                active = apex_st.get("active")
-                best_params = hive.get("apex_best_params", {})
-                wl = hive.get("apex_daily_watchlist", {})
-                lines.append(f"\nAPEX CURRENT STATE [{mode_str}]:")
-                if active:
-                    lines.append(f"  IN TRADE: {active.get('direction')} {active.get('symbol')} @ ${active.get('entry',0):,.4f}")
-                    lines.append(f"  Signal type: {active.get('signal_type','?')} | Entered: {active.get('time','?')[:19]}")
-                else:
-                    lines.append(f"  Idle — hunting top movers")
-                if wl:
-                    lines.append(f"  Watchlist: {', '.join(wl.get('assets',[]))}")
-                    lines.append(f"  Last scanned: {wl.get('scanned','?')[:19]}")
-                if best_params:
-                    lines.append(f"  Params from: HyperTrain (sentinel_research-2.py)")
-                    lines.append(f"  RSI entry: {best_params.get('rsi_entry',0):.1f} | stop: {best_params.get('stop_loss_pct',0)*100:.2f}% | RR: {best_params.get('reward_ratio',0):.2f}x")
-            except Exception as e:
-                lines.append(f"  (error reading state: {e})")
-
-        reply("\n".join(lines))
-        return
+    # /proof duplicate removed — single handler exists above (line ~2762)
 
     # /checklist — show master checklist
     if cmd("/checklist", "show checklist", "task list", "what's pending"):
