@@ -337,6 +337,80 @@ def tg(msg):
     except:
         pass
 
+# ── Triple EMA + RSI Strategy (83% WR documented) ────────────────────────────
+# Source: https://daviddtech.medium.com/83-win-rate-5-minute-ultimate-scalping-trading-strategy-89c4e89fb364
+# Rules: EMA 9 > 55 > 200 alignment + RSI midline (>51 long, <49 short) on 5m candles
+# Cached per asset, refreshed every 60s to avoid hammering Coinbase API
+
+_ema_cache = {}  # product -> {"emas": {9:v, 55:v, 200:v}, "rsi": v, "ts": datetime}
+EMA_CACHE_TTL = 60  # seconds
+
+def _fetch_5m_candles(product, limit=210):
+    """Fetch 5-minute candles from Coinbase public API (no auth needed)."""
+    try:
+        # Coinbase uses product_id like "BTC-USD" and granularity in seconds
+        url = f"https://api.exchange.coinbase.com/products/{product}/candles"
+        r = requests.get(url, params={"granularity": 300}, timeout=10)
+        if r.status_code == 200:
+            data = r.json()[:limit]  # [[time, low, high, open, close, volume], ...]
+            closes = [float(c[4]) for c in reversed(data)]  # oldest first
+            return closes
+    except Exception as e:
+        print(f"[APEX] Candle fetch error for {product}: {e}")
+    return []
+
+def _calc_ema(prices, period):
+    """Calculate EMA for a price series."""
+    if len(prices) < period:
+        return None
+    k = 2 / (period + 1)
+    ema = sum(prices[:period]) / period  # SMA seed
+    for p in prices[period:]:
+        ema = p * k + ema * (1 - k)
+    return ema
+
+def _calc_rsi(prices, period=14):
+    """Calculate RSI from price series."""
+    if len(prices) < period + 1:
+        return None
+    gains, losses = [], []
+    for i in range(1, len(prices)):
+        delta = prices[i] - prices[i-1]
+        gains.append(max(delta, 0))
+        losses.append(max(-delta, 0))
+    avg_gain = sum(gains[-period:]) / period
+    avg_loss = sum(losses[-period:]) / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))
+
+def get_ema_rsi_signal(product):
+    """Check triple EMA alignment + RSI midline for a product.
+    Returns: 'BUY', 'SELL', or None."""
+    now = datetime.now()
+    cached = _ema_cache.get(product)
+    if cached and (now - cached["ts"]).total_seconds() < EMA_CACHE_TTL:
+        emas = cached["emas"]
+        rsi = cached["rsi"]
+    else:
+        closes = _fetch_5m_candles(product)
+        if len(closes) < 200:
+            return None
+        emas = {9: _calc_ema(closes, 9), 55: _calc_ema(closes, 55), 200: _calc_ema(closes, 200)}
+        rsi = _calc_rsi(closes)
+        if any(v is None for v in emas.values()) or rsi is None:
+            return None
+        _ema_cache[product] = {"emas": emas, "rsi": rsi, "ts": now}
+
+    # Triple EMA alignment + RSI midline filter
+    if emas[9] > emas[55] > emas[200] and rsi > 51:
+        return "BUY"
+    if emas[9] < emas[55] < emas[200] and rsi < 49:
+        return "SELL"
+    return None
+
+
 def poll_prices(price_history):
     """Poll all assets in current WATCHLIST, append to rolling windows."""
     current = {}
@@ -434,6 +508,24 @@ def best_signal(price_history, current_prices, min_momentum_override=None):
                             "direction": direction, "signal_type": "fvg",
                             "fvg_zone": f"${fvg_low:.4f}–${fvg_high:.4f}",
                         }
+
+        # ── Signal 3: Triple EMA alignment + RSI midline (83% WR documented) ──
+        # Source: https://daviddtech.medium.com/83-win-rate-5-minute-ultimate-scalping-trading-strategy-89c4e89fb364
+        # Strongest signal — when 5m candle EMAs 9>55>200 align with RSI midline
+        ema_direction = get_ema_rsi_signal(product)
+        if ema_direction:
+            if ema_direction == "SELL" and not PAPER_MODE and not LIVE_SHORTS_ENABLED:
+                pass
+            else:
+                # EMA alignment is high-conviction — score it above momentum
+                score = abs(move) + 0.005  # boost above raw momentum
+                if score > best_score:
+                    best_score = score
+                    best_sig = {
+                        "symbol": asset["symbol"], "product": product,
+                        "price": latest, "momentum": move,
+                        "direction": ema_direction, "signal_type": "ema_triple",
+                    }
 
     return best_sig
 
