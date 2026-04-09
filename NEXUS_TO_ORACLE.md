@@ -2489,3 +2489,24 @@ Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace aler
 
 ## [2026-04-09 13:00]
 AutoResearch started PID 36275 at 2026-04-09T13:00:04.229573
+
+## [2026-04-09 13:18]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 13:18]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 13:18]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 13:18]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 13:18]
+Proactive heartbeat sent: APEX's best backtest right now is mean reversion on SPY 4h — 72.53% WR, not the ...
+
+## [2026-04-09 13:18]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Kicked auto_improver (1 tasks)', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 13:30]
+AutoResearch started PID 95201 at 2026-04-09T13:30:19.953168

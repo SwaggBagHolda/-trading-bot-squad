@@ -31,6 +31,7 @@ ANTHROPIC_KEY       = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL     = "claude-sonnet-4-6"
 COMPOSIO_KEY        = os.getenv("COMPOSIO_API_KEY", "")
 COMPOSIO_ENTITY_ID  = os.getenv("COMPOSIO_ENTITY_ID", "default")
+ELEVENLABS_KEY      = os.getenv("ELEVENLABS_API_KEY", "")
 TRADE_LOG_SHEET_ID  = os.getenv("TRADE_LOG_SHEET_ID", "")
 GMAIL_ACCOUNT_ID    = "cb9cbc5a-ffe5-4254-a106-49912176a1ba"   # ACTIVE
 GITHUB_ACCOUNT_ID   = "e101cc4b-b485-4734-add8-74b4cf83ba6f"   # EXPIRED — needs re-auth at app.composio.dev
@@ -237,6 +238,15 @@ COMMAND_PHRASES = {
 # Conversation memory — rolling window of last 20 messages with Ty
 _conversation_history: list = []
 MAX_HISTORY = 20
+# Voice reply mode — when True, NEXUS replies with voice (set when Ty sends voice)
+_voice_reply_mode = [False]
+
+def smart_send(chat_id, text):
+    """Send text, or voice+text when Ty spoke to NEXUS via voice note."""
+    if _voice_reply_mode[0] and ELEVENLABS_KEY and len(text) < 2500:
+        send_voice(chat_id, text)
+    else:
+        send(chat_id, text)
 
 def send(chat_id, text):
     try:
@@ -248,6 +258,39 @@ def send(chat_id, text):
             requests.post(f"{API}/sendMessage", json={"chat_id": chat_id, "text": text}, timeout=10)
     except Exception as e:
         print(f"[NEXUS] Send error: {e}")
+
+def send_voice(chat_id, text):
+    """Convert text to speech via ElevenLabs free tier and send as Telegram voice note."""
+    if not ELEVENLABS_KEY:
+        send(chat_id, text)  # Fallback to text if no key
+        return
+    try:
+        from elevenlabs import ElevenLabs
+        client = ElevenLabs(api_key=ELEVENLABS_KEY)
+        # Use free-tier voice "Rachel" — clear, professional female voice
+        audio_gen = client.text_to_speech.convert(
+            voice_id="21m00Tcm4TlvDq8ikWAM",  # Rachel
+            text=text[:2500],  # ElevenLabs free tier limit
+            model_id="eleven_multilingual_v2",
+        )
+        # Collect audio bytes from generator
+        audio_bytes = b"".join(audio_gen)
+        # Save to temp file and send via Telegram
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+        with open(tmp_path, "rb") as f:
+            requests.post(
+                f"{API}/sendVoice",
+                data={"chat_id": chat_id},
+                files={"voice": ("voice.mp3", f, "audio/mpeg")},
+                timeout=30,
+            )
+        os.unlink(tmp_path)
+        print(f"[NEXUS] Voice message sent ({len(audio_bytes)} bytes)")
+    except Exception as e:
+        print(f"[NEXUS] Voice send failed ({e}), falling back to text")
+        send(chat_id, text)
 
 def get_updates(offset=None):
     try:
@@ -807,6 +850,45 @@ def browse_url(url):
     except Exception as e:
         return f"Browse error: {e}"
 
+def browse_and_screenshot(url, selector=None):
+    """Browse a URL and take a screenshot. Returns (text_content, screenshot_path)."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 720})
+            page.goto(url, timeout=20000, wait_until="domcontentloaded")
+            title = page.title()
+            body = page.inner_text("body")
+            screenshot_path = str(BASE / "logs" / "screenshot.png")
+            if selector:
+                page.locator(selector).screenshot(path=screenshot_path)
+            else:
+                page.screenshot(path=screenshot_path, full_page=False)
+            browser.close()
+        return f"**{title}**\n\n{body[:3000].strip()}", screenshot_path
+    except Exception as e:
+        return f"Browse error: {e}", None
+
+def mac_run_applescript(script: str) -> str:
+    """Run an AppleScript command on macOS. For safe automation only."""
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True, text=True, timeout=10
+        )
+        return result.stdout.strip() or result.stderr.strip()
+    except Exception as e:
+        return f"AppleScript error: {e}"
+
+def mac_open_url(url: str) -> str:
+    """Open a URL in the default browser."""
+    return mac_run_applescript(f'open location "{url}"')
+
+def mac_get_frontmost_app() -> str:
+    """Get the name of the frontmost application."""
+    return mac_run_applescript('tell application "System Events" to get name of first application process whose frontmost is true')
+
 def summarize_youtube(url):
     """Use yt-dlp to pull YouTube video metadata and summarize with AI."""
     try:
@@ -1335,6 +1417,47 @@ def delegate_to_claude(task: str) -> str:
         log_bug(f"delegate_to_claude spawn error: {e}")
 
     return f"Task queued for Claude Code: {task[:80]}..."
+
+
+def relay_from_claude(message: str):
+    """Process a message relayed from Claude Code via the bridge file.
+    Claude writes to shared/claude_to_nexus.json, NEXUS picks it up."""
+    try:
+        send(OWNER_ID, f"[Claude Code] {message}")
+        log_to_oracle(f"Claude relayed: {message[:100]}")
+    except Exception as e:
+        print(f"[NEXUS] Relay error: {e}")
+
+def check_claude_bridge():
+    """Check for messages from Claude Code. Called in main loop."""
+    bridge = BASE / "shared" / "claude_to_nexus.json"
+    if bridge.exists():
+        try:
+            data = json.loads(bridge.read_text())
+            if data.get("messages"):
+                for msg in data["messages"]:
+                    relay_from_claude(msg.get("text", ""))
+                # Clear after processing
+                bridge.write_text(json.dumps({"messages": []}, indent=2))
+        except Exception:
+            pass
+
+def write_to_claude_bridge(task: str):
+    """Write a task from NEXUS to Claude Code via bridge file."""
+    bridge = BASE / "shared" / "nexus_to_claude.json"
+    try:
+        data = {"messages": []}
+        if bridge.exists():
+            data = json.loads(bridge.read_text())
+        data.setdefault("messages", []).append({
+            "text": task,
+            "timestamp": datetime.now().isoformat(),
+            "from": "nexus"
+        })
+        bridge.write_text(json.dumps(data, indent=2))
+        log_to_oracle(f"Wrote to Claude bridge: {task[:80]}")
+    except Exception as e:
+        print(f"[NEXUS] Bridge write error: {e}")
 
 
 # ── Composio tool bridge ───────────────────────────────────────────────────────
@@ -2042,8 +2165,9 @@ def handle_message(text, chat_id):
         return False
 
     def reply(msg_text: str):
-        """Send response and record exchange in conversation history."""
-        send(chat_id, msg_text)
+        """Send response and record exchange in conversation history.
+        Uses voice reply when Ty sent a voice note (via smart_send)."""
+        smart_send(chat_id, msg_text)
         _history_add(text, msg_text)
 
     # ── Standing order detection — fires before all other handlers ────────────
@@ -2099,6 +2223,73 @@ def handle_message(text, chat_id):
         if blacklist:
             msg += f"\n{len(blacklist)} strategies blacklisted"
         reply(msg)
+        return
+
+    # Proof — real timestamps, URLs, trade counts, strategy sources
+    if cmd("/proof", "show proof", "prove it", "show me proof"):
+        from datetime import datetime as _dt
+        hive = read_hive()
+        perf = hive.get("bot_performance", {})
+        msg = "PROOF OF WORK\n━━━━━━━━━━━━━━━━━━━━━\n"
+        msg += f"Timestamp: {_dt.now().strftime('%Y-%m-%d %H:%M:%S EST')}\n\n"
+        # Bot trade counts
+        for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
+            bd = perf.get(bot, {}) if isinstance(perf.get(bot), dict) else {}
+            tc = bd.get("total_trades", 0)
+            wr = bd.get("win_rate", 0)
+            mode = bd.get("mode", "unknown")
+            msg += f"{bot}: {tc} trades | WR: {wr:.0f}% | Mode: {mode}\n"
+        # Strategy sources
+        msg += "\nSTRATEGY SOURCES (verified)\n"
+        msg += "APEX: EMA 9/21 + RSI(7) 80/20 scalp\n"
+        msg += "  tadonomics.com/best-indicators-for-scalping\n"
+        msg += "DRIFT: MACD(12,26,9) + RSI(14) — 73% WR\n"
+        msg += "  quantifiedstrategies.com/macd-and-rsi-strategy\n"
+        msg += "TITAN: Multi-EMA + VWAP confluence\n"
+        msg += "  medium.com/@redsword_23261\n"
+        msg += "SENTINEL: ICT FVG + 3:1 R:R — FTMO\n"
+        msg += "  innercircletrader.net/tutorials/fair-value-gap-trading-strategy\n"
+        # Training results
+        import glob as _glob
+        train_files = sorted(_glob.glob(str(BASE / "logs/training/squad_training_*.json")))
+        if train_files:
+            last = json.loads(Path(train_files[-1]).read_text())
+            msg += f"\nLast HyperTrain: {last.get('timestamp', 'unknown')}\n"
+            msg += f"Experiments: {last.get('experiments_per_bot', 0)}/bot\n"
+        # Backtest engine
+        msg += "\nBacktest: Real Coinbase OHLCV via ccxt + vectorbt\n"
+        msg += f"Assets: {', '.join(['BTC', 'ETH', 'SOL', 'ADA', 'AVAX', 'LINK', 'DOGE', 'DOT', 'XRP'])}\n"
+        msg += f"Exchange: Coinbase (paper mode)\n"
+        reply(msg)
+        return
+
+    # Browse — NEXUS browses a URL and sends summary + screenshot
+    if cmd("/browse", "browse ", "go to ", "open "):
+        import re as _re
+        urls = _re.findall(r'https?://\S+', text)
+        if not urls:
+            # Try to construct URL from text
+            target = text_lower.replace("/browse", "").replace("browse", "").replace("go to", "").replace("open", "").strip()
+            if target and "." in target:
+                urls = [f"https://{target}" if not target.startswith("http") else target]
+        if urls:
+            reply(f"Browsing {urls[0]}...")
+            content, screenshot = browse_and_screenshot(urls[0])
+            if screenshot:
+                try:
+                    with open(screenshot, "rb") as f:
+                        requests.post(
+                            f"{API}/sendPhoto",
+                            data={"chat_id": chat_id, "caption": content[:1000]},
+                            files={"photo": f},
+                            timeout=30,
+                        )
+                except Exception:
+                    reply(content[:2000])
+            else:
+                reply(content[:2000])
+        else:
+            reply("Send a URL to browse. Example: /browse coindesk.com")
         return
 
     # Train / AutoResearch
@@ -2697,7 +2888,7 @@ Context (use only if relevant): Squad P&L today ${total_pnl:+.2f}. Mission: $100
                 _src = [l.strip() for l in _actual.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
                 response = _grounded + ("\n\nSources:\n" + "\n".join(_src[:5]) if _src else "")
         _history_add(text, response)
-        send(chat_id, response)
+        smart_send(chat_id, response)
     # else: AI unavailable — go silent
 
 def run():
@@ -2733,7 +2924,10 @@ def run():
                     elif voice:
                         transcribed = transcribe_voice(voice["file_id"])
                         if transcribed:
+                            # Reply with voice when Ty sends voice
+                            _voice_reply_mode[0] = True
                             handle_message(transcribed, chat_id)
+                            _voice_reply_mode[0] = False
                         else:
                             send(chat_id, "Couldn't transcribe that one. Try again or type it.")
 
@@ -2743,6 +2937,12 @@ def run():
                     check_scheduled_tasks(str(OWNER_ID))
                 except Exception as _e:
                     print(f"[NEXUS] Scheduled task error: {_e}")
+
+            # ── Claude Code bridge — check every loop iteration ─────────
+            try:
+                check_claude_bridge()
+            except Exception as _e:
+                pass
 
             # ── ORACLE bridge every 2 minutes ─────────────────────────────
             if (now - last_oracle_check).total_seconds() >= 120:

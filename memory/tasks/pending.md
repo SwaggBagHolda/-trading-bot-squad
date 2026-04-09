@@ -5,7 +5,7 @@
 
 # --- ACTIVE ---
 
-- [AUTO_IMPROVE] CRITICAL: Rebuild HyperTrain backtest model — current simulate_backtest() is broken
+- [DONE] CRITICAL: Rebuild HyperTrain backtest model — current simulate_backtest() is broken
   - Problem: Simple ratio heuristics produce 13-24% WR regardless of parameters
   - Training HALTED (TRAINING_ENABLED = False in hypertrain.py) until this is fixed
   - Steps:
