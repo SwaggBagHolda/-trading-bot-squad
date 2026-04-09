@@ -1,60 +1,35 @@
 {
-  "completed": "2026-04-09T03:43:56.861942",
+  "completed": "2026-04-09T06:39:55.170118",
   "total_experiments": 40000,
-  "elapsed_seconds": 1351.6,
+  "elapsed_seconds": 0.3,
   "data_source": "Coinbase public exchange API \u2014 real OHLCV",
   "bots": [
     {
-      "bot": "APEX",
-      "win_rate": 16.09,
-      "avg_pnl": -0.04078837999999999,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.1
-    },
-    {
-      "bot": "DRIFT",
-      "win_rate": 18.78,
-      "avg_pnl": -0.09187224000000029,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.1
+      "bot": "SENTINEL",
+      "win_rate": 0,
+      "winners": 0,
+      "error": "database is locked"
     },
     {
       "bot": "TITAN",
-      "win_rate": 25.36,
-      "avg_pnl": -0.08919401000000024,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.1
+      "win_rate": 0,
+      "winners": 0,
+      "error": "database is locked"
     },
     {
-      "bot": "SENTINEL",
-      "win_rate": 15.98,
-      "avg_pnl": -0.05981216000000028,
-      "winners": 20,
-      "top_strategy": "mean_reversion",
-      "best_asset": "AVAX/USD",
-      "best_timeframe": "6h",
-      "best_wr": 84.3
+      "bot": "APEX",
+      "win_rate": 0,
+      "winners": 0,
+      "error": "database is locked"
+    },
+    {
+      "bot": "DRIFT",
+      "win_rate": 0,
+      "winners": 0,
+      "error": "database is locked"
     }
   ],
   "top_strategies": [
-    {
-      "strategy": "mean_reversion",
-      "asset": "AVAX/USD",
-      "timeframe": "6h",
-      "win_rate": 84.3,
-      "avg_pnl": 0.8879,
-      "sharpe": 9402499535131.938,
-      "experiments": 484
-    },
     {
       "strategy": "mean_reversion",
       "asset": "SPY",
@@ -135,6 +110,15 @@
       "avg_pnl": 0.5735,
       "sharpe": 1.346,
       "experiments": 92
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "TSLA",
+      "timeframe": "1h",
+      "win_rate": 69.07,
+      "avg_pnl": 0.5691,
+      "sharpe": 1.39,
+      "experiments": 97
     }
   ]
 }

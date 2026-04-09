@@ -31,25 +31,17 @@
       "win_rate": 70.73,
       "avg_pnl": 0.6153,
       "sharpe": 1.466
-    }
-  ],
-  "sentinel_blacklist": [
-    {
-      "strategy": "rsi_divergence",
-      "asset": "AVAX/USD",
-      "timeframe": "1m",
-      "win_rate": 8.33,
-      "avg_pnl": -0.2214,
-      "reason": "consistently_unprofitable"
     },
     {
       "strategy": "mean_reversion",
-      "asset": "BTC/USD",
-      "timeframe": "6h",
-      "win_rate": 80.0,
-      "avg_pnl": -0.2203,
-      "reason": "consistently_unprofitable"
-    },
+      "asset": "OIL",
+      "timeframe": "4h",
+      "win_rate": 67.9,
+      "avg_pnl": 0.6046,
+      "sharpe": 1.433
+    }
+  ],
+  "sentinel_blacklist": [
     {
       "strategy": "support_resistance",
       "asset": "BTC/USD",
@@ -72,14 +64,6 @@
       "timeframe": "1m",
       "win_rate": 69.97,
       "avg_pnl": -0.0828,
-      "reason": "consistently_unprofitable"
-    },
-    {
-      "strategy": "rsi_divergence",
-      "asset": "DOGE/USD",
-      "timeframe": "5m",
-      "win_rate": 73.68,
-      "avg_pnl": -0.0476,
       "reason": "consistently_unprofitable"
     },
     {
@@ -113,12 +97,36 @@
       "win_rate": 51.96,
       "avg_pnl": -0.0098,
       "reason": "consistently_unprofitable"
+    },
+    {
+      "strategy": "ema_cross",
+      "asset": "LINK/USD",
+      "timeframe": "1m",
+      "win_rate": 26.98,
+      "avg_pnl": -0.0053,
+      "reason": "consistently_unprofitable"
+    },
+    {
+      "strategy": "trend_following",
+      "asset": "DOGE/USD",
+      "timeframe": "1m",
+      "win_rate": 9.83,
+      "avg_pnl": -0.0004,
+      "reason": "consistently_unprofitable"
+    },
+    {
+      "strategy": "ema_cross",
+      "asset": "DOGE/USD",
+      "timeframe": "1m",
+      "win_rate": 5.34,
+      "avg_pnl": 0.0034,
+      "reason": "consistently_unprofitable"
     }
   ],
-  "sentinel_last_trained": "2026-04-09T03:43:56.857462",
+  "sentinel_last_trained": "2026-04-09T06:39:55.169361",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": 0.05,
+      "daily_pnl": 0.67,
       "trades": 1,
       "wins": 1,
       "win_rate": 1.0,
@@ -257,20 +265,28 @@
       "win_rate": 70.73,
       "avg_pnl": 0.6153,
       "sharpe": 1.466
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "OIL",
+      "timeframe": "4h",
+      "win_rate": 67.9,
+      "avg_pnl": 0.6046,
+      "sharpe": 1.433
     }
   ],
-  "apex_last_trained": "2026-04-09T03:27:05.362589",
+  "apex_last_trained": "2026-04-09T06:39:06.058466",
   "apex_best_params": {
-    "risk_per_trade": 0.0111,
-    "reward_ratio": 2.4944,
-    "stop_loss_pct": 0.0198,
-    "trailing_stop_pct": 0.0252,
-    "rsi_entry": 40.4321,
-    "rsi_exit": 62.0651,
-    "ema_fast": 5.6154,
-    "ema_slow": 23.9812,
-    "volume_multiplier": 2.2171,
-    "min_rr": 2.1134
+    "risk_per_trade": 0.0077,
+    "reward_ratio": 1.9471,
+    "stop_loss_pct": 0.0153,
+    "trailing_stop_pct": 0.025,
+    "rsi_entry": 30.5138,
+    "rsi_exit": 69.7218,
+    "ema_fast": 7.3462,
+    "ema_slow": 20.6075,
+    "volume_multiplier": 2.1505,
+    "min_rr": 2.3042
   },
   "drift_top_strategies": [
     {
@@ -304,20 +320,28 @@
       "win_rate": 70.73,
       "avg_pnl": 0.6153,
       "sharpe": 1.466
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "OIL",
+      "timeframe": "4h",
+      "win_rate": 67.9,
+      "avg_pnl": 0.6046,
+      "sharpe": 1.433
     }
   ],
-  "drift_last_trained": "2026-04-09T03:32:42.084755",
+  "drift_last_trained": "2026-04-09T06:44:59.132361",
   "drift_best_params": {
-    "risk_per_trade": 0.0108,
-    "reward_ratio": 2.2337,
-    "stop_loss_pct": 0.0286,
-    "trailing_stop_pct": 0.0362,
-    "rsi_entry": 40.7989,
-    "rsi_exit": 70.3575,
-    "ema_fast": 13.7491,
-    "ema_slow": 47.0889,
-    "volume_multiplier": 1.4327,
-    "min_rr": 2.4417
+    "risk_per_trade": 0.0195,
+    "reward_ratio": 2.2936,
+    "stop_loss_pct": 0.0269,
+    "trailing_stop_pct": 0.0395,
+    "rsi_entry": 37.6562,
+    "rsi_exit": 69.8369,
+    "ema_fast": 16.1177,
+    "ema_slow": 38.555,
+    "volume_multiplier": 2.457,
+    "min_rr": 3.4578
   },
   "titan_top_strategies": [
     {
@@ -486,9 +510,67 @@
       "outcome": "win",
       "momentum": -0.004213,
       "fvg_zone": null
+    },
+    {
+      "ts": "2026-04-09T06:39:21.108645",
+      "symbol": "FARTCOIN",
+      "product": "FARTCOIN-USD",
+      "direction": "BUY",
+      "signal_type": "momentum",
+      "entry": 0.1764,
+      "exit": 0.17785,
+      "pnl_pct": 0.00822,
+      "pnl_usd": 0.675,
+      "hold_secs": 1291.708251,
+      "reason": "trail",
+      "outcome": "win",
+      "momentum": 0.006562,
+      "fvg_zone": null
     }
   ],
-  "apex_lessons_updated": "2026-04-09T06:11:38.196165",
+  "apex_lessons_updated": "2026-04-09T06:39:21.108657",
   "hive_last_cleaned": "2026-04-09T06:30:00",
-  "hive_clean_note": "Artifact Sharpe > 1000 entries removed. Min 50 trades enforced."
+  "hive_clean_note": "Artifact Sharpe > 1000 entries removed. Min 50 trades enforced.",
+  "strategy_research_sources": {
+    "researched": "2026-04-09",
+    "APEX": {
+      "strategy": "RSI(2-3) extreme mean reversion, EMA(9)+EMA(20), Bollinger Bands",
+      "rsi_thresholds": "entry < 15 (oversold), exit > 50 (momentum loss)",
+      "expected_wr": "65-75%",
+      "sources": [
+        "https://www.mc2.fi/blog/best-rsi-for-scalping",
+        "https://www.xs.com/en/blog/1-minute-scalping-strategy/",
+        "https://forextester.com/blog/bollinger-bands-rsi-stochastic-scalping-strategy/"
+      ]
+    },
+    "DRIFT": {
+      "strategy": "RSI(14)+MACD(12,26,9)+volume spike >120%, 20/50-day MA structure",
+      "entry": "RSI oversold + MACD bullish crossover + volume spike confluence",
+      "expected_wr": "60-70%",
+      "sources": [
+        "https://www.hyrotrader.com/blog/crypto-swing-trading-navigating-bull-and-bear-markets/",
+        "https://www.altrady.com/blog/swing-trading/trend-breakout-moving-average-setups-crypto-swing-trading"
+      ]
+    },
+    "TITAN": {
+      "strategy": "Anchored VWAP + ICT Order Blocks + 200-day EMA trend filter",
+      "entry": "Price touches weekly AVWAP in trend direction, confirmed by order block",
+      "expected_wr": "Institutional consensus \u2014 highest probability documented setups",
+      "sources": [
+        "https://www.trader-dale.com/master-anchored-vwap-3-simple-strategies-for-smarter-trading/",
+        "https://www.luxalgo.com/blog/ict-trader-concepts-order-blocks-unpacked/",
+        "https://www.tradingsim.com/blog/anchored-vwap-strategies"
+      ]
+    },
+    "SENTINEL": {
+      "strategy": "0.5% risk/trade, conservative RSI triggers, 2:1+ R:R, daily stop at 3%",
+      "entry": "Only high-probability setups, halt after 3 consecutive losses",
+      "expected_wr": "55-65% (FTMO passed at 72% WR per documented example)",
+      "sources": [
+        "https://tradelikemaster.com/blog/how-to-pass-ftmo-challenge-2026-complete-guide",
+        "https://propjournal.net/guides/how-to-pass-ftmo",
+        "https://academy.ftmo.com/lesson/maximum-daily-loss/"
+      ]
+    }
+  }
 }
