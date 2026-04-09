@@ -2282,3 +2282,45 @@ AutoResearch started PID 1144 at 2026-04-09T07:17:24.207912
 
 ## [2026-04-09 07:53]
 [GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 08:06]
+Proactive heartbeat sent: Squad has run 1 trades today for $+0.67 total. APEX 1 trades, $+0.67....
+
+## [2026-04-09 08:06]
+Heartbeat safety checks: ["Restarted: ['scheduler.py', 'paper_trading.py']", 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 08:12]
+AutoResearch started PID 1881 at 2026-04-09T08:12:33.898433
+
+## [2026-04-09 08:17]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 08:18]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 08:18]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 08:18]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 08:31]
+Proactive heartbeat sent: Squad has run 1 trades today for $+0.67 total. APEX 1 trades, $+0.67....
+
+## [2026-04-09 08:31]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 08:48]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 08:48]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 08:48]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 08:56]
+Proactive heartbeat sent: Squad has run 1 trades today for $+0.67 total. APEX 1 trades, $+0.67....
+
+## [2026-04-09 08:56]
+Heartbeat safety checks: ['Live P&L pace alert: $+0.00']

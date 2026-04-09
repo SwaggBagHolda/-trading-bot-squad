@@ -46,40 +46,40 @@
       "strategy": "support_resistance",
       "asset": "BTC/USD",
       "timeframe": "6h",
-      "win_rate": 42.02,
-      "avg_pnl": -0.1092,
+      "win_rate": 43.13,
+      "avg_pnl": -0.104,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "session_open",
       "asset": "LINK/USD",
       "timeframe": "1m",
-      "win_rate": 49.68,
-      "avg_pnl": -0.0863,
+      "win_rate": 49.63,
+      "avg_pnl": -0.0856,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "rsi_divergence",
       "asset": "LINK/USD",
       "timeframe": "1m",
-      "win_rate": 69.97,
-      "avg_pnl": -0.0828,
+      "win_rate": 69.87,
+      "avg_pnl": -0.0821,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "ema_cross",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 31.11,
-      "avg_pnl": -0.0349,
+      "win_rate": 30.73,
+      "avg_pnl": -0.0531,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "rsi_divergence",
       "asset": "ADA/USD",
       "timeframe": "1m",
-      "win_rate": 70.93,
-      "avg_pnl": -0.0329,
+      "win_rate": 70.25,
+      "avg_pnl": -0.0312,
       "reason": "consistently_unprofitable"
     },
     {
@@ -87,50 +87,51 @@
       "asset": "DOGE/USD",
       "timeframe": "1m",
       "win_rate": 0.0,
-      "avg_pnl": -0.0147,
-      "reason": "consistently_unprofitable"
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "SOL/USD",
-      "timeframe": "6h",
-      "win_rate": 51.96,
-      "avg_pnl": -0.0098,
+      "avg_pnl": -0.0123,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "ema_cross",
       "asset": "LINK/USD",
       "timeframe": "1m",
-      "win_rate": 26.98,
-      "avg_pnl": -0.0053,
+      "win_rate": 25.85,
+      "avg_pnl": -0.0059,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "trend_following",
       "asset": "DOGE/USD",
       "timeframe": "1m",
-      "win_rate": 9.83,
-      "avg_pnl": -0.0004,
+      "win_rate": 8.9,
+      "avg_pnl": -0.0,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "ema_cross",
       "asset": "DOGE/USD",
       "timeframe": "1m",
-      "win_rate": 5.34,
-      "avg_pnl": 0.0034,
+      "win_rate": 5.14,
+      "avg_pnl": 0.0035,
+      "reason": "consistently_unprofitable"
+    },
+    {
+      "strategy": "volume_spike",
+      "asset": "DOGE/USD",
+      "timeframe": "1m",
+      "win_rate": 32.56,
+      "avg_pnl": 0.0049,
       "reason": "consistently_unprofitable"
     }
   ],
-  "sentinel_last_trained": "2026-04-09T06:39:55.169361",
+  "sentinel_last_trained": "2026-04-09T08:05:53.857775",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": 0.67,
-      "trades": 1,
-      "wins": 1,
-      "win_rate": 1.0,
-      "mode": "live_scalping"
+      "daily_pnl": 0.0,
+      "monthly_pnl": 0.0,
+      "trades": 0,
+      "win_rate": 0,
+      "status": "paper_trading",
+      "active_position": true
     },
     "VOLT": {
       "daily_pnl": 0.0,
@@ -233,182 +234,63 @@
   ],
   "apex_strategy_source": "SENTINEL_HYPERTRAIN",
   "apex_strategy_updated": "2026-04-05T14:44:04.288592",
-  "apex_top_strategies": [
-    {
-      "strategy": "mean_reversion",
-      "asset": "SPY",
-      "timeframe": "4h",
-      "win_rate": 72.53,
-      "avg_pnl": 0.6688,
-      "sharpe": 1.608
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "ETH/USD",
-      "timeframe": "4h",
-      "win_rate": 68.92,
-      "avg_pnl": 0.6186,
-      "sharpe": 1.46
-    },
-    {
-      "strategy": "support_resistance",
-      "asset": "GBP/USD",
-      "timeframe": "1m",
-      "win_rate": 69.41,
-      "avg_pnl": 0.6166,
-      "sharpe": 1.423
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "GBP/USD",
-      "timeframe": "4h",
-      "win_rate": 70.73,
-      "avg_pnl": 0.6153,
-      "sharpe": 1.466
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "OIL",
-      "timeframe": "4h",
-      "win_rate": 67.9,
-      "avg_pnl": 0.6046,
-      "sharpe": 1.433
-    }
-  ],
-  "apex_last_trained": "2026-04-09T06:39:06.058466",
+  "apex_top_strategies": [],
+  "apex_last_trained": "2026-04-09T08:05:52.718264",
   "apex_best_params": {
-    "risk_per_trade": 0.0077,
-    "reward_ratio": 1.9471,
-    "stop_loss_pct": 0.0153,
-    "trailing_stop_pct": 0.025,
-    "rsi_entry": 30.5138,
-    "rsi_exit": 69.7218,
-    "ema_fast": 7.3462,
-    "ema_slow": 20.6075,
-    "volume_multiplier": 2.1505,
-    "min_rr": 2.3042
+    "risk_per_trade": 0.0098,
+    "reward_ratio": 1.7779,
+    "stop_loss_pct": 0.0037,
+    "trailing_stop_pct": 0.0038,
+    "rsi_period": 3.1114,
+    "rsi_entry": 10.1754,
+    "rsi_exit": 51.1606,
+    "ema_fast": 11.1144,
+    "ema_slow": 23.5619,
+    "volume_multiplier": 1.6362,
+    "min_rr": 1.9213
   },
-  "drift_top_strategies": [
-    {
-      "strategy": "mean_reversion",
-      "asset": "SPY",
-      "timeframe": "4h",
-      "win_rate": 72.53,
-      "avg_pnl": 0.6688,
-      "sharpe": 1.608
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "ETH/USD",
-      "timeframe": "4h",
-      "win_rate": 68.92,
-      "avg_pnl": 0.6186,
-      "sharpe": 1.46
-    },
-    {
-      "strategy": "support_resistance",
-      "asset": "GBP/USD",
-      "timeframe": "1m",
-      "win_rate": 69.41,
-      "avg_pnl": 0.6166,
-      "sharpe": 1.423
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "GBP/USD",
-      "timeframe": "4h",
-      "win_rate": 70.73,
-      "avg_pnl": 0.6153,
-      "sharpe": 1.466
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "OIL",
-      "timeframe": "4h",
-      "win_rate": 67.9,
-      "avg_pnl": 0.6046,
-      "sharpe": 1.433
-    }
-  ],
-  "drift_last_trained": "2026-04-09T06:44:59.132361",
+  "drift_top_strategies": [],
+  "drift_last_trained": "2026-04-09T08:04:34.178423",
   "drift_best_params": {
-    "risk_per_trade": 0.0195,
-    "reward_ratio": 2.2936,
-    "stop_loss_pct": 0.0269,
-    "trailing_stop_pct": 0.0395,
-    "rsi_entry": 37.6562,
-    "rsi_exit": 69.8369,
-    "ema_fast": 16.1177,
-    "ema_slow": 38.555,
-    "volume_multiplier": 2.457,
-    "min_rr": 3.4578
+    "risk_per_trade": 0.0113,
+    "reward_ratio": 2.4688,
+    "stop_loss_pct": 0.0227,
+    "trailing_stop_pct": 0.0327,
+    "rsi_period": 14.2243,
+    "rsi_entry": 29.81,
+    "rsi_exit": 74.5746,
+    "ema_fast": 20.1433,
+    "ema_slow": 53.0988,
+    "volume_multiplier": 1.4956,
+    "min_rr": 2.0148
   },
-  "titan_top_strategies": [
-    {
-      "strategy": "mean_reversion",
-      "asset": "SPY",
-      "timeframe": "4h",
-      "win_rate": 72.53,
-      "avg_pnl": 0.6688,
-      "sharpe": 1.608
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "ETH/USD",
-      "timeframe": "4h",
-      "win_rate": 68.92,
-      "avg_pnl": 0.6186,
-      "sharpe": 1.46
-    },
-    {
-      "strategy": "support_resistance",
-      "asset": "GBP/USD",
-      "timeframe": "1m",
-      "win_rate": 69.41,
-      "avg_pnl": 0.6166,
-      "sharpe": 1.423
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "GBP/USD",
-      "timeframe": "4h",
-      "win_rate": 70.73,
-      "avg_pnl": 0.6153,
-      "sharpe": 1.466
-    },
-    {
-      "strategy": "mean_reversion",
-      "asset": "OIL",
-      "timeframe": "4h",
-      "win_rate": 67.9,
-      "avg_pnl": 0.6046,
-      "sharpe": 1.433
-    }
-  ],
-  "titan_last_trained": "2026-04-09T07:10:19.573592",
+  "titan_top_strategies": [],
+  "titan_last_trained": "2026-04-09T08:05:04.149531",
   "titan_best_params": {
-    "risk_per_trade": 0.0284,
-    "reward_ratio": 5.2591,
-    "stop_loss_pct": 0.0402,
-    "trailing_stop_pct": 0.0561,
-    "rsi_entry": 21.9171,
-    "rsi_exit": 78.0171,
-    "ema_fast": 16.8249,
-    "ema_slow": 97.4614,
-    "volume_multiplier": 1.6941,
-    "min_rr": 4.1141
+    "risk_per_trade": 0.0065,
+    "reward_ratio": 4.641,
+    "stop_loss_pct": 0.0351,
+    "trailing_stop_pct": 0.0503,
+    "rsi_period": 15.9509,
+    "rsi_entry": 22.7412,
+    "rsi_exit": 73.1776,
+    "ema_fast": 45.261,
+    "ema_slow": 181.8055,
+    "volume_multiplier": 1.2689,
+    "min_rr": 3.7425
   },
   "sentinel_best_params": {
-    "risk_per_trade": 0.0048,
-    "reward_ratio": 2.125,
-    "stop_loss_pct": 0.023,
-    "trailing_stop_pct": 0.0297,
-    "rsi_entry": 41.3703,
-    "rsi_exit": 58.0316,
-    "ema_fast": 10.3363,
-    "ema_slow": 39.2913,
-    "volume_multiplier": 2.332,
-    "min_rr": 2.9001
+    "risk_per_trade": 0.0033,
+    "reward_ratio": 2.5045,
+    "stop_loss_pct": 0.0173,
+    "trailing_stop_pct": 0.0108,
+    "rsi_period": 12.4186,
+    "rsi_entry": 31.3713,
+    "rsi_exit": 61.3351,
+    "ema_fast": 12.0108,
+    "ema_slow": 35.8724,
+    "volume_multiplier": 1.5296,
+    "min_rr": 2.0616
   },
   "graduation": {
     "DRIFT": {
