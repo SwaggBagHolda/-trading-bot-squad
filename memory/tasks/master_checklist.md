@@ -53,6 +53,15 @@
 | 38 | RESEARCH agent: SOUL.md + TOOLS.md + BOOTSTRAP.md in OpenClaw workspace | Codey | done | 2026-04-09 | 2026-04-09 |
 | 39 | Hourly research cron in scheduler.py (CoinGecko movers + Polymarket opps) | Codey | done | 2026-04-09 | 2026-04-09 |
 | 40 | claude_briefing.md auto-updated session briefing + added to CLAUDE.md rule 1 | Codey | done | 2026-04-09 | 2026-04-09 |
+| 41 | AGENTS.md created (both locations) + operating modes for Claude/Codey/NEXUS | Codey | done | 2026-04-09 | 2026-04-09 |
+| 42 | Agent SDK Phase 2: wire execute_decision() into Telegram + autonomous loop | Codey | done | 2026-04-09 | 2026-04-09 |
+| 43 | Fix /proof — hard data only, remove duplicate handler, add PID/trades/HyperTrain/checklist | Codey | done | 2026-04-09 | 2026-04-09 |
+| 44 | Fix PID detection — stem patterns for pgrep, add DRIFT/TITAN to all process lists | Codey | done | 2026-04-09 | 2026-04-09 |
+| 45 | APEX triple EMA strategy (83% WR) — EMA 9/55/200 + RSI midline on 5m Coinbase candles | Codey | done | 2026-04-09 | 2026-04-09 |
+| 46 | DRIFT sqlite schema mismatch bug — crashes on start, fix before DRIFT can trade | Codey | pending | 2026-04-09 | — |
+| 47 | TITAN sqlite schema mismatch bug — same as DRIFT, crashes on start | Codey | pending | 2026-04-09 | — |
+| 48 | Implement ETH/USD mean_reversion 4h (68.92% WR from HyperTrain) into DRIFT | Codey | pending | 2026-04-09 | — |
+| 49 | NEXUS autonomous decision loop — 5min independent cycle, acts without Ty | Codey | done | 2026-04-09 | 2026-04-09 |
 
 ---
 

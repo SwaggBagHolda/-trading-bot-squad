@@ -59,7 +59,8 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 
 last_oracle_check = datetime.now()
 last_proactive = datetime.now()
-last_autonomous = datetime.now() - timedelta(seconds=900)  # fire immediately on first loop
+last_autonomous = datetime.now() - timedelta(seconds=300)  # fire immediately on first loop
+AUTONOMOUS_INTERVAL = 300  # 5 minutes — CEO checks in constantly
 last_heartbeat = datetime.now()
 last_memory_consolidation = datetime.now()
 last_income_idea = datetime.now()
@@ -1933,13 +1934,15 @@ AUTONOMOUS_LOG = BASE / "logs" / "autonomous.log"
 
 def autonomous_loop():
     """
-    Every 15 min — NEXUS acts without waiting for Ty.
-    Four hard checks, every cycle, every result logged.
+    Every 5 min — NEXUS CEO decision loop.
+    Checks all systems, identifies problems, EXECUTES fixes via Agent SDK, reports results.
+    This is what makes NEXUS autonomous — she acts, then tells Ty what she did.
     """
     hive = read_hive()
     perf = hive.get("bot_performance", {})
     grad = hive.get("graduation", {})
     now  = datetime.now()
+    actions_taken = []
 
     def act(msg):
         line = f"[{now.strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
@@ -1950,160 +1953,154 @@ def autonomous_loop():
         except Exception:
             pass
 
-    act("=== AUTONOMOUS LOOP START ===")
+    act("=== CEO DECISION LOOP START ===")
 
-    # ── CHECK 1: Bot performance snapshot ────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 1: SYSTEM HEALTH — are all processes alive? Fix what's down.
+    # ══════════════════════════════════════════════════════════════════════════
+    REQUIRED_BOTS = {
+        "APEX": "apex_coingecko",
+        "SENTINEL": "sentinel_polymarket",
+        "ORACLE": "oracle_listener",
+        "SCHEDULER": "scheduler",
+    }
+    for bot_name, pgrep_pattern in REQUIRED_BOTS.items():
+        r = subprocess.run(["pgrep", "-f", pgrep_pattern], capture_output=True, text=True)
+        if r.stdout.strip():
+            act(f"HEALTH [{bot_name}]: running (PID {r.stdout.strip().split()[0]})")
+        else:
+            act(f"HEALTH [{bot_name}]: DOWN — restarting via SDK")
+            if AGENT_SDK_AVAILABLE:
+                try:
+                    result = agent_restart_bot(bot_name, f"CEO loop: {bot_name} found down at {now.strftime('%H:%M')}")
+                    act(f"HEALTH [{bot_name}]: SDK restart → {result[:100]}")
+                    actions_taken.append(f"Restarted {bot_name}")
+                except Exception as e:
+                    act(f"HEALTH [{bot_name}]: SDK restart failed: {e}")
+            else:
+                # Fallback: direct restart
+                script = {"APEX": "apex_coingecko.py", "SENTINEL": "sentinel_polymarket.py",
+                          "ORACLE": "oracle_listener.py", "SCHEDULER": "scheduler.py"}.get(bot_name)
+                if script:
+                    log_f = open(BASE / "logs" / f"{Path(script).stem}.log", "a")
+                    subprocess.Popen(["python3", "-u", str(BASE / script)], cwd=str(BASE),
+                                     start_new_session=True, stdout=log_f, stderr=subprocess.STDOUT)
+                    act(f"HEALTH [{bot_name}]: direct restart")
+                    actions_taken.append(f"Restarted {bot_name}")
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 2: PERFORMANCE — check all bots, act on underperformers
+    # ══════════════════════════════════════════════════════════════════════════
     for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
         data = perf.get(bot, {})
         if not isinstance(data, dict):
             continue
-        mode   = data.get("mode", "?").upper()
-        wr     = data.get("win_rate", 0) * 100
+        wr     = data.get("win_rate", 0)
         trades = data.get("trades", 0)
         pnl    = data.get("daily_pnl", 0)
-        act(f"PERF [{bot}/{mode}] trades={trades} WR={wr:.1f}% P&L=${pnl:+.2f}")
+        act(f"PERF [{bot}] trades={trades} WR={wr*100:.1f}% P&L=${pnl:+.2f}")
 
-    # ── CHECK 2: AutoResearch — trigger if any bot WR < 50% after 5+ trades ─
-    research_triggered = False
-    for bot, data in perf.items():
-        if not isinstance(data, dict) or research_triggered:
-            continue
-        trades = data.get("trades", 0)
-        wr     = data.get("win_rate", 0)
-        if trades >= 5 and wr < 0.50:
-            already_running = bool(subprocess.run(
-                ["pgrep", "-f", "sentinel_research"], capture_output=True, text=True
-            ).stdout.strip())
-            if not already_running:
-                run_all_training()
-                act(f"AUTO-RESEARCH TRIGGERED: {bot} WR={wr*100:.1f}% on {trades} trades — launched")
-                send(OWNER_ID, f"AutoResearch triggered — {bot} WR at {wr*100:.1f}% on {trades} trades. Running now.")
-            else:
-                act(f"AUTO-RESEARCH PENDING: {bot} WR={wr*100:.1f}% — already running")
-            research_triggered = True
-
-    if not research_triggered:
-        act("AUTO-RESEARCH: All bots above 50% WR — no trigger")
-
-    # ── CHECK 3: APEX active trade — act on problems, don't just report them ───
-    force_scan_flag  = BASE / "shared" / "apex_force_scan.flag"
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 3: APEX TRADE MONITORING — force close bad trades, loosen if idle
+    # ══════════════════════════════════════════════════════════════════════════
     force_close_flag = BASE / "shared" / "apex_force_close.flag"
     try:
         state_file = BASE / "shared" / "apex_state.json"
         if state_file.exists():
             apex_st = json.loads(state_file.read_text())
             active  = apex_st.get("active")
-            saved   = apex_st.get("saved", "")
             if active:
                 entry     = active.get("entry", 0)
                 symbol    = active.get("symbol", "?")
                 direction = active.get("direction", "?")
-                trade_time_str = active.get("time", "")
                 hold_secs = 0
                 try:
+                    trade_time_str = active.get("time", "")
                     if trade_time_str:
                         hold_secs = (now - datetime.fromisoformat(trade_time_str)).total_seconds()
                 except Exception:
                     pass
-                market = fetch_market_snapshot()
-                cur = market.get(symbol, {}).get("price")
-                # Fallback: direct Coinbase spot price for assets not in market snapshot
-                if not cur:
-                    try:
-                        product = active.get("product", f"{symbol}-USD")
-                        r_price = requests.get(
-                            f"https://api.coinbase.com/v2/prices/{product.replace('-','/')}/spot",
-                            timeout=5
-                        )
-                        if r_price.status_code == 200:
-                            cur = float(r_price.json()["data"]["amount"])
-                    except Exception:
-                        pass
+                # Get current price
+                cur = None
+                try:
+                    product = active.get("product", f"{symbol}-USD")
+                    r_price = requests.get(
+                        f"https://api.coinbase.com/v2/prices/{product.replace('-','/')}/spot", timeout=5)
+                    if r_price.status_code == 200:
+                        cur = float(r_price.json()["data"]["amount"])
+                except Exception:
+                    pass
                 if cur and entry:
                     pnl_pct = (cur - entry) / entry if direction == "BUY" else (entry - cur) / entry
-                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.4f} now ${cur:,.4f} ({pnl_pct*100:+.2f}%) held {int(hold_secs//60)}m")
-                    # If losing more than 1.5x normal stop AND held > 10 minutes — force close
-                    APEX_STOP = 0.003
-                    if pnl_pct < -(APEX_STOP * 1.5) and hold_secs > 600:
-                        force_close_flag.write_text(now.isoformat())
-                        act(f"APEX: FORCE CLOSE — {direction} {symbol} at {pnl_pct*100:+.2f}%, held {int(hold_secs//60)}m (past 1.5x stop)")
-                        send(OWNER_ID, f"Closed APEX {direction} {symbol} — was at {pnl_pct*100:+.2f}% for {int(hold_secs//60)}min. Past acceptable loss. Hunting next setup.")
-                    # Upgrade: check hive for better asset available right now
-                    top_strats = hive.get("apex_top_strategies", [])
-                    if top_strats and symbol not in [s.get("asset","").replace("/USD","") for s in top_strats[:3]]:
-                        best = top_strats[0]
-                        act(f"APEX: In {symbol} but {best.get('asset','?')} shows {best.get('win_rate',0):.1f}% WR — will switch after this trade closes")
-                else:
-                    act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.4f} (price unavailable)")
+                    act(f"APEX: {direction} {symbol} @ ${entry:,.2f} → ${cur:,.2f} ({pnl_pct*100:+.2f}%) {int(hold_secs//60)}m")
+                    # Force close if losing > 0.45% AND held > 10 min
+                    if pnl_pct < -0.0045 and hold_secs > 600:
+                        if AGENT_SDK_AVAILABLE:
+                            agent_force_close_trade("APEX", f"Loss {pnl_pct*100:+.2f}% held {int(hold_secs//60)}m")
+                        else:
+                            force_close_flag.write_text(now.isoformat())
+                        act(f"APEX: FORCE CLOSED — {pnl_pct*100:+.2f}% for {int(hold_secs//60)}m")
+                        actions_taken.append(f"Force-closed APEX {direction} {symbol} at {pnl_pct*100:+.2f}%")
             else:
+                # APEX idle — check how long
+                saved = apex_st.get("saved", "")
                 if saved:
                     try:
                         idle_secs = (now - datetime.fromisoformat(saved)).total_seconds()
-                        idle_min  = int(idle_secs / 60)
-                        act(f"APEX: IDLE {idle_min}min — scanning for next opportunity")
-                        # After 60 min idle — force a fresh scan
-                        if idle_secs > 3600:
-                            force_scan_flag.write_text(now.isoformat())
-                            act(f"APEX: FORCE SCAN FLAG written — idle {idle_min}min, refreshing asset list")
-                            # If hive has a clear winner, update watchlist priority
-                            top_strats = hive.get("apex_top_strategies", [])
-                            if top_strats:
-                                best = top_strats[0]
-                                best_sym = best.get("asset", "").replace("/USD", "")
-                                wl = hive.get("apex_daily_watchlist", {})
-                                assets = wl.get("assets", [])
-                                if best_sym and best_sym not in assets[:2]:
-                                    assets = [best_sym] + [a for a in assets if a != best_sym]
-                                    hive["apex_daily_watchlist"]["assets"] = assets[:8]
-                                    try:
-                                        write_hive_safe(hive)
-                                        act(f"APEX: Watchlist updated — {best_sym} moved to front ({best.get('win_rate',0):.1f}% WR)")
-                                    except Exception as we:
-                                        act(f"APEX: Watchlist update error: {we}")
-                    except Exception as e:
-                        act(f"APEX: idle calc error: {e}")
-                else:
-                    act("APEX: No trades yet this session")
-        else:
-            # No state file — restart APEX if not running
-            apex_running = subprocess.run(
-                ["pgrep", "-f", "apex_coingecko.py"],
-                capture_output=True, text=True
-            ).stdout.strip()
-            if not apex_running:
-                act("APEX: state missing, process not running — restarting now")
-                subprocess.Popen(
-                    ["python3", "-u", str(BASE / "apex_coingecko.py")],
-                    cwd=str(BASE),
-                    stdout=open(str(BASE / "logs" / "apex_coingecko.log"), "a"),
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
-                act("APEX: Restarted")
-            else:
-                act(f"APEX: Process running (PID {apex_running.split()[0]}) — state file not yet written")
+                        idle_min = int(idle_secs / 60)
+                        act(f"APEX: idle {idle_min}m")
+                        if idle_secs > 1800:  # 30 min idle — loosen threshold
+                            old_mom = hive.get("nexus_apex_overrides", {}).get("min_momentum", 0.0001)
+                            new_mom = max(old_mom * 0.5, 0.00001)
+                            if AGENT_SDK_AVAILABLE:
+                                agent_adjust_threshold("APEX", "min_momentum", new_mom)
+                            else:
+                                nexus_write_hive_param("nexus_apex_overrides",
+                                    {"min_momentum": new_mom, "cooldown": 5},
+                                    f"Idle {idle_min}m — loosening")
+                            act(f"APEX: idle {idle_min}m — loosened momentum {old_mom*100:.4f}% → {new_mom*100:.4f}%")
+                            actions_taken.append(f"Loosened APEX threshold (idle {idle_min}m)")
+                    except Exception:
+                        pass
     except Exception as e:
         act(f"APEX CHECK ERROR: {e}")
 
-    # ── CHECK 3b: ORACLE process — restart if down, don't just alert ─────────
-    try:
-        oracle_proc = subprocess.run(["pgrep", "-f", "oracle_listener.py"], capture_output=True, text=True)
-        if not oracle_proc.stdout.strip():
-            oracle_log = BASE / "logs" / "oracle_listener.log"
-            oracle_log.parent.mkdir(parents=True, exist_ok=True)
-            subprocess.Popen(
-                ["python3", "-u", str(BASE / "oracle_listener.py")],
-                cwd=str(BASE),
-                stdout=open(str(oracle_log), "a"),
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
-            act("ORACLE: was down — restarted it")
-            send(OWNER_ID, "ORACLE was down — restarted it. Back up.")
-        else:
-            act(f"ORACLE: running (PID {oracle_proc.stdout.strip().split()[0]})")
-    except Exception as e:
-        act(f"ORACLE CHECK ERROR: {e}")
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 4: STRATEGY — trigger research if WR is low
+    # ══════════════════════════════════════════════════════════════════════════
+    research_triggered = False
+    for bot, data in perf.items():
+        if not isinstance(data, dict) or research_triggered:
+            continue
+        trades = data.get("trades", 0)
+        wr = data.get("win_rate", 0)
+        if trades >= 5 and wr < 0.50:
+            if AGENT_SDK_AVAILABLE:
+                try:
+                    result = agent_run_hypertrain(100)
+                    act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain via SDK → {result[:80]}")
+                    actions_taken.append(f"HyperTrain triggered ({bot} WR={wr*100:.1f}%)")
+                except Exception as e:
+                    act(f"RESEARCH: SDK error: {e}")
+            else:
+                run_all_training()
+                act(f"RESEARCH: {bot} WR={wr*100:.1f}% — triggered HyperTrain (direct)")
+            research_triggered = True
+    if not research_triggered:
+        act("RESEARCH: No triggers — all bots WR acceptable")
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 5: REPORT — tell Ty what was done (only if actions were taken)
+    # ══════════════════════════════════════════════════════════════════════════
+    if actions_taken:
+        report = f"CEO loop ({now.strftime('%H:%M')}) — {len(actions_taken)} action(s):\n"
+        report += "\n".join(f"• {a}" for a in actions_taken)
+        send(OWNER_ID, report)
+        act(f"REPORT: Sent {len(actions_taken)} actions to Ty")
+    else:
+        act("REPORT: All systems green — no actions needed")
+
+    act("=== CEO DECISION LOOP END ===")
 
     # ── CHECK 4: Graduation progress — DRIFT, TITAN, SENTINEL ────────────────
     for bot in ["DRIFT", "TITAN", "SENTINEL"]:
@@ -3495,7 +3492,7 @@ def run():
                 last_oracle_check = now
 
             # ── AUTONOMOUS LOOP every 15 minutes — NEXUS acts, doesn't wait ─
-            if (now - last_autonomous).total_seconds() >= 900:
+            if (now - last_autonomous).total_seconds() >= AUTONOMOUS_INTERVAL:
                 autonomous_loop()
                 last_autonomous = now
 
