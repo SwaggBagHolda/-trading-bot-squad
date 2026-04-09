@@ -46,9 +46,10 @@ except:
 FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
 
 # ── TRAINING GATE ────────────────────────────────────────────────────────────
-# HALTED 2026-04-09: 4+ cycles with identical results — strategy space is broken.
-# Must rebuild strategy exploration before re-enabling.
-TRAINING_ENABLED = False
+# RE-ENABLED 2026-04-09: Backtest engine rebuilt with real Coinbase candles via ccxt.
+# Validated: produces real trades with varied WR. HyperTrain optimizes from here.
+# Gate: if a full cycle produces 0 improvements across all bots, halt again.
+TRAINING_ENABLED = True
 
 # Hard limit: maximum 2 runs per calendar day (3am + noon)
 MAX_DAILY_RUNS = 2

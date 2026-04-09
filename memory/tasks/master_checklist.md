@@ -46,6 +46,7 @@
 | 31 | Validate SENTINEL positions open AND close with P&L | Codey | verified | 2026-04-09 | 2026-04-09 |
 | 32 | SENTINEL disk persistence for positions (survive restarts) | Codey | done | 2026-04-09 | 2026-04-09 |
 | 33 | SENTINEL duplicate position guard | Codey | done | 2026-04-09 | 2026-04-09 |
+| 34 | Re-enable HyperTrain after backtest validation | Codey | done | 2026-04-09 | 2026-04-09 |
 
 ---
 
@@ -55,6 +56,6 @@
 |---|------|-------|--------|-------|
 | R1 | Nightly self-improvement review (1am) | NEXUS | active | Reads chat JSONL, writes fixes to self_improve.md |
 | R2 | Morning 5-priority report (6am) | NEXUS | active | Includes Polymarket scan |
-| R3 | AutoResearch/HyperTrain (3am + noon) | NEXUS | active | TRAINING_ENABLED=True, real backtests |
+| R3 | AutoResearch/HyperTrain (3am + noon) | NEXUS | active | TRAINING_ENABLED=True, real Coinbase candle backtests via ccxt |
 | R4 | APEX hourly trade count check | NEXUS | active | < 5/hr triggers investigation |
 | R5 | Phase 2 parameter tuning | NEXUS | active | Writes overrides to hive_mind.json |
