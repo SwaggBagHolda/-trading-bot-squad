@@ -106,3 +106,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 11:47]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "Mean reversion on SPY 4h is sitting at 72.53% WR right now — that's the strongest signal in the hive. APEX's got a SELL "
+
+## [2026-04-09 12:18]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "Mean reversion on SPY 4h is backtesting at 72.53% WR — that's the strongest signal we've got right now and APEX is hunti"
+
+## [2026-04-09 12:48]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's best backtest right now is mean reversion on 4h — 72.53% WR, not the BLUR scalp she's sitting in. Worth consideri"
