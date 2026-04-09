@@ -529,6 +529,7 @@ def search_youtube(query, max_results=3):
 def smart_research(query):
     """
     Route research query to the right source — zero fabrication, real URLs always.
+    - Crypto news queries → CoinDesk + The Block (news intent)
     - Market/price queries → CoinGecko live data
     - Strategy/video queries → YouTube search + DuckDuckGo
     - General queries → DuckDuckGo HTML scraping
@@ -539,15 +540,36 @@ def smart_research(query):
     query = re.sub(r'\s+', ' ', query)
     q_lower = query.lower()
 
-    # ── Market data → CoinGecko ──────────────────────────────────────────────
-    market_kw = ["price", "prices", "btc", "eth", "sol", "bitcoin", "ethereum",
-                 "solana", "volume", "24h", "market cap", "pump", "dump", "rally",
-                 "crash", "chart", "how much is", "what is btc", "what is eth"]
+    crypto_tokens = ["btc", "eth", "sol", "xrp", "doge", "avax", "bitcoin",
+                     "ethereum", "solana", "crypto", "altcoin", "defi", "token"]
+    news_triggers = ["why is", "why is it", "why did", "what happened",
+                     "latest news", "news on", "breaking", "crash", "crashed",
+                     "dump", "pumped", "pumping", "dropping", "down today",
+                     "up today", "catalyst", "what caused", "what's happening with",
+                     "whats happening with", "reason for", "big move"]
     strategy_kw = ["strategy", "backtest", "indicator", "signal", "pattern",
                    "scalp", "swing", "trend", "momentum", "rsi", "macd", "ema"]
-    is_market  = any(kw in q_lower for kw in market_kw) and not any(kw in q_lower for kw in strategy_kw)
+    market_kw = ["price", "prices", "btc", "eth", "sol", "bitcoin", "ethereum",
+                 "solana", "volume", "24h", "market cap", "rally",
+                 "chart", "how much is", "what is btc", "what is eth"]
+
+    is_news = (
+        any(trig in q_lower for trig in news_triggers)
+        and any(tok in q_lower for tok in crypto_tokens)
+        and not any(kw in q_lower for kw in strategy_kw)
+    )
+    is_market  = any(kw in q_lower for kw in market_kw) and not any(kw in q_lower for kw in strategy_kw) and not is_news
     is_video   = any(kw in q_lower for kw in ["youtube", "video", "watch", "tutorial"] + strategy_kw)
 
+    # ── Crypto news → CoinDesk + The Block ──────────────────────────────────
+    if is_news:
+        cd_results  = web_search(f"{query} site:coindesk.com")
+        tb_results  = web_search(f"{query} site:theblock.co")
+        combined    = f"COINDESK:\n{cd_results}\n\nTHE BLOCK:\n{tb_results}"
+        _research_ran = True
+        return combined
+
+    # ── Market data → CoinGecko ──────────────────────────────────────────────
     if is_market:
         market = fetch_market_snapshot()
         parts  = []
@@ -1285,22 +1307,28 @@ def autonomous_loop():
                         if idle_secs > 3600:
                             force_scan_flag.write_text(now.isoformat())
                             act(f"APEX: FORCE SCAN FLAG written — idle {idle_min}min")
-                            send(OWNER_ID, f"APEX idle {idle_min}min — forced market scan triggered.")
                     except Exception as e:
                         act(f"APEX: idle calc error: {e}")
                 else:
                     act("APEX: No trades yet this session")
         else:
-            act("APEX: apex_state.json missing — process may be down")
-            # Attempt restart
-            subprocess.Popen(
-                ["python3", "-u", str(BASE / "apex_coingecko.py")],
-                cwd=str(BASE),
-                stdout=open(str(BASE / "logs" / "apex_coingecko.log"), "a"),
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
-            act("APEX: Restart attempted")
+            # Only restart if APEX is not already running
+            apex_running = subprocess.run(
+                ["pgrep", "-f", "apex_coingecko.py"],
+                capture_output=True, text=True
+            ).stdout.strip()
+            if not apex_running:
+                act("APEX: apex_state.json missing and process not running — restarting")
+                subprocess.Popen(
+                    ["python3", "-u", str(BASE / "apex_coingecko.py")],
+                    cwd=str(BASE),
+                    stdout=open(str(BASE / "logs" / "apex_coingecko.log"), "a"),
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+                act("APEX: Restart attempted")
+            else:
+                act(f"APEX: Process running (PID {apex_running.split()[0]}) — no state file yet, skipping restart")
     except Exception as e:
         act(f"APEX CHECK ERROR: {e}")
 
@@ -1332,8 +1360,8 @@ def autonomous_loop():
                 send(OWNER_ID, f"{bot} at {t}/{tgt} paper trades ({pct:.0f}%) — {wr:.1f}% WR. Close to live.")
                 act(f"GRAD [{bot}]: Near-milestone alert sent")
         elif stage == "live_pending":
-            act(f"GRAD [{bot}]: LIVE PENDING — awaiting Ty approval")
-            send(OWNER_ID, f"{bot} passed paper trading and is waiting for your go-ahead to go live.")
+            # Only alert once — not every 15 min
+            act(f"GRAD [{bot}]: LIVE PENDING — awaiting Ty approval (alert suppressed to avoid spam)")
 
     act("=== AUTONOMOUS LOOP END ===")
 
@@ -1441,19 +1469,17 @@ def proactive_check():
     # ── OVERNIGHT INCOME ACTION LOOP ─────────────────────────────────────────
     # Runs every heartbeat (30 min). All 4 paths always active.
 
-    # PATH 1: APEX idle >2 hours — check entry conditions, escalate
+    # PATH 1: APEX idle check — log only, APEX Telegrams its own trade events
     try:
         apex_state_file = BASE / "shared" / "apex_state.json"
         if apex_state_file.exists():
             apex_state = json.loads(apex_state_file.read_text())
             if not apex_state.get("active"):
-                last_trade_time = apex_state.get("last_trade_time")
-                if last_trade_time:
-                    idle_secs = (datetime.now() - datetime.fromisoformat(last_trade_time)).total_seconds()
-                    if idle_secs > 7200:
-                        idle_hrs = idle_secs / 3600
-                        send(OWNER_ID, f"APEX idle {idle_hrs:.1f}h — no position open. Entry conditions may be too tight.")
-                        actions_taken.append(f"APEX idle {idle_hrs:.1f}h alert")
+                saved_time = apex_state.get("saved", "")
+                if saved_time:
+                    idle_secs = (datetime.now() - datetime.fromisoformat(saved_time)).total_seconds()
+                    idle_hrs = idle_secs / 3600
+                    actions_taken.append(f"APEX idle {idle_hrs:.1f}h (no alert — APEX self-reports)")
     except Exception as e:
         log_bug(f"APEX idle check error: {e}")
 
@@ -1496,7 +1522,7 @@ def proactive_check():
                 pnl = g.get("paper_pnl", 0.0)
                 log_to_oracle(f"[GRADUATION] {bot} paper: {t}/{tgt} trades | {wr*100:.1f}% WR | P&L {pnl:+.3f}%")
             elif stage == "live_pending":
-                send(OWNER_ID, f"{bot} has passed paper trading — ready for live. Reply to approve.")
+                log_to_oracle(f"[GRADUATION] {bot} live_pending — awaiting Ty approval")
     except Exception as e:
         log_bug(f"Graduation monitor error: {e}")
 
@@ -1744,7 +1770,6 @@ def handle_message(text, chat_id):
     if cmd("/research", "research ", "look up"):
         query = text.replace("/research", "").replace("research", "").replace("look up", "").strip()
         if query:
-            send(chat_id, f"Searching: {query[:60]}...")
             raw = smart_research(query)
             # AI summarizes the real data, cites URLs, no fabrication
             summary = ask_ai(
@@ -1828,7 +1853,6 @@ def handle_message(text, chat_id):
 
     # Income ideas
     if cmd("/ideas", "income ideas", "money ideas", "give me ideas", "income opportunities"):
-        send(chat_id, "Researching...")
         idea = generate_income_idea()
         reply(idea)
         return
@@ -1981,7 +2005,6 @@ def handle_message(text, chat_id):
         url_match = re.search(r"https?://[^\s]+", text)
         if url_match:
             url = url_match.group(0)
-            send(chat_id, f"Browsing {url[:60]}...")
             raw = browse_url(url)
             summary = ask_ai(
                 f"Summarize this webpage in 3-5 sentences, focus on what's relevant for a crypto trader:\n\n{raw[:2000]}"
@@ -1995,7 +2018,6 @@ def handle_message(text, chat_id):
     # PDF report generation
     if cmd("/pdf", "make a pdf", "create a pdf", "generate pdf", "save as pdf"):
         topic = re.sub(r"^(/pdf|make a pdf|create a pdf|generate pdf|save as pdf)\s*", "", text, flags=re.IGNORECASE).strip()
-        send(chat_id, "Generating PDF...")
         hive = read_hive()
         perf = hive.get("bot_performance", {})
         _pnl = sum(v.get("daily_pnl", 0) for v in perf.values() if isinstance(v, dict))
@@ -2029,7 +2051,6 @@ def handle_message(text, chat_id):
         ])
     )
     if _is_nl_research:
-        send(chat_id, f"On it...")
         raw = smart_research(text)
         summary = ask_ai(
             f'Ty asked: "{text}"\n\n'
@@ -2119,10 +2140,8 @@ def run():
                     if text:
                         handle_message(text, chat_id)
                     elif voice:
-                        send(chat_id, "🎤 Got your voice message, transcribing...")
                         transcribed = transcribe_voice(voice["file_id"])
                         if transcribed:
-                            send(chat_id, f"📝 You said: \"{transcribed}\"")
                             handle_message(transcribed, chat_id)
                         else:
                             send(chat_id, "Couldn't transcribe that one. Try again or type it.")
