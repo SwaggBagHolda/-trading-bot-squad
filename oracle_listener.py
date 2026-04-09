@@ -309,7 +309,20 @@ def run():
     print("=" * 55)
 
     if not TOKEN:
-        print("[ORACLE] ERROR: ORACLE_TELEGRAM_TOKEN not set in .env")
+        # Degrade gracefully — run file bridge only, skip Telegram polling
+        # This prevents the crash-restart loop when the token isn't configured
+        print("[ORACLE] WARNING: ORACLE_TELEGRAM_TOKEN not set — running in file-bridge-only mode")
+        while True:
+            try:
+                pending = parse_pending()
+                for body in pending:
+                    print(f"[ORACLE] NEXUS message (bridge-only): {body[:80]}")
+                time.sleep(120)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                print(f"[ORACLE] Bridge loop error: {e}")
+                time.sleep(30)
         return
 
     print(f"[ORACLE] Online. Bridge: {NEXUS_MSG.name} → {ORACLE_MSG.name}")
