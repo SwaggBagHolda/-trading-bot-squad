@@ -1161,17 +1161,18 @@ def create_pdf(title, content):
 def check_bot_health():
     """Check if all required processes are running."""
     issues = []
-    bots_to_check = [
-        "apex_coingecko.py",
-        "sentinel_polymarket.py",
-        "nexus_brain_v3.py",
-        "oracle_listener.py",
-        "scheduler.py",
-    ]
-    for bot in bots_to_check:
-        result = subprocess.run(["pgrep", "-f", bot], capture_output=True, text=True)
+    # Use stem patterns for pgrep — matches both "python3 script.py" and full-path launches
+    bots_to_check = {
+        "apex_coingecko": "apex_coingecko.py",
+        "sentinel_polymarket": "sentinel_polymarket.py",
+        "nexus_brain": "nexus_brain_v3.py",
+        "oracle_listener": "oracle_listener.py",
+        "scheduler": "scheduler.py",
+    }
+    for pattern, display_name in bots_to_check.items():
+        result = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
         if not result.stdout.strip():
-            issues.append(f"{bot} is NOT running")
+            issues.append(f"{display_name} is NOT running")
     return issues
 
 BOT_RESTART_MAP = {
@@ -2765,11 +2766,13 @@ def handle_message(text, chat_id):
         lines = [f"PROOF OF WORK — {datetime.now().strftime('%Y-%m-%d %H:%M:%S EST')}", "━" * 40]
 
         # 1. RUNNING PROCESSES — actual PIDs
+        # Use stem names (no .py) for pgrep to match both "python script.py" and full-path launches
         lines.append("\n1. RUNNING PROCESSES")
-        for name, script in [("NEXUS", "nexus_brain_v3.py"), ("APEX", "apex_coingecko.py"),
-                              ("SENTINEL", "sentinel_polymarket.py"), ("ORACLE", "oracle_listener.py"),
-                              ("SCHEDULER", "scheduler.py")]:
-            r = subprocess.run(["pgrep", "-f", script], capture_output=True, text=True)
+        for name, pattern in [("NEXUS", "nexus_brain"), ("APEX", "apex_coingecko"),
+                               ("DRIFT", "drift"), ("TITAN", "titan"),
+                               ("SENTINEL", "sentinel_polymarket"), ("ORACLE", "oracle_listener"),
+                               ("SCHEDULER", "scheduler")]:
+            r = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
             pids = r.stdout.strip().replace("\n", ",")
             lines.append(f"  {name}: {'PID ' + pids if pids else 'NOT RUNNING'}")
 

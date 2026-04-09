@@ -47,6 +47,8 @@ def _hive_write(data):
 
 BOT_SCRIPTS = {
     "APEX": "apex_coingecko.py",
+    "DRIFT": "drift.py",
+    "TITAN": "titan.py",
     "SENTINEL": "sentinel_polymarket.py",
     "ORACLE": "oracle_listener.py",
     "SCHEDULER": "scheduler.py",
@@ -88,12 +90,17 @@ def _check_hive() -> str:
                 "mode": data.get("mode", "unknown"),
             }
 
-    # Check running processes
+    # Check running processes — use stem patterns for reliable pgrep matching
     procs = {}
-    for name in ["apex_coingecko.py", "sentinel_polymarket.py", "nexus_brain_v3.py",
-                  "oracle_listener.py", "scheduler.py"]:
-        r = subprocess.run(["pgrep", "-f", name], capture_output=True, text=True)
-        procs[name] = "running" if r.stdout.strip() else "stopped"
+    for display, pattern in [("apex_coingecko.py", "apex_coingecko"),
+                              ("drift.py", "drift"),
+                              ("titan.py", "titan"),
+                              ("sentinel_polymarket.py", "sentinel_polymarket"),
+                              ("nexus_brain_v3.py", "nexus_brain"),
+                              ("oracle_listener.py", "oracle_listener"),
+                              ("scheduler.py", "scheduler")]:
+        r = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
+        procs[display] = "running" if r.stdout.strip() else "stopped"
 
     return json.dumps({"bot_performance": result, "processes": procs}, indent=2)
 
