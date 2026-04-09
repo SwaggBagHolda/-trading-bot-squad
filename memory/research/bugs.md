@@ -127,3 +127,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 15:49]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "ZEC's sitting at $362.24 and hasn't moved enough to matter yet — but that SPY mean reversion signal is hitting 72.53% WR"
+
+## [2026-04-09 16:20]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's 33% WR today is a problem — 3 trades and only $0.62 to show means the entry logic is too loose on low-cap assets "
+
+## [2026-04-09 16:50]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's 33% WR today is a flag — mean reversion on a 4h window is backtesting at 72.53% right now, which is nearly double"

@@ -2594,3 +2594,27 @@ Proactive heartbeat sent: ZEC's sitting at $362.24 and hasn't moved enough to ma
 
 ## [2026-04-09 15:49]
 Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 16:01]
+AutoResearch started PID 98234 at 2026-04-09T16:01:37.305654
+
+## [2026-04-09 16:20]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 16:20]
+Proactive heartbeat sent: APEX's 33% WR today is a problem — 3 trades and only $0.62 to show means the ent...
+
+## [2026-04-09 16:20]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 16:31]
+AutoResearch started PID 98508 at 2026-04-09T16:31:53.864136
+
+## [2026-04-09 16:50]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 16:50]
+Proactive heartbeat sent: APEX's 33% WR today is a flag — mean reversion on a 4h window is backtesting at ...
+
+## [2026-04-09 16:50]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
