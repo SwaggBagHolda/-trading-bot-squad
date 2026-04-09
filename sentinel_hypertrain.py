@@ -48,8 +48,8 @@ STRATEGIES = [
 ]
 
 ASSETS = [
-    "BTC/USD", "ETH/USD", "SOL/USD", "AAPL", "TSLA", "SPY",
-    "QQQ", "NVDA", "EUR/USD", "GBP/USD", "GOLD", "OIL"
+    "BTC/USD", "ETH/USD", "SOL/USD", "ADA/USD",
+    "AVAX/USD", "LINK/USD", "DOGE/USD", "MATIC/USD",
 ]
 
 TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h"]

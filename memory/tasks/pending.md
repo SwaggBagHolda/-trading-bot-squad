@@ -5,8 +5,17 @@
 
 # --- ACTIVE ---
 
-# (No pending tasks as of 2026-04-09 consolidation pass)
-# All prior [DONE] tasks archived. See memory/tasks/completed.md for history.
+- [AUTO_IMPROVE] CRITICAL: Rebuild HyperTrain backtest model — current simulate_backtest() is broken
+  - Problem: Simple ratio heuristics produce 13-24% WR regardless of parameters
+  - Training HALTED (TRAINING_ENABLED = False in hypertrain.py) until this is fixed
+  - Steps:
+    1. Research proven crypto strategies with documented WR (ICT FVG, VWAP reversion, BB squeeze, EMA cross + RSI div)
+    2. Pull real historical crypto candles from Coinbase API for backtesting
+    3. Rebuild simulate_backtest() to use actual price data via VectorBT or similar
+    4. Validate that parameter changes actually move WR meaningfully (>5% delta)
+    5. Set TRAINING_ENABLED = True only after WR > 50% on at least one strategy
+  - Assets: crypto only (Coinbase). No stocks, forex, commodities.
+  - Deadline: Before next training cycle
 
 # --- KNOWN ISSUES (not yet tasked) ---
 # - Wire AutoResearch results → update apex_coingecko.py entry params from hive_mind.json["apex_best_params"]

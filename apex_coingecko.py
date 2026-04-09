@@ -91,11 +91,10 @@ def scan_coinpaprika(max_assets=20):
 
 def scan_stocks_top_movers(max_assets=4):
     """
-    Finnhub — free tier, 60 req/min.
-    Scans a curated list of high-beta stocks for intraday movement.
-    Returns list of {symbol, product, abs_change, source} dicts.
-    Only runs if FINNHUB_API_KEY is set.
+    DISABLED: APEX trades crypto only on Coinbase. No stocks/forex/commodities.
+    Stocks (SPY, NVDA etc.) are not available on Coinbase and waste API calls.
     """
+    return []
     if not FINNHUB_KEY:
         return []
     watchlist = ["NVDA", "TSLA", "AMD", "MSTR", "COIN", "SPY", "QQQ", "META"]

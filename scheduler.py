@@ -175,12 +175,24 @@ def send_warden_6hr_report():
     now = datetime.now()
     hour = now.strftime("%I:%M %p")
 
+    # Detect actual NEXUS model from nexus_brain_v3.py
+    nexus_model = "unknown"
+    try:
+        brain_file = BASE / "nexus_brain_v3.py"
+        if brain_file.exists():
+            for line in brain_file.read_text().splitlines():
+                if "ANTHROPIC_MODEL" in line and "=" in line and not line.strip().startswith("#"):
+                    nexus_model = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    break
+    except Exception:
+        pass
+
     lines = [
         f"🛡️ WARDEN CHECK-IN — {hour}",
         "━" * 30,
         "✅ All systems operational",
         f"✅ WARDEN: Running (PID active)",
-        f"✅ NEXUS: Online (Haiku)",
+        f"✅ NEXUS: Online ({nexus_model})",
         f"✅ ZEUS: Monitoring every 5min",
         f"✅ Scheduler: Running",
         "━" * 30,

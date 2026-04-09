@@ -1,8 +1,22 @@
 """
 HYPERTRAIN + AUTORESEARCH — Always Together
 "One discovers. One validates. They are inseparable."
-Runs at 3am (overnight) and 12pm (midday) on all bots simultaneously.
+Schedule: 3am (overnight) + 12pm (midday), max 2 runs per day.
 Uses FREE models only via OpenRouter.
+
+TRAINING HALTED as of 2026-04-09:
+  The simulate_backtest() model is fundamentally broken — it produces
+  13-24% WR regardless of parameters because win rates are derived from
+  simple ratio heuristics, not real market data. No amount of parameter
+  tuning will fix a broken backtest model.
+
+  Before re-enabling training, NEXUS must:
+  1. Research proven crypto scalping/swing strategies with documented WR
+  2. Rebuild simulate_backtest with realistic crypto price dynamics
+  3. Validate that parameter changes actually move WR meaningfully
+  4. Only then set TRAINING_ENABLED = True
+
+  See memory/tasks/pending.md for the [AUTO_IMPROVE] task.
 """
 
 import json
@@ -10,7 +24,8 @@ import random
 import sqlite3
 import requests
 import time
-from datetime import datetime
+import os
+from datetime import datetime, date
 from pathlib import Path
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -19,10 +34,10 @@ BASE = Path.home() / "trading-bot-squad"
 HIVE = BASE / "shared" / "hive_mind.json"
 RESULTS_DIR = BASE / "logs" / "training"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+RUN_COUNT_FILE = RESULTS_DIR / "daily_run_count.json"
 
 OPENROUTER_KEY = None
 try:
-    import os
     from dotenv import load_dotenv
     load_dotenv(BASE / ".env")
     OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -30,6 +45,17 @@ except:
     pass
 
 FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
+
+# ── TRAINING GATE ────────────────────────────────────────────────────────────
+# HALTED: backtest model is broken (13-24% WR on all params).
+# Set to True ONLY after strategy parameters are rebuilt with real data.
+TRAINING_ENABLED = False
+
+# Hard limit: maximum 2 runs per calendar day (3am + noon)
+MAX_DAILY_RUNS = 2
+
+# Only re-trigger if win rate improves by at least this much (absolute)
+MIN_WR_IMPROVEMENT = 0.05
 
 
 def _make_retry_session(retries=3, backoff_factor=2.0):
@@ -49,9 +75,48 @@ def _make_retry_session(retries=3, backoff_factor=2.0):
 
 http = _make_retry_session()
 
+
+def _get_daily_run_count():
+    """Read how many times HyperTrain has run today."""
+    today = date.today().isoformat()
+    try:
+        if RUN_COUNT_FILE.exists():
+            data = json.loads(RUN_COUNT_FILE.read_text())
+            if data.get("date") == today:
+                return data.get("count", 0)
+    except Exception:
+        pass
+    return 0
+
+
+def _increment_daily_run_count():
+    """Record a HyperTrain run for today."""
+    today = date.today().isoformat()
+    count = _get_daily_run_count() + 1
+    RUN_COUNT_FILE.write_text(json.dumps({"date": today, "count": count}))
+    return count
+
+
 BOTS = ["APEX", "DRIFT", "TITAN", "SENTINEL"]
 
-# Strategy parameter spaces — AutoResearch explores these
+# Crypto-only assets — Coinbase-tradeable only. No stocks, forex, or commodities.
+CRYPTO_ASSETS = [
+    "BTC/USD", "ETH/USD", "SOL/USD", "ADA/USD",
+    "AVAX/USD", "LINK/USD", "DOGE/USD", "MATIC/USD",
+]
+
+# ── STRATEGY PARAMETER SPACES ───────────────────────────────────────────────
+# WARNING: These params are KNOWN BROKEN as of 2026-04-09.
+# The simulate_backtest model does not respond meaningfully to these ranges.
+# They produce 13-24% WR regardless of values because the backtest is a
+# simple heuristic, not a real market simulation.
+#
+# TODO: Replace with strategy params derived from real proven crypto strategies:
+#   - ICT Fair Value Gap (FVG) entries on 1m/5m
+#   - VWAP mean reversion with volume confirmation
+#   - EMA crossover with RSI divergence filter
+#   - Bollinger Band squeeze breakouts with ATR stops
+# Each must be validated against real historical crypto data before use.
 PARAM_SPACES = {
     "APEX": {
         "rsi_oversold": (25, 40),
@@ -88,8 +153,7 @@ PARAM_SPACES = {
     }
 }
 
-# Research-validated best params from April 5 squad training (80K experiments)
-# Used as starting points instead of midpoint defaults
+# Last known best params — frozen until backtest model is rebuilt
 RESEARCH_VALIDATED_PARAMS = {
     "APEX": {
         "rsi_oversold": 33,
@@ -130,6 +194,7 @@ class HyperTrainer:
     def __init__(self):
         print(f"[HYPERTRAIN] Initialized. Free models only. Always with AutoResearch.")
         self.session_results = {}
+        self.last_best_wr = {}  # Track best WR per bot to gate re-runs
 
     def autoresearch_hypothesis(self, bot_name, current_params):
         """
@@ -140,8 +205,9 @@ class HyperTrainer:
             return self._generate_random_hypothesis(bot_name, current_params)
 
         try:
-            prompt = f"""You are a quantitative trading researcher optimizing a {bot_name} bot.
+            prompt = f"""You are a quantitative trading researcher optimizing a {bot_name} crypto bot.
 Current parameters: {json.dumps(current_params, indent=2)}
+Assets: crypto only (Coinbase). No stocks, forex, or commodities.
 
 Generate 3 specific parameter variations to test that might improve performance.
 Focus on: better entry timing, tighter risk management, or improved signal quality.
@@ -193,15 +259,15 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
     def simulate_backtest(self, bot_name, params, n_trades=500):
         """
         HyperTraining phase: Validate hypothesis with simulated backtest.
-        In production: replace with real VectorBT on historical data.
-        Returns performance metrics.
+
+        WARNING: This model is KNOWN BROKEN — it uses simple ratio heuristics
+        that produce 13-24% WR regardless of parameters. It does NOT simulate
+        real market dynamics. Must be rebuilt with real crypto price data
+        (e.g. VectorBT on Coinbase candles) before results are trustworthy.
         """
-        # Simulate based on parameter quality heuristics
-        # Better RSI levels = higher win rate
         base_win_rate = 0.55
 
         if bot_name == "APEX":
-            # Tighter stops = lower avg gain but higher win rate
             stop = params.get("stop_loss_pct", 0.004)
             trail = params.get("trailing_stop_pct", 0.006)
             rr_ratio = trail / stop
@@ -259,13 +325,13 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
         print(f"[AUTORESEARCH] Generating hypotheses for {bot_name}...")
 
         space = PARAM_SPACES.get(bot_name, {})
-        # Start from research-validated params (April 5, 80K experiments)
-        # Falls back to midpoints only if no validated params exist
+        # Start from research-validated params
         if bot_name in RESEARCH_VALIDATED_PARAMS:
             current_best = dict(RESEARCH_VALIDATED_PARAMS[bot_name])
         else:
             current_best = {k: round((v[0]+v[1])/2, 4) for k, v in space.items()}
         current_best_sharpe = 0.0
+        current_best_wr = self.last_best_wr.get(bot_name, 0.0)
 
         improvements = 0
         results = []
@@ -286,14 +352,21 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
                     "improved": metrics["sharpe"] > current_best_sharpe
                 })
 
-                if metrics["sharpe"] > current_best_sharpe + 0.05:
+                # Only count as improvement if WR improves by >= 5% absolute
+                new_wr = metrics["win_rate"]
+                if (metrics["sharpe"] > current_best_sharpe + 0.05
+                        and new_wr >= current_best_wr + MIN_WR_IMPROVEMENT):
                     current_best = merged
                     current_best_sharpe = metrics["sharpe"]
+                    current_best_wr = new_wr
                     improvements += 1
 
             if (i + 3) % 30 == 0:
                 print(f"[HYPERTRAIN] {bot_name}: {i+3}/{experiments} experiments | "
-                      f"Improvements: {improvements} | Best Sharpe: {current_best_sharpe:.3f}")
+                      f"Improvements: {improvements} | Best Sharpe: {current_best_sharpe:.3f} | "
+                      f"Best WR: {current_best_wr:.1%}")
+
+        self.last_best_wr[bot_name] = current_best_wr
 
         # Save results
         result_file = RESULTS_DIR / f"{bot_name}_training_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
@@ -304,6 +377,7 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
                 "improvements": improvements,
                 "best_params": current_best,
                 "best_sharpe": current_best_sharpe,
+                "best_win_rate": current_best_wr,
                 "timestamp": datetime.now().isoformat()
             }, f, indent=2)
 
@@ -312,12 +386,13 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             self._share_to_hive(bot_name, current_best, current_best_sharpe, experiments)
 
         print(f"[HYPERTRAIN] {bot_name} complete: {improvements} improvements | "
-              f"Best Sharpe: {current_best_sharpe:.3f}")
+              f"Best Sharpe: {current_best_sharpe:.3f} | Best WR: {current_best_wr:.1%}")
 
         return {
             "bot": bot_name,
             "improvements": improvements,
             "best_sharpe": current_best_sharpe,
+            "best_win_rate": current_best_wr,
             "best_params": current_best
         }
 
@@ -327,6 +402,8 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             if HIVE.exists():
                 with open(HIVE) as f:
                     data = json.load(f)
+                if "strategy_discoveries" not in data:
+                    data["strategy_discoveries"] = []
                 discovery = {
                     "name": f"{bot_name}_hypertrain_{datetime.now().strftime('%Y%m%d')}",
                     "bot": bot_name,
@@ -346,10 +423,28 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             print(f"[HYPERTRAIN] Hive share error: {e}")
 
     def run_all_bots(self, experiments_per_bot=100):
-        """Run HyperTrain + AutoResearch on ALL bots. Always together."""
+        """Run HyperTrain + AutoResearch on ALL bots. Always together.
+        Enforces daily run limit and training gate."""
+
+        # Check training gate
+        if not TRAINING_ENABLED:
+            msg = ("[HYPERTRAIN] TRAINING HALTED — backtest model is broken (13-24% WR). "
+                   "Strategy parameters must be rebuilt before training resumes. "
+                   "Set TRAINING_ENABLED = True after fixing simulate_backtest().")
+            print(msg)
+            return {"halted": True, "reason": "backtest_model_broken"}
+
+        # Enforce hard daily limit
+        runs_today = _get_daily_run_count()
+        if runs_today >= MAX_DAILY_RUNS:
+            msg = f"[HYPERTRAIN] Daily limit reached ({runs_today}/{MAX_DAILY_RUNS}). Skipping."
+            print(msg)
+            return {"halted": True, "reason": "daily_limit_reached", "runs_today": runs_today}
+
         print(f"\n{'='*50}")
         print(f"[HYPERTRAIN + AUTORESEARCH] Full squad training starting")
         print(f"[HYPERTRAIN + AUTORESEARCH] {experiments_per_bot} experiments per bot")
+        print(f"[HYPERTRAIN] Run {runs_today + 1}/{MAX_DAILY_RUNS} for today")
         print(f"{'='*50}\n")
 
         start = datetime.now()
@@ -361,12 +456,14 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             time.sleep(1)
 
         duration = (datetime.now() - start).seconds
+        _increment_daily_run_count()
 
         print(f"\n{'='*50}")
         print(f"[HYPERTRAIN] Full squad training complete in {duration}s")
         print(f"{'='*50}")
         for bot, result in all_results.items():
-            print(f"  {bot}: {result['improvements']} improvements | Sharpe: {result['best_sharpe']:.3f}")
+            print(f"  {bot}: {result['improvements']} improvements | "
+                  f"Sharpe: {result['best_sharpe']:.3f} | WR: {result['best_win_rate']:.1%}")
 
         # Save master results
         master_file = RESULTS_DIR / f"squad_training_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
@@ -382,6 +479,14 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
 
 if __name__ == "__main__":
     trainer = HyperTrainer()
-    print("Running full squad HyperTraining + AutoResearch...")
-    results = trainer.run_all_bots(experiments_per_bot=100)
-    print("\nTraining complete. Results saved to logs/training/")
+    if not TRAINING_ENABLED:
+        print("=" * 60)
+        print("HYPERTRAIN HALTED: Backtest model is broken.")
+        print("The simulate_backtest() produces 13-24% WR on ALL parameters.")
+        print("Strategy params must be rebuilt with real crypto data first.")
+        print("Set TRAINING_ENABLED = True after fixing the model.")
+        print("=" * 60)
+    else:
+        print("Running full squad HyperTraining + AutoResearch...")
+        results = trainer.run_all_bots(experiments_per_bot=100)
+        print("\nTraining complete. Results saved to logs/training/")
