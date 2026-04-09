@@ -2510,3 +2510,21 @@ Heartbeat safety checks: ['AutoResearch callback delivered', 'Kicked auto_improv
 
 ## [2026-04-09 13:30]
 AutoResearch started PID 95201 at 2026-04-09T13:30:19.953168
+
+## [2026-04-09 13:48]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 13:48]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 13:48]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 13:48]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 13:48]
+Proactive heartbeat sent: APEX's only fired twice all day and we're sitting at 50% WR — that's right on th...
+
+## [2026-04-09 13:48]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']

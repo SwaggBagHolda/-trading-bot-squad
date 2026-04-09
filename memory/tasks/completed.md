@@ -364,3 +364,10 @@ Invalid API key · Fix external API key
 **Output:**
 claude CLI not found. Is it installed and in PATH?
 
+---
+## 2026-04-09 13:18 | FAILED
+**Task:** CRITICAL: Rebuild HyperTrain backtest model — current simulate_backtest() is broken
+
+**Output:**
+claude CLI not found. Is it installed and in PATH?
+

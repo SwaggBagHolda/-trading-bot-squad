@@ -115,3 +115,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 13:18]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's best backtest right now is mean reversion on SPY 4h — 72.53% WR, not the BLUR short she's sitting in at 50%. That"
+
+## [2026-04-09 13:48]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's only fired twice all day and we're sitting at 50% WR — that's right on the edge of acceptable. The BLUR short is "
