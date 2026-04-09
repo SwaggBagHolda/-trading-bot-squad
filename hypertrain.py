@@ -46,9 +46,9 @@ except:
 FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
 
 # ── TRAINING GATE ────────────────────────────────────────────────────────────
-# Backtest rebuilt 2026-04-09 with real Coinbase candles via ccxt.
-# Strategies use real indicators (EMA, RSI, MACD, BB, ATR) on actual OHLCV data.
-TRAINING_ENABLED = True
+# HALTED 2026-04-09: 4+ cycles with identical results — strategy space is broken.
+# Must rebuild strategy exploration before re-enabling.
+TRAINING_ENABLED = False
 
 # Hard limit: maximum 2 runs per calendar day (3am + noon)
 MAX_DAILY_RUNS = 2

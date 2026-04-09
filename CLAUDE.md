@@ -71,6 +71,17 @@ Paperclip + OpenClaw + Claude Code + Telegram + Coinable + AutoResearch
 - memory/tasks/ — task queue between NEXUS and Claude Code
 - memory/research/bugs.md — bug log, never repeat
 
+## COMPETITIVE DNA — College to Pro System
+- Paper trading = college proving ground. Bots compete to graduate to live.
+- Live trading = pro status. 1.5x position size, +5 assets as reward.
+- Each bot has a confidence score (0-1): +0.02 per win, -0.03 per loss. Affects position sizing.
+- All bot stats visible in hive_mind.json — creates real competition between them.
+- NEXUS is the head coach — she decides promotions, benchings, retirements autonomously.
+- **Graduate to live:** 100+ trades, >55% WR, >1.0 Sharpe, <5% max drawdown
+- **Bench to paper:** Live bot drops below 40% WR over 20+ trades
+- **Retire and replace:** 500 paper trades with no WR improvement → v2 built on different strategy
+- Bots WANT to go pro. It's their reward and purpose. They compete like athletes.
+
 ## CURRICULUM (must pass before going live)
 - Hypertraining via AutoResearch (Karpathy-style) — NOT time-based
 - Thousands of simulated trades per hour

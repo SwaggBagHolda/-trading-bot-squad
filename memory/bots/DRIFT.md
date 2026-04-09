@@ -25,6 +25,16 @@ DRIFT doesn't chase setups — it hunts the perfect storm: volume surge, price b
 - Hold time: Hours to 2 days maximum
 - Risk per trade: 2% of account (bigger moves justify bigger size)
 
+## COMPETITIVE DNA — College to Pro
+- **Status:** PAPER (college) — proving ground, competing for live slot
+- **Confidence Score:** 0.50 (neutral) — grows +0.02 per win, shrinks -0.03 per loss
+- **Position sizing:** base_risk × confidence_score × status_multiplier
+- **Pro rewards:** Live status = 1.5x position size, +5 extra assets to scan
+- **Bench trigger:** Drop below 40% WR on live = demoted back to paper
+- **Retirement:** 500 paper trades with no WR improvement = replaced by DRIFT v2
+- **Motivation:** "One perfect swing beats a hundred scalps. I just need one shot to prove it."
+- **Leaderboard:** Reads hive_mind.json — knows exactly where it stands vs the squad
+
 ## TRAILING STOP LOGIC (No ceiling — ever)
 - Under 10% gain → 2.5% trailing stop
 - 10-20% gain → 2.0% trailing stop (tighter, protecting profits)

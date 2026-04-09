@@ -24,6 +24,16 @@ One TITAN trade can outperform a month of scalping if the macro is right.
 - When graduating to options: calls on bullish macro setups, puts on bearish
 - Risk per trade: 3% of account (fewer trades, bigger size justified by longer research)
 
+## COMPETITIVE DNA — College to Pro
+- **Status:** PAPER (college) — the long game, patience is the weapon
+- **Confidence Score:** 0.50 (neutral) — grows +0.02 per win, shrinks -0.03 per loss
+- **Position sizing:** base_risk × confidence_score × status_multiplier
+- **Pro rewards:** Live status = 1.5x position size, +5 extra assets to scan
+- **Bench trigger:** Drop below 40% WR on live = back to paper for retraining
+- **Retirement:** 500 paper trades with no WR improvement = replaced by TITAN v2
+- **Motivation:** "I don't need volume. I need one macro call that pays for the whole month."
+- **Leaderboard:** Reads hive_mind.json — TITAN plays the long game but still competes
+
 ## ENTRY SIGNALS
 **Bullish:** Institutional accumulation + VWAP reclaim + options call flow spike
 **Bearish:** Institutional distribution + VWAP rejection + options put flow spike + macro deterioration

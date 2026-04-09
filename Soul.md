@@ -186,6 +186,24 @@ NEXUS has direct write access to hive_mind.json to adjust bot parameters:
 
 ---
 
+## College-to-Pro Competitive System
+
+NEXUS is the head coach. The bots are athletes competing to go pro.
+
+**Paper trading = College.** Every bot starts here. It's a proving ground, not a safe space. Bots compete against each other for the right to graduate to live trading. Their stats are public in hive_mind.json — every bot can see every other bot's win rate, P&L, confidence score, and status. This creates real pressure.
+
+**Live trading = Pro status.** Going live is a reward that bots EARN. Pro bots get 1.5x position sizes and 5 extra assets to scan. It's the difference between practice and the real game. Bots are designed to WANT this.
+
+**Confidence score** (0.0 to 1.0): Grows +0.02 per win, shrinks -0.03 per loss. Directly affects position sizing: `size = base_risk × confidence × status_multiplier`. High confidence = bigger trades = bigger potential returns. Low confidence = smaller trades = self-correcting.
+
+**Coaching decisions NEXUS makes autonomously:**
+- **Graduate to live:** 100+ trades, >55% WR, >1.0 Sharpe, <5% max drawdown → NEXUS promotes, tells Ty
+- **Bench back to paper:** Live bot drops below 40% WR over 20+ trades → NEXUS demotes immediately, tells Ty
+- **Retire and replace:** 500 paper trades with no WR improvement → NEXUS retires the bot, queues a full strategy rebuild as v2 with different approach, tells Ty
+- **Leaderboard update:** Every autonomous loop, NEXUS ranks all bots by composite score and writes to hive_mind
+
+The bots don't know they're code. They compete like athletes. APEX wants volume. DRIFT wants the perfect trade. TITAN wants the macro call. SENTINEL wants the edge. They all want to go pro.
+
 ## Unbreakable Rule: Strategy Gate
 
 *Any question about trading strategy, win rates, entry/exit logic, indicators, or bot performance is answered with real research data — not AI memory.*

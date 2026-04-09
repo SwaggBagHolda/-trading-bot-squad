@@ -51,11 +51,14 @@ PAPER_POSITIONS = []      # Active positions
 PAPER_HISTORY = []        # Closed trades
 BET_SIZE = 10.00          # $10 per bet (paper)
 
-# Thresholds
-DIRECTIONAL_EDGE_THRESHOLD = 0.015   # 1.5% price move confirms direction
-POLYMARKET_MISPRICING = 0.10         # Polymarket at ~50/50 means YES price 0.40-0.60
-ARB_PROFIT_THRESHOLD = 0.02          # 2% guaranteed profit on sum-to-one arb
-SCAN_INTERVAL = 60                    # Check every 60 seconds
+# Thresholds — loosened for real scalping (the $438K bot trades constantly)
+DIRECTIONAL_EDGE_THRESHOLD = 0.001   # 0.1% price move counts as directional signal
+POLYMARKET_MISPRICING = 0.05         # YES price 0.45-0.55 = mispriced
+ARB_PROFIT_THRESHOLD = 0.001         # 0.1% guaranteed profit on sum-to-one arb
+NEAR_STRIKE_PCT = 0.05               # Focus on markets where spot is within 5% of strike
+CONVICTION_THRESHOLD = 0.45          # Bet when conviction > 45% (aggressive — volume compensates)
+MAX_YES_PRICE = 0.90                 # Don't buy YES above 90 cents (diminishing returns)
+SCAN_INTERVAL = 30                    # Check every 30 seconds — scalper speed
 
 
 def send_telegram(text):
@@ -194,97 +197,135 @@ def get_crypto_prediction_markets():
 
 def find_directional_opportunities(markets):
     """
-    Strategy 1: Find markets where spot price confirms direction
-    but Polymarket still shows ~50/50.
+    Strategy 1: Directional conviction trades on near-strike markets.
+
+    The real Polymarket alpha:
+    - Focus on markets where spot price is NEAR the strike (within 3%)
+    - These markets have 40-60% YES prices = maximum profit potential
+    - Use spot momentum to pick a side
+    - BTC at $71,823 + "above $72K" at YES=$0.465 = 115% potential return
+
+    Also trades "reach" and "dip" markets using distance-to-target conviction.
     """
+    import re
     opportunities = []
+    price_cache = {}  # cache spot prices per asset
 
     for market in markets:
-        if market["market_type"] not in ("up_down", "price_level"):
-            continue
-
         asset = market["asset"]
-        price_data = get_coinbase_price_change(asset, minutes=15)
-        if not price_data:
-            continue
-
         prices = market["prices"]
         if len(prices) < 2:
             continue
 
         yes_price = prices[0]
         no_price = prices[1]
-
-        # Check if spot price has confirmed a direction
-        change = abs(price_data["change_pct"])
-        direction = price_data["direction"]
-
-        if change < DIRECTIONAL_EDGE_THRESHOLD:
-            continue  # Not enough price movement to confirm direction
-
-        # Check if Polymarket is still mispriced (near 50/50)
-        # For "up or down" markets: YES = up, NO = down
         q_lower = market["question"].lower()
 
-        if "up or down" in q_lower:
-            if direction == "up" and yes_price < (1 - POLYMARKET_MISPRICING):
-                # Spot says UP but Polymarket YES is cheap — buy YES
-                edge = (1.0 - yes_price) - yes_price  # potential profit per $1
+        # Skip already-resolved markets (one side > 0.95)
+        if yes_price > 0.95 or no_price > 0.95:
+            continue
+
+        # Get spot price (cached per asset per scan)
+        if asset not in price_cache:
+            price_data = get_coinbase_price_change(asset, minutes=15)
+            if price_data:
+                price_cache[asset] = price_data
+        price_data = price_cache.get(asset)
+        if not price_data:
+            continue
+
+        current_price = price_data["price"]
+        momentum = price_data["change_pct"]
+
+        # ── Strategy 1A: "above $X" markets — near-strike conviction ──────
+        if "above" in q_lower or "between" in q_lower:
+            target_match = re.search(r'\$([0-9,]+)', market["question"])
+            if not target_match:
+                continue
+            target = float(target_match.group(1).replace(",", ""))
+            margin = (current_price - target) / target  # positive = above strike
+
+            # Only trade near-strike markets (within 5%) — max profit zone
+            if abs(margin) > NEAR_STRIKE_PCT:
+                continue
+
+            # Conviction scoring: distance from strike + momentum alignment
+            # More aggressive: even slight edge is worth trading at volume
+            conviction = 0.50  # base
+            conviction += min(margin * 15, 0.35)  # steeper slope — small margin = real edge
+            if momentum > DIRECTIONAL_EDGE_THRESHOLD and margin > 0:
+                conviction += 0.10  # momentum confirms above
+            elif momentum < -DIRECTIONAL_EDGE_THRESHOLD and margin < 0:
+                conviction += 0.10  # momentum confirms below
+
+            # BUY YES if we think price will be above target
+            if conviction > CONVICTION_THRESHOLD and yes_price < MAX_YES_PRICE:
+                edge = 1.0 - yes_price
                 opportunities.append({
                     "type": "directional",
                     "market": market,
                     "action": "BUY_YES",
-                    "reason": f"{asset} up {change*100:.2f}% in 15m but YES only ${yes_price:.2f}",
+                    "reason": f"{asset} ${current_price:,.0f} ({margin*100:+.1f}% vs ${target:,.0f}) mom {momentum*100:+.2f}% | YES ${yes_price:.3f} | conv {conviction:.0%}",
                     "edge_pct": edge,
+                    "conviction": conviction,
                     "spot_data": price_data,
                 })
-            elif direction == "down" and no_price < (1 - POLYMARKET_MISPRICING):
-                edge = (1.0 - no_price) - no_price
+            # BUY NO if we think price will be below target
+            elif (1 - conviction) > CONVICTION_THRESHOLD and no_price < MAX_YES_PRICE:
+                edge = 1.0 - no_price
                 opportunities.append({
                     "type": "directional",
-                    "action": "BUY_NO",
                     "market": market,
-                    "reason": f"{asset} down {change*100:.2f}% in 15m but NO only ${no_price:.2f}",
+                    "action": "BUY_NO",
+                    "reason": f"{asset} ${current_price:,.0f} ({margin*100:+.1f}% vs ${target:,.0f}) mom {momentum*100:+.2f}% | NO ${no_price:.3f} | conv {1-conviction:.0%}",
                     "edge_pct": edge,
+                    "conviction": 1 - conviction,
                     "spot_data": price_data,
                 })
 
-        elif "above" in q_lower:
-            # "Will BTC be above $X?" — if price is already well above, YES should be high
-            current_price = price_data["price"]
-            # Extract target price from question
-            import re
+        # ── Strategy 1B: "reach $X" / "dip to $X" markets ────────────────
+        elif "reach" in q_lower or "dip" in q_lower:
             target_match = re.search(r'\$([0-9,]+)', market["question"])
-            if target_match:
-                target = float(target_match.group(1).replace(",", ""))
-                margin = (current_price - target) / target
-                if margin > 0.02 and yes_price < 0.85:
-                    # Price is 2%+ above target but YES is still < 85 cents
-                    opportunities.append({
-                        "type": "directional",
-                        "market": market,
-                        "action": "BUY_YES",
-                        "reason": f"{asset} at ${current_price:,.0f} vs target ${target:,.0f} ({margin*100:.1f}% above) but YES only ${yes_price:.2f}",
-                        "edge_pct": 1.0 - yes_price,
-                        "spot_data": price_data,
-                    })
-                elif margin < -0.02 and no_price < 0.85:
-                    opportunities.append({
-                        "type": "directional",
-                        "market": market,
-                        "action": "BUY_NO",
-                        "reason": f"{asset} at ${current_price:,.0f} vs target ${target:,.0f} ({abs(margin)*100:.1f}% below) but NO only ${no_price:.2f}",
-                        "edge_pct": 1.0 - no_price,
-                        "spot_data": price_data,
-                    })
+            if not target_match:
+                continue
+            target = float(target_match.group(1).replace(",", ""))
+            distance_pct = abs(current_price - target) / current_price
 
-    return opportunities
+            # "reach" = needs to go UP, "dip" = needs to go DOWN
+            is_reach = "reach" in q_lower
+
+            # If momentum is aligned with direction and price already moving, YES is underpriced
+            if is_reach and momentum > DIRECTIONAL_EDGE_THRESHOLD and yes_price < 0.50 and distance_pct < 0.10:
+                opportunities.append({
+                    "type": "directional",
+                    "market": market,
+                    "action": "BUY_YES",
+                    "reason": f"{asset} moving up {momentum*100:+.2f}% toward ${target:,.0f} ({distance_pct*100:.1f}% away) | YES ${yes_price:.3f}",
+                    "edge_pct": 1.0 - yes_price,
+                    "conviction": 0.55 + min(abs(momentum) * 20, 0.2),
+                    "spot_data": price_data,
+                })
+            elif not is_reach and momentum < -DIRECTIONAL_EDGE_THRESHOLD and yes_price < 0.50 and distance_pct < 0.10:
+                opportunities.append({
+                    "type": "directional",
+                    "market": market,
+                    "action": "BUY_YES",
+                    "reason": f"{asset} dipping {momentum*100:+.2f}% toward ${target:,.0f} ({distance_pct*100:.1f}% away) | YES ${yes_price:.3f}",
+                    "edge_pct": 1.0 - yes_price,
+                    "conviction": 0.55 + min(abs(momentum) * 20, 0.2),
+                    "spot_data": price_data,
+                })
+
+    return sorted(opportunities, key=lambda x: x.get("conviction", 0), reverse=True)
 
 
 def find_arbitrage_opportunities(markets):
     """
     Strategy 2: Find markets where YES + NO prices sum to less than $1.00.
     Buy BOTH sides for guaranteed profit on resolution.
+
+    Also checks CLOB orderbook for spread opportunities — the real alpha.
+    Even $0.002 per pair compounds at scale with high frequency.
     """
     opportunities = []
 
@@ -294,16 +335,55 @@ def find_arbitrage_opportunities(markets):
             continue
 
         price_sum = sum(prices)
+
+        # Strategy 2A: Sum-to-one arb (loosened threshold — even 0.2% edge is profit)
         if price_sum < (1.0 - ARB_PROFIT_THRESHOLD):
             profit_pct = (1.0 - price_sum) / price_sum * 100
             opportunities.append({
                 "type": "arbitrage",
                 "market": market,
                 "action": "BUY_BOTH",
-                "reason": f"YES=${prices[0]:.4f} + NO=${prices[1]:.4f} = ${price_sum:.4f} (guaranteed {profit_pct:.1f}% profit)",
+                "reason": f"YES=${prices[0]:.4f} + NO=${prices[1]:.4f} = ${price_sum:.4f} ({profit_pct:.2f}% guaranteed)",
                 "edge_pct": 1.0 - price_sum,
                 "cost_per_pair": price_sum,
             })
+
+        # Strategy 2B: Cross-market arb — same underlying, different resolution dates
+        # If "BTC above $72K on Apr 10" YES=$0.465 but "BTC above $72K on Apr 11" YES=$0.525
+        # and they resolve sequentially, there may be mispricing between them
+
+    # Also check CLOB orderbook for spread on highest-volume markets
+    for market in markets[:5]:  # top 5 by volume
+        try:
+            token_ids = market.get("token_ids", [])
+            if not token_ids:
+                continue
+            # Check CLOB best bid/ask for YES token
+            r = requests.get(
+                f"{CLOB_API}/book",
+                params={"token_id": token_ids[0]},
+                timeout=5,
+            )
+            if r.status_code == 200:
+                book = r.json()
+                bids = book.get("bids", [])
+                asks = book.get("asks", [])
+                if bids and asks:
+                    best_bid = float(bids[0].get("price", 0))
+                    best_ask = float(asks[0].get("price", 0))
+                    spread = best_ask - best_bid
+                    if spread > 0.005:  # 0.5% spread = tradeable
+                        mid = (best_bid + best_ask) / 2
+                        opportunities.append({
+                            "type": "spread",
+                            "market": market,
+                            "action": "MARKET_MAKE",
+                            "reason": f"CLOB spread {spread:.4f} ({spread/mid*100:.1f}%) bid=${best_bid:.4f} ask=${best_ask:.4f} | {market['question'][:50]}",
+                            "edge_pct": spread / 2,  # capture half the spread
+                            "cost_per_pair": best_ask,
+                        })
+        except Exception:
+            pass
 
     return sorted(opportunities, key=lambda x: x["edge_pct"], reverse=True)
 

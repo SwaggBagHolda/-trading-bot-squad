@@ -2089,6 +2089,91 @@ def autonomous_loop():
     except Exception as e:
         act(f"CONSEQUENCE 7c error: {e}")
 
+    # ── CHECK 8: Competitive DNA — coaching, confidence, leaderboard ────────
+    try:
+        dna = hive.get("competitive_dna", {})
+        rules = dna.get("rules", {})
+        grad_req = rules.get("graduation_requires", {})
+        bench_req = rules.get("bench_trigger", {})
+        retire_req = rules.get("retirement_trigger", {})
+
+        leaderboard = []
+        for bot_name in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
+            data = perf.get(bot_name, {})
+            if not isinstance(data, dict):
+                continue
+            wr = data.get("win_rate", 0)
+            trades = data.get("trades", 0)
+            pnl = data.get("daily_pnl", 0)
+            conf = data.get("confidence_score", 0.50)
+            status = data.get("status", "paper")
+            best_wr = data.get("best_wr_ever", 0)
+            no_improve = data.get("paper_trades_since_improve", 0)
+
+            # Update confidence score based on recent performance
+            if trades > 0:
+                if wr > 0.55:
+                    conf = min(conf + 0.01, 1.0)  # slight boost each check if winning
+                elif wr < 0.45:
+                    conf = max(conf - 0.01, 0.1)  # slight drop if losing
+                data["confidence_score"] = round(conf, 3)
+                data["position_size_multiplier"] = round(conf * (1.5 if status == "live" else 1.0), 3)
+
+            # Track best WR and improvement
+            if wr > best_wr:
+                data["best_wr_ever"] = round(wr, 4)
+                data["paper_trades_since_improve"] = 0
+            elif status == "paper":
+                data["paper_trades_since_improve"] = no_improve + trades
+
+            # COACHING DECISIONS
+            # Graduate: paper bot meets all requirements
+            if status == "paper" and trades >= grad_req.get("min_trades", 100) and wr >= grad_req.get("min_wr", 0.55):
+                data["status"] = "live"
+                data["position_size_multiplier"] = round(conf * 1.5, 3)
+                act(f"COACH: {bot_name} GRADUATED TO LIVE — {wr*100:.1f}% WR on {trades} trades, conf={conf:.2f}")
+                send(OWNER_ID, f"{bot_name} just went PRO. {wr*100:.1f}% WR on {trades} trades. Position size boosted 1.5x. Confidence: {conf:.0%}")
+
+            # Bench: live bot underperforming
+            elif status == "live" and trades >= bench_req.get("min_trades_to_eval", 20) and wr < bench_req.get("live_wr_below", 0.40):
+                data["status"] = "paper"
+                data["position_size_multiplier"] = round(conf, 3)
+                act(f"COACH: {bot_name} BENCHED — {wr*100:.1f}% WR on live. Back to paper.")
+                send(OWNER_ID, f"{bot_name} benched. {wr*100:.1f}% WR on live over {trades} trades. Demoted to paper for retraining.")
+
+            # Retire: paper bot stagnant
+            elif status == "paper" and no_improve >= retire_req.get("paper_trades_no_improve", 500):
+                gen = data.get("generation", 1)
+                data["status"] = "retired"
+                act(f"COACH: {bot_name} v{gen} RETIRED — {no_improve} trades with no improvement")
+                send(OWNER_ID, f"{bot_name} v{gen} retired after {no_improve} trades with no WR improvement. Queuing v{gen+1} with different strategy.")
+                pending_path = BASE / "memory" / "tasks" / "pending.md"
+                existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
+                task = f"[AUTO_IMPROVE] RETIREMENT: Build {bot_name} v{gen+1} with completely different strategy. v{gen} stagnated at {wr*100:.1f}% WR over {no_improve} trades. (auto-queued {now.isoformat()})"
+                if f"Build {bot_name} v{gen+1}" not in existing:
+                    pending_path.write_text(existing.rstrip() + f"\n- {task}\n")
+
+            # Composite score for leaderboard
+            score = (wr * 40) + (conf * 30) + (min(pnl, 100) * 0.3)
+            leaderboard.append({"bot": bot_name, "score": round(score, 1), "wr": round(wr * 100, 1),
+                                "conf": round(conf, 2), "status": status, "trades": trades})
+
+        # Write leaderboard
+        leaderboard.sort(key=lambda x: x["score"], reverse=True)
+        hive["leaderboard"] = {"last_updated": now.isoformat(), "rankings": leaderboard}
+
+        # Write updated performance back
+        try:
+            HIVE_PATH = BASE / "shared" / "hive_mind.json"
+            HIVE_PATH.write_text(json.dumps(hive, indent=2))
+            if leaderboard:
+                leader = leaderboard[0]
+                act(f"LEADERBOARD: #{1} {leader['bot']} score={leader['score']} WR={leader['wr']}% conf={leader['conf']}")
+        except Exception as e:
+            act(f"Leaderboard write error: {e}")
+    except Exception as e:
+        act(f"COMPETITIVE DNA error: {e}")
+
     act("=== AUTONOMOUS LOOP END ===")
 
 

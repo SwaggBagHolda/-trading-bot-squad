@@ -39,11 +39,17 @@ WATCHLIST = list(_DEFAULT_WATCHLIST)  # mutable — refreshed by scanner
 # ── Scalping parameters ───────────────────────────────────────────────────────
 STARTING          = 328.29
 RISK              = 0.25    # 25% of balance per trade
-STOP              = 0.003   # 0.3% hard stop
-TARGET            = 0.015   # 1.5% take profit
-TRAIL             = 0.003   # 0.3% trailing stop distance (from peak)
-MIN_PROFIT_TRAIL  = 0.008   # trail only activates after 0.8% profit — stops premature exits
+# Stops are now adaptive — these are BASE values for BTC/ETH/SOL (large-cap tight stops)
+STOP              = 0.015   # 1.5% hard stop (was 0.3% — too tight for low-cap coins)
+TARGET            = 0.030   # 3.0% take profit (was 1.5% — need room for volatile assets)
+TRAIL             = 0.010   # 1.0% trailing stop distance (was 0.3% — crypto needs space)
+MIN_PROFIT_TRAIL  = 0.015   # trail activates after 1.5% profit (was 0.8%)
 MAX_LOSS          = 0.05    # 5% daily kill switch
+# Large-cap overrides — BTC/ETH/SOL can use tighter stops
+TIGHT_STOP_SYMBOLS = {"BTC", "ETH", "SOL"}
+TIGHT_STOP        = 0.005   # 0.5% for large-caps
+TIGHT_TARGET      = 0.015   # 1.5% for large-caps
+TIGHT_TRAIL       = 0.004   # 0.4% for large-caps
 MIN_MOMENTUM      = float(os.getenv("APEX_MIN_MOMENTUM", "0.0001"))  # 0.01% — wide net for scalping
 POLL_INTERVAL     = 5       # seconds between price polls — scalper speed
 WINDOW_TICKS      = 6       # 6 × 5s = 30-second window
@@ -578,23 +584,29 @@ def run():
 
                 entry     = active["entry"]
                 direction = active["direction"]
+                symbol    = active.get("symbol", "")
                 pnl_pct   = (price - entry) / entry if direction == "BUY" \
                             else (entry - price) / entry
 
+                # Adaptive stops: tight for BTC/ETH/SOL, wide for volatile low-caps
+                if symbol in TIGHT_STOP_SYMBOLS:
+                    a_stop, a_target, a_trail = TIGHT_STOP, TIGHT_TARGET, TIGHT_TRAIL
+                else:
+                    a_stop, a_target, a_trail = STOP, TARGET, TRAIL
+
                 # Update trailing stop
-                # Trail only activates after MIN_PROFIT_TRAIL (0.8%) — prevents premature exits
                 trail_active = pnl_pct >= MIN_PROFIT_TRAIL
                 if direction == "BUY":
                     if price > trail_best:
                         trail_best = price
-                    trail_stop = trail_best * (1 - TRAIL)
-                    should_exit = pnl_pct <= -STOP or pnl_pct >= TARGET or \
+                    trail_stop = trail_best * (1 - a_trail)
+                    should_exit = pnl_pct <= -a_stop or pnl_pct >= a_target or \
                                   (trail_active and price <= trail_stop)
                 else:
                     if price < trail_best:
                         trail_best = price
-                    trail_stop = trail_best * (1 + TRAIL)
-                    should_exit = pnl_pct <= -STOP or pnl_pct >= TARGET or \
+                    trail_stop = trail_best * (1 + a_trail)
+                    should_exit = pnl_pct <= -a_stop or pnl_pct >= a_target or \
                                   (trail_active and price >= trail_stop)
 
                 print(f"[APEX] {direction} {active['symbol']} {pnl_pct*100:+.3f}% "
@@ -688,8 +700,12 @@ def run():
                     price     = sig["price"]
                     direction = sig["direction"]
                     product   = sig["product"]
-                    stop_p    = price * (1 - STOP) if direction == "BUY" else price * (1 + STOP)
-                    target_p  = price * (1 + TARGET) if direction == "BUY" else price * (1 - TARGET)
+                    sym       = sig["symbol"]
+                    # Adaptive stops per asset class
+                    s_stop   = TIGHT_STOP if sym in TIGHT_STOP_SYMBOLS else STOP
+                    s_target = TIGHT_TARGET if sym in TIGHT_STOP_SYMBOLS else TARGET
+                    stop_p    = price * (1 - s_stop) if direction == "BUY" else price * (1 + s_stop)
+                    target_p  = price * (1 + s_target) if direction == "BUY" else price * (1 - s_target)
 
                     sig_label = sig.get("signal_type", "momentum").upper()
                     fvg_info  = f" FVG:{sig['fvg_zone']}" if sig.get("fvg_zone") else ""
