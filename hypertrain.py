@@ -1,8 +1,8 @@
 """
 HYPERTRAIN + AUTORESEARCH — Always Together
 "One discovers. One validates. They are inseparable."
-Runs every night at 11pm on all bots simultaneously.
-Uses FREE models only — DeepSeek R1 via OpenRouter.
+Runs at 3am (overnight) and 12pm (midday) on all bots simultaneously.
+Uses FREE models only via OpenRouter.
 """
 
 import json
@@ -12,6 +12,8 @@ import requests
 import time
 from datetime import datetime
 from pathlib import Path
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 BASE = Path.home() / "trading-bot-squad"
 HIVE = BASE / "shared" / "hive_mind.json"
@@ -28,6 +30,24 @@ except:
     pass
 
 FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
+
+
+def _make_retry_session(retries=3, backoff_factor=2.0):
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=["GET", "POST"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+http = _make_retry_session()
 
 BOTS = ["APEX", "DRIFT", "TITAN", "SENTINEL"]
 
@@ -68,6 +88,44 @@ PARAM_SPACES = {
     }
 }
 
+# Research-validated best params from April 5 squad training (80K experiments)
+# Used as starting points instead of midpoint defaults
+RESEARCH_VALIDATED_PARAMS = {
+    "APEX": {
+        "rsi_oversold": 33,
+        "rsi_overbought": 73,
+        "volume_multiplier": 1.7489,
+        "stop_loss_pct": 0.002,
+        "trailing_stop_pct": 0.0065,
+        "ema_fast": 10,
+        "ema_slow": 23,
+    },
+    "DRIFT": {
+        "volume_multiplier": 2.6561,
+        "min_price_move": 0.0701,
+        "trailing_stop_initial": 0.0343,
+        "trailing_stop_tight": 0.016,
+        "macd_fast": 13,
+        "macd_slow": 21,
+        "breakout_confirmation_bars": 3,
+    },
+    "TITAN": {
+        "min_confluence": 4,
+        "stop_loss_pct": 0.0436,
+        "trailing_stop_pct": 0.0689,
+        "min_market_cap_b": 1.3367,
+        "min_7d_move": 10,
+        "max_hold_days": 15,
+    },
+    "SENTINEL": {
+        "risk_per_trade": 0.0051,
+        "stop_loss_pct": 0.0044,
+        "trailing_stop_pct": 0.0062,
+        "min_trend_bars": 5,
+        "daily_loss_buffer": 0.0097,
+    },
+}
+
 class HyperTrainer:
     def __init__(self):
         print(f"[HYPERTRAIN] Initialized. Free models only. Always with AutoResearch.")
@@ -89,7 +147,7 @@ Generate 3 specific parameter variations to test that might improve performance.
 Focus on: better entry timing, tighter risk management, or improved signal quality.
 Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
 
-            response = requests.post(
+            response = http.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={"Authorization": f"Bearer {OPENROUTER_KEY}"},
                 json={
@@ -201,8 +259,12 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
         print(f"[AUTORESEARCH] Generating hypotheses for {bot_name}...")
 
         space = PARAM_SPACES.get(bot_name, {})
-        # Start with midpoint params
-        current_best = {k: round((v[0]+v[1])/2, 4) for k, v in space.items()}
+        # Start from research-validated params (April 5, 80K experiments)
+        # Falls back to midpoints only if no validated params exist
+        if bot_name in RESEARCH_VALIDATED_PARAMS:
+            current_best = dict(RESEARCH_VALIDATED_PARAMS[bot_name])
+        else:
+            current_best = {k: round((v[0]+v[1])/2, 4) for k, v in space.items()}
         current_best_sharpe = 0.0
 
         improvements = 0

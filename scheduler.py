@@ -12,7 +12,8 @@ Schedule:
 - Every 6 hrs: WARDEN "all is well" report to Ty
 - 6:00 AM: Daily report to Ty
 - 8:00 AM: Morning market scan all bots
-- 11:00 PM: HyperTraining + AutoResearch (all bots, 100 experiments each)
+- 3:00 AM: HyperTraining + AutoResearch (overnight, all bots)
+- 12:00 PM: HyperTraining + AutoResearch (midday, all bots)
 - Continuous: Paper trading loop for all bots
 - Always: If not trading, training. No exceptions.
 """
@@ -21,12 +22,15 @@ import os
 import sys
 import time
 import json
+import signal
 import sqlite3
 import requests
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 BASE = Path.home() / "trading-bot-squad"
 HIVE = BASE / "shared" / "hive_mind.json"
@@ -37,6 +41,51 @@ load_dotenv(BASE / ".env")
 TELEGRAM_TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN")
 OWNER_CHAT_ID = os.getenv("OWNER_TELEGRAM_CHAT_ID")
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
+
+# PID file to prevent duplicate instances
+PID_FILE = LOGS / "scheduler.pid"
+
+
+def acquire_pidlock():
+    """Prevent duplicate scheduler instances. Returns True if we got the lock."""
+    if PID_FILE.exists():
+        try:
+            old_pid = int(PID_FILE.read_text().strip())
+            os.kill(old_pid, 0)  # Check if process exists
+            if old_pid != os.getpid():
+                print(f"[SCHEDULER] Another instance running (PID {old_pid}). Exiting.")
+                sys.exit(0)
+        except (ProcessLookupError, ValueError):
+            pass  # Stale PID file, safe to overwrite
+    PID_FILE.write_text(str(os.getpid()))
+    return True
+
+
+def release_pidlock():
+    try:
+        if PID_FILE.exists() and int(PID_FILE.read_text().strip()) == os.getpid():
+            PID_FILE.unlink()
+    except Exception:
+        pass
+
+
+def _make_retry_session(retries=3, backoff_factor=1.0, status_forcelist=(429, 500, 502, 503, 504)):
+    """Create a requests session with exponential backoff retry."""
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        allowed_methods=["GET", "POST"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+http = _make_retry_session(retries=3, backoff_factor=2.0)
 
 # Track what ran and when
 schedule_log = {
@@ -55,7 +104,7 @@ def send_telegram(message, urgent=False):
         return
     prefix = "🚨 " if urgent else ""
     try:
-        requests.post(
+        http.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
             json={"chat_id": OWNER_CHAT_ID, "text": prefix + message},
             timeout=10
@@ -76,21 +125,23 @@ def run_warden_check():
     """Every 15 min — check credits, APIs, system health"""
     log("WARDEN: Running 15-min check...")
 
-    # Check free market data
+    # Check free market data (with retry/backoff via session)
     btc_price = None
     try:
-        r = requests.get(
+        r = http.get(
             "https://api.coingecko.com/api/v3/simple/price",
             params={"ids": "bitcoin", "vs_currencies": "usd", "include_24hr_change": "true"},
-            timeout=10
+            timeout=15
         )
         if r.status_code == 200:
             data = r.json()
             btc_price = data["bitcoin"]["usd"]
             btc_change = data["bitcoin"].get("usd_24h_change", 0)
             log(f"WARDEN: BTC=${btc_price:,.0f} ({btc_change:+.2f}%) — free data ✅")
+        else:
+            log(f"WARDEN: Market data HTTP {r.status_code} (retries exhausted)")
     except Exception as e:
-        log(f"WARDEN: Market data error: {e}")
+        log(f"WARDEN: Market data error after retries: {e}")
 
     # Check WARDEN process still running
     try:
@@ -169,7 +220,7 @@ def run_morning_market_scan():
 
     try:
         # Free CoinGecko scan
-        r = requests.get(
+        r = http.get(
             "https://api.coingecko.com/api/v3/coins/markets",
             params={
                 "vs_currency": "usd",
@@ -262,9 +313,9 @@ def run_paper_trading_tick():
 # ── HYPERTRAINING ────────────────────────────────────────────────────────────
 
 def run_hypertrain():
-    """11pm — HyperTraining + AutoResearch on all bots. Always together."""
-    log("HYPERTRAIN: Starting overnight training on all bots...")
-    send_telegram("🔬 HyperTraining started on all bots. 100 experiments each. Results by 6am.")
+    """3am + noon — HyperTraining + AutoResearch on all bots. Always together."""
+    log("HYPERTRAIN: Starting training on all bots...")
+    send_telegram("🔬 HyperTraining started on all bots. 100 experiments each.")
 
     try:
         hypertrain_script = BASE / "hypertrain.py"
@@ -365,23 +416,35 @@ def send_daily_report():
 # ── MAIN SCHEDULER LOOP ───────────────────────────────────────────────────────
 
 def main():
+    acquire_pidlock()
+
+    def _shutdown(signum, frame):
+        log(f"SCHEDULER: Received signal {signum}, shutting down gracefully.")
+        release_pidlock()
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
     log("=" * 55)
     log("NEXUS MASTER SCHEDULER STARTING")
     log("'When not trading, always training.'")
+    log(f"PID: {os.getpid()}")
     log("=" * 55)
 
     send_telegram(
         "⚡ NEXUS Scheduler online.\n"
         "All bots now: paper trading + continuous HyperTraining.\n"
+        "HyperTrain runs at 3am + noon daily.\n"
         "6am report incoming. WARDEN checks every 6hrs.\n"
         "When not trading — always training. 🤖"
     )
 
     tick = 0
     last_6hr = datetime.now() - timedelta(hours=6)  # Force first 6hr report soon
-    last_daily = datetime.now().replace(hour=0, minute=0)
-    last_market_scan = datetime.now().replace(hour=0, minute=0)
-    last_hypertrain = datetime.now().replace(hour=0, minute=0)
+
+    # Use unique keys per run-slot so we can do 2 HyperTrain runs/day
+    # Keys: "YYYY-MM-DD_03" and "YYYY-MM-DD_12"
 
     while True:
         now = datetime.now()
@@ -389,46 +452,54 @@ def main():
 
         try:
             # Every 5 min: paper trading tick
-            if tick % 1 == 0:
-                run_paper_trading_tick()
+            run_paper_trading_tick()
 
             # Every 15 min: WARDEN check
             if tick % 3 == 0:
                 run_warden_check()
 
             # Every 6 hours: WARDEN "all is well" report
-            if (now - last_6hr).seconds >= 21600:
+            if (now - last_6hr).total_seconds() >= 21600:
                 send_warden_6hr_report()
                 last_6hr = now
 
-            # 6am: Daily report
-            if now.hour == 6 and now.minute < 5:
+            # 6am: Daily report (10-min window to tolerate tick drift)
+            if now.hour == 6 and now.minute < 10:
                 day_key = now.strftime("%Y-%m-%d")
                 if schedule_log["daily_report_last"] != day_key:
                     send_daily_report()
                     schedule_log["daily_report_last"] = day_key
 
             # 8am: Morning market scan
-            if now.hour == 8 and now.minute < 5:
+            if now.hour == 8 and now.minute < 10:
                 day_key = now.strftime("%Y-%m-%d")
                 if schedule_log["market_scan_last"] != day_key:
                     run_morning_market_scan()
                     schedule_log["market_scan_last"] = day_key
 
-            # 11pm: HyperTraining
-            if now.hour == 23 and now.minute < 5:
-                day_key = now.strftime("%Y-%m-%d")
-                if schedule_log["hypertrain_last"] != day_key:
+            # 3am: HyperTraining (overnight run)
+            if now.hour == 3 and now.minute < 10:
+                slot_key = now.strftime("%Y-%m-%d") + "_03"
+                if schedule_log["hypertrain_last"] != slot_key:
+                    log("HYPERTRAIN: Overnight run (3am)")
                     run_hypertrain()
-                    schedule_log["hypertrain_last"] = day_key
+                    schedule_log["hypertrain_last"] = slot_key
+
+            # Noon: HyperTraining (midday run)
+            if now.hour == 12 and now.minute < 10:
+                slot_key = now.strftime("%Y-%m-%d") + "_12"
+                if schedule_log.get("hypertrain_noon_last") != slot_key:
+                    log("HYPERTRAIN: Midday run (noon)")
+                    run_hypertrain()
+                    schedule_log["hypertrain_noon_last"] = slot_key
 
             # Midnight: Reset daily P&L
-            if now.hour == 0 and now.minute < 5:
+            if now.hour == 0 and now.minute < 10:
                 if HIVE.exists():
                     with open(HIVE) as f:
                         hive = json.load(f)
                     for bot in ["APEX", "DRIFT", "TITAN", "SENTINEL"]:
-                        if bot in hive["bot_performance"]:
+                        if bot in hive.get("bot_performance", {}):
                             hive["bot_performance"][bot]["daily_pnl"] = 0
                             hive["bot_performance"][bot]["trades"] = 0
                     with open(HIVE, "w") as f:
@@ -438,7 +509,10 @@ def main():
         except Exception as e:
             log(f"SCHEDULER ERROR: {e}")
 
-        time.sleep(1800)  # 5 minute tick
+        time.sleep(300)  # 5-minute tick
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        release_pidlock()
