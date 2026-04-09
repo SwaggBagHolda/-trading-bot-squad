@@ -171,9 +171,15 @@ def save_state(active, trail_best, daily_pnl, trades, wins):
             "wins":       wins,
             "saved":      datetime.now().isoformat(),
         }
-        if state["active"] and isinstance(state["active"].get("time"), datetime):
-            state["active"] = {**state["active"],
-                               "time": state["active"]["time"].isoformat()}
+        if state["active"]:
+            t = state["active"].get("time")
+            if isinstance(t, datetime):
+                # Convert datetime → ISO string for JSON serialization
+                state["active"] = {**state["active"], "time": t.isoformat()}
+            elif not isinstance(t, str):
+                # Defensive: unknown type — replace with current time string
+                state["active"] = {**state["active"], "time": datetime.now().isoformat()}
+            # If already a string, leave as-is — valid ISO format
         STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
         STATE_FILE.write_text(json.dumps(state, indent=2))
     except Exception as e:
@@ -290,7 +296,19 @@ def run():
                              "trail"  if pnl_pct > 0 else "stop"
                     tag    = "WIN" if pnl_usd > 0 else "LOSS"
 
-                    tg(f"{tag} #{trades} | {direction} {active['symbol']}\n"
+                    # Hold time using total_seconds() — safe regardless of active["time"] type
+                    hold_secs = 0
+                    try:
+                        t = active.get("time")
+                        if isinstance(t, datetime):
+                            hold_secs = (datetime.now() - t).total_seconds()
+                        elif isinstance(t, str):
+                            hold_secs = (datetime.now() - datetime.fromisoformat(t)).total_seconds()
+                    except Exception:
+                        pass
+                    hold_str = f"{int(hold_secs//60)}m{int(hold_secs%60):02d}s" if hold_secs else "?s"
+
+                    tg(f"{tag} #{trades} | {direction} {active['symbol']} [{hold_str}]\n"
                        f"${entry:,.4f} -> ${price:,.4f} ({pnl_pct*100:+.3f}%) [{reason}]\n"
                        f"P&L: ${pnl_usd:+.3f} | Day: ${daily_pnl:+.2f} | WR: {wr*100:.0f}% ({wins}/{trades})")
 

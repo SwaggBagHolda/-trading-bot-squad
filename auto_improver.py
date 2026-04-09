@@ -26,6 +26,7 @@ COMPLETED_MD = BASE / "memory" / "tasks" / "completed.md"
 load_dotenv(BASE / ".env", override=True)
 
 CHECK_INTERVAL = 5 * 60  # 5 minutes
+MAX_RETRIES    = 3        # max attempts per task before permanently marking failed
 
 
 def read_pending():
@@ -130,13 +131,22 @@ def check_and_run():
     print(f"[AUTO_IMPROVER] Found {len(tasks)} pending task(s) at {datetime.now().strftime('%H:%M')}")
 
     for line_index, task in tasks:
-        success, output = run_claude(task)
+        success = False
+        output  = ""
+        for attempt in range(1, MAX_RETRIES + 1):
+            success, output = run_claude(task)
+            if success:
+                break
+            print(f"[AUTO_IMPROVER] Attempt {attempt}/{MAX_RETRIES} failed: {task[:50]}...")
+            if attempt < MAX_RETRIES:
+                time.sleep(10)  # brief pause between retries
+
         save_completed(task, success, output)
-        mark_done(line_index, task)
+        mark_done(line_index, task)  # always mark done after max retries — no infinite loops
         if success:
             write_fixed_marker(task)
-        status = "done" if success else "FAILED"
-        print(f"[AUTO_IMPROVER] [{status}] {task[:60]}")
+        status = "done" if success else f"FAILED after {MAX_RETRIES} retries"
+        print(f"[AUTO_IMPROVER] [{status.upper()}] {task[:60]}")
         time.sleep(2)
 
 

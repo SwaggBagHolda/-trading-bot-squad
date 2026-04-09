@@ -19,6 +19,7 @@ CAPABILITIES:
 import os, sys, json, time, requests, subprocess, random, tempfile, re, traceback
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlparse, parse_qs, unquote
 from dotenv import load_dotenv
 
 BASE = Path.home() / "trading-bot-squad"
@@ -353,28 +354,166 @@ CURRENT STATUS:
                 time.sleep(3)
     return None
 
-def web_search(query):
-    """Free web search via DuckDuckGo. Sets _research_ran = True on real results."""
+def web_search(query, max_results=5):
+    """
+    Real web search via DuckDuckGo HTML scraping (BeautifulSoup).
+    Returns results with real URLs and snippets. Sets _research_ran = True.
+    Falls back to DDG instant-answer API if scraping yields nothing.
+    """
     global _research_ran
     try:
+        from bs4 import BeautifulSoup
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
         r = requests.get(
+            "https://html.duckduckgo.com/html/",
+            params={"q": query, "kl": "us-en"},
+            headers=headers,
+            timeout=12,
+        )
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            results = []
+            for block in soup.select(".result__body")[:max_results]:
+                title_a  = block.select_one(".result__title a")
+                snippet  = block.select_one(".result__snippet")
+                url_span = block.select_one(".result__url")
+
+                title = title_a.get_text(strip=True) if title_a else ""
+                snip  = snippet.get_text(strip=True) if snippet else ""
+                # Decode real URL from DDG redirect href
+                real_url = ""
+                if title_a and title_a.get("href"):
+                    href = title_a["href"]
+                    parsed = urlparse(href)
+                    params = parse_qs(parsed.query)
+                    real_url = unquote(params.get("uddg", [href])[0])
+                elif url_span:
+                    real_url = url_span.get_text(strip=True)
+
+                if title and snip:
+                    results.append(f"• {title}\n  URL: {real_url}\n  {snip}")
+
+            if results:
+                _research_ran = True
+                print(f"[NEXUS] web_search() → {len(results)} real results: {query[:60]}")
+                return "\n\n".join(results)
+
+    except Exception as e:
+        print(f"[NEXUS] web_search scrape error: {e}")
+
+    # Fallback: DDG instant-answer API
+    try:
+        r2 = requests.get(
             "https://api.duckduckgo.com/",
             params={"q": query, "format": "json", "no_html": "1", "skip_disambig": "1"},
-            timeout=10
+            timeout=10,
         )
-        data = r.json()
+        data = r2.json()
         abstract = data.get("AbstractText", "")
-        results = data.get("RelatedTopics", [])[:3]
-        response = abstract if abstract else ""
-        for result in results:
-            if isinstance(result, dict) and result.get("Text"):
-                response += f"\n• {result['Text'][:100]}"
-        if response and response != "No results found.":
+        topics   = data.get("RelatedTopics", [])[:3]
+        lines    = [abstract] if abstract else []
+        for t in topics:
+            if isinstance(t, dict) and t.get("Text"):
+                url = t.get("FirstURL", "")
+                lines.append(f"• {t['Text'][:120]}\n  URL: {url}")
+        if lines:
             _research_ran = True
-            print(f"[NEXUS] web_search() grounded: {query[:60]}")
-        return response if response else "No results found."
+            print(f"[NEXUS] web_search() fallback API: {query[:60]}")
+            return "\n\n".join(lines)
     except Exception as e:
         return f"Search error: {e}"
+
+    return "No results found."
+
+
+def search_youtube(query, max_results=3):
+    """
+    Search YouTube for relevant videos using yt-dlp.
+    Returns titles, durations, and real URLs. No fabrication.
+    """
+    global _research_ran
+    try:
+        import yt_dlp
+        opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "extract_flat": True,
+            "playlistend": max_results,
+        }
+        search_query = f"ytsearch{max_results}:{query}"
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(search_query, download=False)
+
+        entries = info.get("entries") or []
+        results = []
+        for entry in entries:
+            if not entry:
+                continue
+            vid_id   = entry.get("id", "")
+            title    = entry.get("title", "Unknown")
+            channel  = entry.get("uploader") or entry.get("channel", "")
+            duration = int(entry.get("duration") or 0)
+            url      = f"https://www.youtube.com/watch?v={vid_id}" if vid_id else ""
+            mins, secs = duration // 60, duration % 60
+            results.append(f"• {title} ({mins}m{secs:02d}s) — {channel}\n  URL: {url}")
+
+        if results:
+            _research_ran = True
+            print(f"[NEXUS] search_youtube() → {len(results)} results: {query[:60]}")
+            return "\n\n".join(results)
+        return "No YouTube results found."
+    except Exception as e:
+        print(f"[NEXUS] search_youtube error: {e}")
+        return f"YouTube search error: {e}"
+
+
+def smart_research(query):
+    """
+    Route research query to the right source — zero fabrication, real URLs always.
+    - Market/price queries → CoinGecko live data
+    - Strategy/video queries → YouTube search + DuckDuckGo
+    - General queries → DuckDuckGo HTML scraping
+    """
+    global _research_ran
+    q_lower = query.lower()
+
+    # ── Market data → CoinGecko ──────────────────────────────────────────────
+    market_kw = ["price", "prices", "btc", "eth", "sol", "bitcoin", "ethereum",
+                 "solana", "volume", "24h", "market cap", "pump", "dump", "rally",
+                 "crash", "chart", "how much is", "what is btc", "what is eth"]
+    strategy_kw = ["strategy", "backtest", "indicator", "signal", "pattern",
+                   "scalp", "swing", "trend", "momentum", "rsi", "macd", "ema"]
+    is_market  = any(kw in q_lower for kw in market_kw) and not any(kw in q_lower for kw in strategy_kw)
+    is_video   = any(kw in q_lower for kw in ["youtube", "video", "watch", "tutorial"] + strategy_kw)
+
+    if is_market:
+        market = fetch_market_snapshot()
+        parts  = []
+        for sym, data in market.items():
+            if data.get("price"):
+                chg = data.get("change", 0)
+                vol = data.get("vol", 0)
+                parts.append(
+                    f"{sym}: ${data['price']:,.2f} ({chg:+.2f}% 24h"
+                    + (f", vol ${vol/1e9:.1f}B" if vol else "") + ")"
+                )
+        if parts:
+            _research_ran = True
+            return "LIVE MARKET DATA (CoinGecko — real-time):\n" + "\n".join(parts)
+
+    if is_video:
+        yt   = search_youtube(query)
+        web  = web_search(query)
+        return f"YOUTUBE RESULTS:\n{yt}\n\nWEB RESULTS:\n{web}"
+
+    # Default: DuckDuckGo
+    return web_search(query)
 
 def browse_url(url):
     """Fetch and summarize a URL using Playwright headless browser."""
@@ -1379,7 +1518,7 @@ def proactive_check():
     # ACTION 2 — 3am: research free crypto signal APIs, queue best result as AUTO_IMPROVE task
     if now.hour == 3 and last_3am_research != now.date():
         try:
-            raw = web_search("free crypto signal API 2026")
+            raw = smart_research("free crypto signal API 2026")
             if raw:
                 summary = ask_ai(
                     f"Based on this search result, identify the single best free crypto signal API "
@@ -1545,13 +1684,28 @@ def handle_message(text, chat_id):
         reply(msg)
         return
 
-    # Research
+    # Research — smart routing with real sources and URL citations
     if cmd("/research", "research ", "look up"):
         query = text.replace("/research", "").replace("research", "").replace("look up", "").strip()
         if query:
-            send(chat_id, f"On it — searching {query}...")
-            result = web_search(query)
-            msg = f"RESEARCH: {query}\n━━━━━━━━━━━━━━━━━━━━━\n{result[:600]}"
+            send(chat_id, f"Searching: {query[:60]}...")
+            raw = smart_research(query)
+            # AI summarizes the real data, cites URLs, no fabrication
+            summary = ask_ai(
+                f"Research query: {query}\n\n"
+                f"Real data from search (use ONLY this — no fabrication):\n{raw[:2500]}\n\n"
+                f"Summarize key findings in 3-5 sentences. "
+                f"Cite the specific source URLs from the data above. "
+                f"If the data contains prices or percentages, include exact numbers. "
+                f"Never add facts not present in the data above.",
+                history=_conversation_history[-MAX_HISTORY:] if _conversation_history else None,
+            ) or raw[:600]
+            msg = f"RESEARCH: {query}\n━━━━━━━━━━━━━━━━━━━━━\n{summary}"
+            # Always append raw sources so URLs are visible
+            if raw and raw != summary:
+                source_lines = [l for l in raw.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
+                if source_lines:
+                    msg += "\n\nSOURCES:\n" + "\n".join(source_lines[:6])
             reply(msg)
         else:
             reply("What do you want me to research?")
@@ -1673,6 +1827,13 @@ def handle_message(text, chat_id):
                         if "notopenssl" in ll or "urllib3" in ll or "notopensslwarning" in ll:
                             continue
                         if "auto_improver fixed" in ll:
+                            continue
+                        # Skip auto_improver's own task-running output — prevents cascade loops
+                        # where selfcheck sees "[AUTO_IMPROVER] [FAILED]" and creates a new task
+                        if log_name == "auto_improver.log" and any(skip in ll for skip in [
+                            "[auto_improver] running:", "[auto_improver] [failed]",
+                            "[auto_improver] found", "[auto_improver] done",
+                        ]):
                             continue
                         findings.append((log_name, line.strip()))
             except Exception as e:
