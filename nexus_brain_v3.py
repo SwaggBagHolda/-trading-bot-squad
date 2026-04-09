@@ -105,6 +105,13 @@ HONESTY:
 - NEVER claim to take an action you cannot confirm happened.
 - NEVER state win rates or research conclusions without real data from hive_mind.json or a confirmed search this session.
 
+UNBREAKABLE RULE — NO DEFERRED PROMISES:
+By the time a response is sent, everything that needed to happen has already happened. There is no "after this message." Therefore:
+- NEVER say "running research now", "checking that now", "I'll look into that", "looking into it", "I'll check", "give me a moment", "one sec", "on it", "checking now", "pulling that".
+- NEVER promise a future action. If research needs to run, it already ran before this message. If you don't have data, say "Don't have live data on that" — not "I'll go get it."
+- If data is missing from context: say what you know, say what's missing, stop. Do not promise to fetch it.
+- This rule exists because every deferred promise is a lie — NEXUS cannot take actions after a message is sent.
+
 UNBREAKABLE RULE — STRATEGY GATE:
 Any question about trading strategy, win rates, entry/exit logic, indicators, bot performance, or "is X working" MUST be answered using real research data. This is not optional.
 - If real data is present in context (from hive_mind.json or a search this session), use it.
@@ -2366,6 +2373,31 @@ Context (use only if relevant): Squad P&L today ${total_pnl:+.2f}. Mission: $100
         )
 
     if response:
+        # ── Deferred-promise interceptor ─────────────────────────────────────
+        # If the AI response contains a promise of future action, execute that
+        # action NOW and replace or append real results before sending.
+        _promise_phrases = [
+            "running research now", "running that now", "checking that now",
+            "looking into that", "looking into it", "i'll look", "ill look",
+            "i'll check", "ill check", "i'll research", "ill research",
+            "checking now", "researching now", "pulling that", "pulling data",
+            "on it", "give me a moment", "give me a sec", "one moment",
+            "one sec", "i'll get back", "ill get back", "will check",
+            "will look", "will research", "will pull",
+        ]
+        _resp_lower = response.lower()
+        if any(p in _resp_lower for p in _promise_phrases):
+            print(f"[NEXUS] Intercepted deferred promise — executing research immediately")
+            _actual = smart_research(text)
+            _grounded = ask_ai(
+                f'Ty asked: "{text}"\n\n'
+                f"Real research data:\n{_actual[:2500]}\n\n"
+                f"Answer using only this data. No deferred promises. If data is thin, say so and cite what you found.",
+                history=_conversation_history[-MAX_HISTORY:] if _conversation_history else None,
+            )
+            if _grounded:
+                _src = [l.strip() for l in _actual.splitlines() if l.strip().startswith("URL:") or l.strip().startswith("http")]
+                response = _grounded + ("\n\nSources:\n" + "\n".join(_src[:5]) if _src else "")
         _history_add(text, response)
         send(chat_id, response)
     # else: AI unavailable — go silent
