@@ -5,7 +5,7 @@ Assets: Dynamic — scans CoinGecko top movers at startup and every 4h
 Execution: Coinbase Advanced Trade API (paper fallback)
 Target: 50-200 trades/day — real scalper volume
 """
-import os, sys, json, time, uuid, jwt, requests
+import os, sys, json, time, uuid, jwt, requests, fcntl
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +19,29 @@ load_dotenv(BASE / ".env", override=True)
 TELEGRAM_TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN")
 OWNER_CHAT_ID  = os.getenv("OWNER_TELEGRAM_CHAT_ID")
 HIVE           = BASE / "shared" / "hive_mind.json"
+HIVE_LOCK      = BASE / "shared" / "hive_mind.lock"
 STATE_FILE     = BASE / "shared" / "apex_state.json"
+
+def _hive_write(data):
+    """Write hive_mind.json with exclusive file lock."""
+    with open(HIVE_LOCK, "a+") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            HIVE.write_text(json.dumps(data, indent=2))
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+
+def _hive_read():
+    """Read hive_mind.json with shared file lock."""
+    try:
+        with open(HIVE_LOCK, "a+") as lf:
+            fcntl.flock(lf, fcntl.LOCK_SH)
+            try:
+                return _hive_read()
+            finally:
+                fcntl.flock(lf, fcntl.LOCK_UN)
+    except:
+        return {}
 
 CB_API   = "https://api.coinbase.com"
 KEY_NAME = os.getenv("APEX_COINBASE_API_KEY_NAME", "")
@@ -203,13 +225,13 @@ def scan_top_movers(max_assets=MAX_WATCHLIST):
     print(f"[APEX] Scan complete [{sources}] — top movers: {syms}")
 
     try:
-        hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+        hive = _hive_read()
         hive["apex_daily_watchlist"] = {
             "assets":  [a["symbol"] for a in available],
             "scanned": datetime.now().isoformat(),
             "sources": sources,
         }
-        HIVE.write_text(json.dumps(hive, indent=2))
+        _hive_write(hive)
     except Exception:
         pass
 
@@ -454,15 +476,36 @@ def load_state():
 
 def update_hive(pnl, trades, wins):
     try:
-        hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
-        hive.setdefault("bot_performance", {})["APEX"] = {
+        hive = _hive_read()
+        apex = hive.setdefault("bot_performance", {}).get("APEX", {})
+        # Preserve confidence_score across updates
+        conf = apex.get("confidence_score", 0.50)
+        hive["bot_performance"]["APEX"] = {
             "daily_pnl": round(pnl, 2), "trades": trades, "wins": wins,
             "win_rate":  round(wins / trades, 3) if trades else 0,
             "mode":      "live_scalping",
+            "confidence_score": conf,
         }
-        HIVE.write_text(json.dumps(hive, indent=2))
+        _hive_write(hive)
     except:
         pass
+
+
+def update_confidence(won: bool):
+    """Write confidence score back to hive_mind after each trade close."""
+    try:
+        hive = _hive_read()
+        apex = hive.setdefault("bot_performance", {}).setdefault("APEX", {})
+        conf = apex.get("confidence_score", 0.50)
+        if won:
+            conf = min(conf + 0.02, 1.0)
+        else:
+            conf = max(conf - 0.03, 0.1)
+        apex["confidence_score"] = round(conf, 3)
+        _hive_write(hive)
+        print(f"[APEX] Confidence: {conf:.3f} ({'↑' if won else '↓'})")
+    except Exception as e:
+        print(f"[APEX] Confidence update failed: {e}")
 
 def log_trade_lesson(trade_data):
     """
@@ -470,7 +513,7 @@ def log_trade_lesson(trade_data):
     All bots can read apex_trade_lessons to learn from APEX's live results.
     """
     try:
-        hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+        hive = _hive_read()
         lessons = hive.get("apex_trade_lessons", [])
         lessons.append({
             "ts":          datetime.now().isoformat(),
@@ -493,7 +536,7 @@ def log_trade_lesson(trade_data):
             lessons = lessons[-500:]
         hive["apex_trade_lessons"] = lessons
         hive["apex_lessons_updated"] = datetime.now().isoformat()
-        HIVE.write_text(json.dumps(hive, indent=2))
+        _hive_write(hive)
     except Exception as e:
         print(f"[APEX] log_trade_lesson error: {e}")
 
@@ -664,6 +707,7 @@ def run():
                         "fvg_zone":    active.get("fvg_zone"),
                     })
 
+                    update_confidence(won=(pnl_pct > 0))
                     update_hive(daily_pnl, trades, wins)
                     active     = trail_best = None
                     last_close = datetime.now()
@@ -696,7 +740,15 @@ def run():
 
                 sig = best_signal(price_history, current, min_momentum_override=current_min_momentum)
                 if sig:
-                    size      = STARTING * RISK
+                    # Confidence score from hive_mind affects position sizing
+                    _conf = 0.50  # default
+                    try:
+                        if HIVE.exists():
+                            _hd = json.loads(HIVE.read_text())
+                            _conf = _hd.get("bot_performance", {}).get("APEX", {}).get("confidence_score", 0.50)
+                    except Exception:
+                        pass
+                    size      = STARTING * RISK * max(_conf, 0.2)  # floor at 20% of base
                     price     = sig["price"]
                     direction = sig["direction"]
                     product   = sig["product"]

@@ -16,7 +16,7 @@ CAPABILITIES:
 - Auto-restart crashed bots
 """
 
-import os, sys, json, time, requests, subprocess, random, tempfile, re, traceback
+import os, sys, json, time, requests, subprocess, random, tempfile, re, traceback, fcntl
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote
@@ -301,10 +301,26 @@ def get_updates(offset=None):
         return r.json().get("result", [])
     except: return []
 
+HIVE_LOCK = BASE / "shared" / "hive_mind.lock"
+
 def read_hive():
     try:
-        with open(HIVE) as f: return json.load(f)
+        with open(HIVE_LOCK, "a+") as lf:
+            fcntl.flock(lf, fcntl.LOCK_SH)
+            try:
+                with open(HIVE) as f: return json.load(f)
+            finally:
+                fcntl.flock(lf, fcntl.LOCK_UN)
     except: return {}
+
+def write_hive_safe(data):
+    """Write hive_mind.json with exclusive file lock."""
+    with open(HIVE_LOCK, "a+") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            HIVE.write_text(json.dumps(data, indent=2))
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 def read_winners():
     try:
@@ -355,7 +371,7 @@ def nexus_write_hive_param(key, value, reason):
         hive = read_hive()
         old_value = hive.get(key)
         hive[key] = value
-        HIVE.write_text(json.dumps(hive, indent=2))
+        write_hive_safe(hive)
         # Log every change
         log_path = BASE / "memory" / "tasks" / "self_improve.md"
         log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -668,7 +684,7 @@ CURRENT STATUS:
                 },
                 json={
                     "model":      use_model,
-                    "max_tokens": 500,
+                    "max_tokens": 1500,
                     "system":     sys_prompt,
                     "messages":   messages,
                 },
@@ -1007,25 +1023,43 @@ def create_pdf(title, content):
 def check_bot_health():
     """Check if all required processes are running."""
     issues = []
-    bots_to_check = ["scheduler.py", "paper_trading.py", "nexus_brain_v3.py"]
+    bots_to_check = [
+        "apex_coingecko.py",
+        "sentinel_polymarket.py",
+        "nexus_brain_v3.py",
+        "oracle_listener.py",
+        "scheduler.py",
+    ]
     for bot in bots_to_check:
         result = subprocess.run(["pgrep", "-f", bot], capture_output=True, text=True)
         if not result.stdout.strip():
             issues.append(f"{bot} is NOT running")
     return issues
 
+BOT_RESTART_MAP = {
+    "apex_coingecko.py":     "apex_coingecko.py",
+    "sentinel_polymarket.py": "sentinel_polymarket.py",
+    "oracle_listener.py":    "oracle_listener.py",
+    "scheduler.py":          "scheduler.py",
+}
+
 def auto_restart_bots(issues):
-    """Auto-restart crashed bots."""
+    """Auto-restart crashed bots. Never restarts nexus (that's us)."""
     restarted = []
     for issue in issues:
-        if "scheduler.py" in issue:
-            subprocess.Popen(["python3", str(BASE / "scheduler.py")],
-                           cwd=str(BASE), start_new_session=True)
-            restarted.append("scheduler.py")
-        elif "paper_trading.py" in issue:
-            subprocess.Popen(["python3", str(BASE / "paper_trading.py")],
-                           cwd=str(BASE), start_new_session=True)
-            restarted.append("paper_trading.py")
+        for name, script in BOT_RESTART_MAP.items():
+            if name in issue:
+                try:
+                    subprocess.Popen(
+                        ["python3", str(BASE / script)],
+                        cwd=str(BASE), start_new_session=True,
+                        stdout=open(BASE / "logs" / f"{Path(script).stem}.log", "a"),
+                        stderr=subprocess.STDOUT,
+                    )
+                    restarted.append(name)
+                except Exception as e:
+                    log_bug(f"Failed to restart {name}: {e}")
+                break
     return restarted
 
 def run_all_training():
@@ -1883,7 +1917,7 @@ def autonomous_loop():
                                     assets = [best_sym] + [a for a in assets if a != best_sym]
                                     hive["apex_daily_watchlist"]["assets"] = assets[:8]
                                     try:
-                                        (BASE / "shared" / "hive_mind.json").write_text(json.dumps(hive, indent=2))
+                                        write_hive_safe(hive)
                                         act(f"APEX: Watchlist updated — {best_sym} moved to front ({best.get('win_rate',0):.1f}% WR)")
                                     except Exception as we:
                                         act(f"APEX: Watchlist update error: {we}")
@@ -1982,7 +2016,7 @@ def autonomous_loop():
             hive_dirty = True
     if hive_dirty:
         try:
-            (BASE / "shared" / "hive_mind.json").write_text(json.dumps(hive, indent=2))
+            write_hive_safe(hive)
             act(f"HIVE: Cleaned {len(artifact_log)} artifact entries")
             # Silenced — handle internally, Ty only wants trades/breaks/money
             # Queue revalidation
@@ -2164,8 +2198,7 @@ def autonomous_loop():
 
         # Write updated performance back
         try:
-            HIVE_PATH = BASE / "shared" / "hive_mind.json"
-            HIVE_PATH.write_text(json.dumps(hive, indent=2))
+            write_hive_safe(hive)
             if leaderboard:
                 leader = leaderboard[0]
                 act(f"LEADERBOARD: #{1} {leader['bot']} score={leader['score']} WR={leader['wr']}% conf={leader['conf']}")

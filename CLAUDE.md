@@ -17,6 +17,7 @@
 11. **Bidirectional trading.** Every bot trades BOTH directions — long on bullish signals, short on bearish. In paper mode, all signals are fully simulated. In live mode, shorting on spot requires Coinbase INTX (perpetual futures) — flag clearly if not yet wired. Never restrict to longs-only without documenting why.
 12. **Signals require evidence.** FVG (Fair Value Gap) and momentum are the two core entry signal types for APEX. Both are implemented in code. Any new signal type must be backtested first via AutoResearch before being added to live code.
 13. **Auto-queue suggestions.** When NEXUS or Claude Code identifies an action that should be taken (backtest, retrain, AutoResearch run), it queues it immediately in memory/tasks/pending.md as [AUTO_IMPROVE] — no permission prompt needed. Suggestions that aren't queued are noise.
+14. **Foundation before features — UNBREAKABLE.** Before building ANY new feature, Claude and Codey must first answer three questions: (1) Is the current foundation solid? (2) Will this actually work end-to-end, or just appear to work? (3) Is there a better approach? If the foundation is broken, fix it first. No new features on broken foundations. Ever. A feature that writes data nothing reads is not a feature — it's debris. A function that exists but never executes is not progress — it's tech debt. Every new addition must be verified working with real execution, not just "imports clean."
 
 ## WHO I AM
 Claude = Orchestrator/Strategist only. NOT a trading bot.

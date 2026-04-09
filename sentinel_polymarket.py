@@ -444,6 +444,102 @@ def paper_trade(opportunity):
     return trade
 
 
+TAKE_PROFIT_PCT = 0.15   # Close when position is up 15%
+STOP_LOSS_PCT   = -0.10  # Close when position is down 10%
+MAX_HOLD_HOURS  = 48     # Auto-close after 48 hours
+
+
+def resolve_positions(markets):
+    """Check open positions and close any that hit TP/SL/expiry."""
+    global PAPER_BALANCE
+    if not PAPER_POSITIONS:
+        return
+
+    # Build lookup: question -> current prices
+    price_lookup = {}
+    for m in markets:
+        price_lookup[m["question"]] = m["prices"]
+
+    to_close = []
+    for i, pos in enumerate(PAPER_POSITIONS):
+        reason = None
+        pnl = 0
+
+        # Check hold time
+        try:
+            open_time = datetime.fromisoformat(pos["timestamp"])
+            hours_held = (datetime.now() - open_time).total_seconds() / 3600
+        except Exception:
+            hours_held = 0
+
+        if pos["action"] == "BUY_BOTH":
+            # Arb: guaranteed profit, resolve after 1 scan
+            pnl = pos.get("guaranteed_profit", 0)
+            reason = "arb_resolved"
+        else:
+            # Directional: check current price vs entry
+            current_prices = price_lookup.get(pos["market"])
+            if current_prices:
+                is_yes = "YES" in pos.get("action", "")
+                current_price = current_prices[0] if is_yes else current_prices[1]
+                entry_price = pos.get("entry_price", 0)
+
+                if entry_price > 0:
+                    price_change = (current_price - entry_price) / entry_price
+                    shares = pos.get("shares", 0)
+                    pnl = shares * (current_price - entry_price)
+
+                    if price_change >= TAKE_PROFIT_PCT:
+                        reason = "take_profit"
+                    elif price_change <= STOP_LOSS_PCT:
+                        reason = "stop_loss"
+                    elif hours_held >= MAX_HOLD_HOURS:
+                        reason = "max_hold"
+                else:
+                    if hours_held >= MAX_HOLD_HOURS:
+                        reason = "max_hold"
+            elif hours_held >= MAX_HOLD_HOURS:
+                reason = "max_hold"
+
+        if reason:
+            pos["status"] = "closed"
+            pos["pnl"] = round(pnl, 4)
+            pos["close_reason"] = reason
+            pos["close_time"] = datetime.now().isoformat()
+            PAPER_BALANCE += pos["bet_size"] + pnl
+            PAPER_HISTORY.append(pos)
+            to_close.append(i)
+
+            tag = "WIN" if pnl > 0 else "LOSS"
+            print(f"[SENTINEL] {tag}: {pos['action']} '{pos['market'][:50]}' "
+                  f"P&L: ${pnl:+.4f} [{reason}] Balance: ${PAPER_BALANCE:.2f}")
+
+            # Update confidence score
+            try:
+                hive = json.loads(HIVE.read_text()) if HIVE.exists() else {}
+                s = hive.setdefault("bot_performance", {}).setdefault("SENTINEL", {})
+                conf = s.get("confidence_score", 0.50)
+                conf = min(conf + 0.02, 1.0) if pnl > 0 else max(conf - 0.03, 0.1)
+                s["confidence_score"] = round(conf, 3)
+                HIVE.write_text(json.dumps(hive, indent=2))
+            except Exception:
+                pass
+
+    # Remove closed positions (reverse order to preserve indices)
+    for i in sorted(to_close, reverse=True):
+        PAPER_POSITIONS.pop(i)
+
+    if to_close:
+        wins = sum(1 for t in PAPER_HISTORY if t.get("pnl", 0) > 0)
+        total = len(PAPER_HISTORY)
+        total_pnl = sum(t.get("pnl", 0) for t in PAPER_HISTORY)
+        send_telegram(
+            f"SENTINEL resolved {len(to_close)} position(s)\n"
+            f"Record: {wins}/{total} ({wins/total*100:.0f}% WR) | "
+            f"Total P&L: ${total_pnl:+.2f} | Balance: ${PAPER_BALANCE:.2f}"
+        )
+
+
 def update_hive_mind():
     """Update hive_mind.json with SENTINEL's Polymarket status."""
     try:
@@ -484,6 +580,9 @@ def scan_and_trade():
 
     if not markets:
         return
+
+    # Resolve any open positions first
+    resolve_positions(markets)
 
     # Strategy 1: Directional edge
     directional = find_directional_opportunities(markets)

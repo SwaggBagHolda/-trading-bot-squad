@@ -118,3 +118,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 13:48]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's only fired twice all day and we're sitting at 50% WR — that's right on the edge of acceptable. The BLUR short is "
+
+## [2026-04-09 14:19]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "BTC and SOL are both green while ETH is slipping — that divergence usually doesn't hold long, one of them's wrong. MON i"
+
+## [2026-04-09 14:49]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: 'BTC and SOL are both up ~0.7% today but ETH is slightly red — that divergence is worth watching. When ETH lags like this'

@@ -2552,3 +2552,21 @@ Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace aler
 
 ## [2026-04-09 14:30]
 AutoResearch started PID 96310 at 2026-04-09T14:30:53.175147
+
+## [2026-04-09 14:49]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 14:49]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 14:49]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 14:49]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 14:49]
+Proactive heartbeat sent: BTC and SOL are both up ~0.7% today but ETH is slightly red — that divergence is...
+
+## [2026-04-09 14:49]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'APEX idle 0.0h (no alert — APEX self-reports)', 'Live P&L pace alert: $+0.00']
