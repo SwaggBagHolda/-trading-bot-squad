@@ -1,158 +1,136 @@
 # Next Session Task File
-# Written: 2026-04-07 (end of session) | Read this at the start of every session
+# Written: 2026-04-09 (end of session) | Read this at the start of every session
 
 ## SYSTEM STATE RIGHT NOW
 
 | Process | PID | Status |
 |---|---|---|
-| NEXUS | 56248 | Running — Anthropic/Haiku, `-u` unbuffered |
-| APEX | 54644 | Running — live paper trading BTC (CoinGecko signals, Coinbase prices) |
-| ORACLE | 51993 | Running |
-| SCHEDULER | 54645 | Running — paper_trading_tick disabled (was fabricating random P&L) |
-| BOT_CURRICULUM | 53694 | Running — DRIFT/TITAN/SENTINEL backtesting on live CoinGecko data |
+| NEXUS | 1093 | Running — Anthropic/Sonnet 4.6, `-u` unbuffered |
+| ORACLE | 1094 | Running |
+| SCHEDULER | 5606 | Running — 5-min tick, stable, PID-locked |
+| APEX | — | Not running (needs restart) |
+| BOT_CURRICULUM | — | Not running (needs restart) |
+| HyperTrain | HALTED | TRAINING_ENABLED=False — backtest model broken (13-24% WR) |
+| OpenClaw Gateway | Running | 10 plugins loaded, ws://127.0.0.1:18789 |
 
-## AI MODEL — CRITICAL CHANGE THIS SESSION
-- **OpenRouter REMOVED entirely.** All 3 OpenRouter models were returning 401.
-- **NEXUS now runs on Anthropic API directly** — `claude-haiku-4-5-20251001`
+## AI MODEL — CURRENT
+- **NEXUS runs on Anthropic API directly** — `claude-sonnet-4-6` (upgraded from Haiku)
+- Model constant: `ANTHROPIC_MODEL = "claude-sonnet-4-6"` in nexus_brain_v3.py line 31
 - Key loaded via `.env` with `load_dotenv(override=True)` — overrides corrupted system env
-- System env has bad key `sk-sk-ant-api03-...` (double prefix) — `.env` key wins due to override=True
-- Model constant: `ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"` in nexus_brain_v3.py
 
-## KEY MANAGEMENT — NEW RULE (PERMANENT)
-**NEVER add API keys via terminal echo, chat paste, or GUI text field that logs.**
-**ALWAYS use: `python3 set_key_silent.py KEY_NAME`**
-- Uses macOS osascript dialog — hidden input, never touches terminal stdout or logs
-- Script location: `~/trading-bot-squad/set_key_silent.py`
-- Takes key name as arg: `python3 set_key_silent.py ANTHROPIC_API_KEY`
-- Prints only length and format check — never the key value
+## WHAT WAS DONE THIS SESSION (2026-04-09)
 
-Keys exposed this session (ALL need to be rotated if not already done):
-- ANTHROPIC_API_KEY — exposed multiple times, was auto-revoked, new key added via osascript
-- OPENROUTER_API_KEY — 401, account issue (OpenRouter now removed from codebase)
-- COMPOSIO_API_KEY — exposed twice in chat, needs rotation at composio.dev
-- OpenAI key — removed from .env, deferred
+### Scheduler Stability (CRITICAL FIX)
+- **Root cause found:** `time.sleep(1800)` (30min) with comment saying "5 minute tick" — scheduler never reached HyperTrain windows
+- Fixed to `time.sleep(300)` (5min tick)
+- Fixed `.seconds` vs `.total_seconds()` bug on WARDEN 6hr interval
+- Added PID file lock to prevent duplicate instances
+- Added signal handlers (SIGTERM/SIGINT) for clean shutdown
+- Added CoinGecko retry logic with exponential backoff (3 retries, 2s base)
+- **Commit:** f868db9
+
+### HyperTrain Infinite Loop Fix (URGENT)
+- Added `TRAINING_ENABLED = False` gate — ALL training HALTED
+- Added `MAX_DAILY_RUNS = 2` with persistent counter (logs/training/daily_run_count.json)
+- Added `MIN_WR_IMPROVEMENT = 0.05` — only re-trigger if WR improves by 5%+
+- Embedded RESEARCH_VALIDATED_PARAMS from April 5 (80K experiments)
+- Removed non-crypto assets (SPY, GBP/USD, GOLD, OIL) from all training files
+- Disabled stock scanner in apex_coingecko.py
+- Fixed WARDEN to read actual model from nexus_brain_v3.py dynamically
+- **Commit:** 82b62ab
+
+### CLAUDE.md Session Startup
+- Added 10-step automatic startup routine (zero input from Ty)
+- Includes /dream, system health checks, Telegram status summary
+- **Commit:** 03d1cdb
+
+### OpenClaw Updates
+- Updated OpenClaw to 2026.4.9
+- Updated Claude Code to latest
+- Enabled 7 new plugins: memory-wiki, webhooks, brave, firecrawl, perplexity, lobster, llm-task
+- Configured memory-lancedb (embedding via OpenRouter) but using memory-core as active provider
+- No computer use plugin exists in OpenClaw 2026.4.9 — browser plugin is the web automation layer
+- npm global prefix set to ~/.npm-global to avoid EACCES errors
+
+### Browser Wired into NEXUS
+- NEXUS has `browse_url()` function (nexus_brain_v3.py line 795) using Playwright headless
+- **Tested successfully:** Browsed coindesk.com, got full page content including headlines
+- Top headline at time of test: "Bitcoin shoots above $72,000 as optimism grows over Middle East ceasefire"
+- Playwright installed and working
+
+### HyperTrain Schedule Changed
+- Moved from 11pm to **3am + noon** (2x daily runs)
+- Uses slot keys to prevent re-runs: `YYYY-MM-DD_03` and `YYYY-MM-DD_12`
+- Currently HALTED (TRAINING_ENABLED=False) until backtest model rebuilt
 
 ---
 
-## P1 — FIX APEX WIN RATE (current: 67% on 3 trades — too few to be meaningful)
+## P1 — REBUILD HYPERTRAIN BACKTEST MODEL (HIGHEST PRIORITY)
 
-APEX has only 3 trades. Need:
-- More signal frequency — CoinGecko is rate-limited (429) frequently, signals drop out
-- Better entry logic — RSI-only isn't enough for scalping
-- Wire AutoResearch results back into apex_coingecko.py params
-- Add fallback signal source when CoinGecko rate-limits
+**Problem:** `simulate_backtest()` in hypertrain.py uses simple ratio heuristics, producing 13-24% WR regardless of parameters. This makes all training meaningless.
 
-Current APEX params (from hive_mind.json `apex_best_params`):
-- Check with: `python3 -c "import json; from pathlib import Path; h=json.loads((Path.home()/'trading-bot-squad/shared/hive_mind.json').read_text()); print(json.dumps(h.get('apex_best_params',{}), indent=2))"`
+**Solution queued in memory/tasks/pending.md as [AUTO_IMPROVE]:**
+1. Replace heuristic backtest with VectorBT on real Coinbase OHLCV candles
+2. Implement proven strategies: ICT FVG, VWAP reversion, BB squeeze, EMA cross + RSI divergence
+3. Validate each strategy hits > 50% WR on historical data
+4. Only then set TRAINING_ENABLED=True
+5. Run 1000+ experiments with real backtest to find optimal params
 
 ---
 
-## P2 — WIRE REAL AUTORESEARCH CALLBACK
+## P2 — WIRE AUTORESEARCH RESULTS BACK TO LIVE BOTS
 
-**What was built this session:**
-- `sentinel_research-2.py` now writes `shared/research_done.flag` when training completes
-- NEXUS `proactive_check()` detects the flag, sends Telegram summary with per-bot top strategy, deletes flag
-- AutoResearch phrases properly routed: "run autoresearch", "run auto research", "auto research", etc.
-
-**What still needs wiring:**
-- AutoResearch results → actually update `apex_coingecko.py` entry params
-- When sentinel_research-2.py finds best params for APEX, those should propagate to the live bot
-- Currently best_params saved to `hive_mind.json` as `apex_best_params` but APEX doesn't read them on each scan
-
-**To connect:**
-- `apex_coingecko.py` `scan_markets()` should read `hive_mind.json["apex_best_params"]` for RSI thresholds
+- AutoResearch saves best params to `hive_mind.json` as `apex_best_params`
+- APEX doesn't read these on each scan — needs to pull from hive_mind.json dynamically
 - After AutoResearch completes, NEXUS should restart APEX to pick up new params
 
 ---
 
-## P3 — FIX NEXUS CRASH (root cause still unknown)
+## P3 — FIX APEX WIN RATE & RESTART BOTS
 
-**What we know:**
-- NEXUS crashed 17 times this session — silently, no traceback
-- Crashes happen after handling 2-4 messages
-- NOT caused by cron (cron is a safe "start if dead" watchdog)
-- NOT caused by scheduler (scheduler doesn't touch NEXUS)
-
-**Fixes applied this session:**
-- Cron now uses `python3 -u` (unbuffered) — crashes will now appear in logs
-- Exception handler now logs full traceback with `flush=True`
-- `import traceback` added to nexus_brain_v3.py
-
-**Next session: catch the first crash traceback in logs/nexus.log and fix root cause**
-- Watch for: `[NEXUS CRASH]` in logs/nexus.log after a message is received
-- Likely candidates: proactive_check() hitting a None somewhere, timedelta math, hive_mind.json write conflict
+- APEX not currently running — needs restart
+- BOT_CURRICULUM not running — DRIFT/TITAN/SENTINEL need restart
+- APEX has only 3 trades from previous sessions — needs more signal frequency
+- CoinGecko rate-limits (429) frequently — Coinbase spot fallback wired but entry signals drop
 
 ---
 
-## P4 — BOT GRADUATION STATUS
+## P4 — NEXUS CRASH INVESTIGATION
 
-DRIFT/TITAN/SENTINEL running via `bot_curriculum.py` (PID 53694):
-- Uses live CoinGecko prices (5-min scans)
-- RSI-based entry signals, trailing stops
-- Graduation: 100 backtesting trades + 55%+ WR + positive P&L → paper → 200 trades → live_pending
-
-Current progress (very early):
-- DRIFT: 3 trades, 67% WR (backtesting)
-- TITAN: 0 trades
-- SENTINEL: 0 trades
-
-At 5-min scan intervals with 1-hour max hold, expect ~5-10 trades/day per bot.
-DRIFT needs ~3-4 weeks to hit 100 trades at this rate — consider tightening entry conditions or adding more symbols.
+- NEXUS crashed 17 times in April 7 session — silently, no traceback
+- Fixes applied: `-u` flag, full traceback logging, flush=True
+- **Next session: check logs/nexus.log for `[NEXUS CRASH]` entries**
+- Current PID 1093 appears stable
 
 ---
 
-## P5 — FIXES MADE THIS SESSION (do not redo)
+## P5 — COMPOSIO INTEGRATIONS (LOW PRIORITY)
 
-### Price Feed
-- `fetch_market_snapshot()` — added Coinbase public spot fallback when CoinGecko 429s
-- Root cause of $28K BTC price: CoinGecko 429 → price=0 passed to AI → AI hallucinated training-data price
-- `_coinbase_spot()` function added — hits `api.coinbase.com/v2/prices/{sym}-USD/spot`, no auth, no rate limit
-
-### Data Integrity
-- `scheduler.py` `run_paper_trading_tick()` DISABLED — was writing fake random P&L to all bots every 30min including APEX
-- Stale `status: "paper_trading"` field removed from all bots in hive_mind.json
-- WARDEN report now reads `mode` field (not `status`) — shows `[LIVE]` for APEX, `[BACKTESTING]` for others
-- DRIFT `mode` field was missing — set to `backtesting`
-
-### AutoResearch Completion Callback
-- `sentinel_research-2.py` writes `shared/research_done.flag` on completion
-- NEXUS `proactive_check()` detects flag, sends clean Telegram summary, deletes flag
-- Per-bot top strategy + best asset + WR included in summary
-
-### Process Management
-- Duplicate APEX PIDs killed (had 51032 + 54225 running simultaneously)
-- Duplicate scheduler PIDs killed (had 12522 + 54394)
-- All processes now started with `-u` flag for unbuffered output
-- Cron watchdog updated to use `python3 -u` for NEXUS and ORACLE
-
-### NEXUS Routing
-- `run autoresearch`, `auto research`, `autoresearch`, `research all` etc. added to both COMMAND_PHRASES and train handler
-- `/autoresearch` slash command added
-- `run_all_training()` no longer sends a Telegram message itself — NEXUS handler sends the informative response instead
-
----
-
-## P6 — WIRED BUT NEEDS TESTING
-
-- **Gmail via Composio** — `GMAIL_ACCOUNT_ID = "cb9cbc5a-..."` (marked ACTIVE) — 2am pitch saves to file if PROSPECT_EMAIL not set
-- **GitHub via Composio** — `GITHUB_ACCOUNT_ID = "e101cc4b-..."` (EXPIRED — needs re-auth at app.composio.dev)
-- **COMPOSIO_API_KEY** — exposed in chat, needs rotation before Composio features work
+- Gmail via Composio — GMAIL_ACCOUNT_ID `cb9cbc5a-...` (ACTIVE)
+- GitHub via Composio — GITHUB_ACCOUNT_ID `e101cc4b-...` (EXPIRED — needs re-auth)
+- COMPOSIO_API_KEY was exposed in chat — needs rotation at composio.dev
 
 ---
 
 ## KEY CONSTANTS
 
 ```
-ANTHROPIC_MODEL:  claude-haiku-4-5-20251001
+ANTHROPIC_MODEL:  claude-sonnet-4-6
 TRADE_LOG_SHEET:  1vr6JVCNpJfRviul47oVV7iyYDC_ryJTGO0OaBHpXRsg
 GMAIL_ACCOUNT_ID: cb9cbc5a-ffe5-4254-a106-49912176a1ba  (ACTIVE)
 GITHUB_ACCOUNT_ID: e101cc4b-b485-4734-add8-74b4cf83ba6f (EXPIRED)
-CRON: */5 watchdog for NEXUS + ORACLE | 2am + 2:30am nightly_consolidate.py
+CRON: */5 watchdog for NEXUS + ORACLE
+NPM_GLOBAL_PREFIX: ~/.npm-global
 ```
 
 ## WHAT NOT TO CHANGE
 - Soul.md — do not rewrite without Ty approval
-- `load_dotenv(BASE / ".env", override=True)` — the override=True is critical, system env has bad key
-- `set_key_silent.py` — this is the only safe key entry method going forward
-- QUIET_MODE = False — night shift active
-- `run_paper_trading_tick()` in scheduler.py — must stay disabled (no-op), do not re-enable
+- `load_dotenv(BASE / ".env", override=True)` — override=True is critical
+- `set_key_silent.py` — only safe key entry method
+- `run_paper_trading_tick()` in scheduler.py — must stay disabled (no-op)
+- `TRAINING_ENABLED = False` in hypertrain.py — do NOT re-enable until backtest rebuilt
+- HyperTrain schedule (3am + noon) — don't change without Ty approval
+
+## KEY MANAGEMENT — PERMANENT RULE
+**NEVER add API keys via terminal echo, chat paste, or GUI text field that logs.**
+**ALWAYS use: `python3 set_key_silent.py KEY_NAME`**
