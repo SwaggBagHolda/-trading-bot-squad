@@ -2258,3 +2258,27 @@ AutoResearch started PID 4962 at 2026-04-09T06:25:05.886186
 
 ## [2026-04-09 06:35]
 AutoResearch started PID 5163 at 2026-04-09T06:35:56.113302
+
+## [2026-04-09 07:13]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 07:13]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 07:13]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 07:13]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 07:17]
+AutoResearch started PID 1144 at 2026-04-09T07:17:24.207912
+
+## [2026-04-09 07:53]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 07:53]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 07:53]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%

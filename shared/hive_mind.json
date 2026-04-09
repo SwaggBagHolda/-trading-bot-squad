@@ -375,20 +375,28 @@
       "win_rate": 70.73,
       "avg_pnl": 0.6153,
       "sharpe": 1.466
+    },
+    {
+      "strategy": "mean_reversion",
+      "asset": "OIL",
+      "timeframe": "4h",
+      "win_rate": 67.9,
+      "avg_pnl": 0.6046,
+      "sharpe": 1.433
     }
   ],
-  "titan_last_trained": "2026-04-09T03:38:16.072593",
+  "titan_last_trained": "2026-04-09T07:10:19.573592",
   "titan_best_params": {
-    "risk_per_trade": 0.0248,
-    "reward_ratio": 4.8677,
-    "stop_loss_pct": 0.0306,
-    "trailing_stop_pct": 0.0599,
-    "rsi_entry": 25.0737,
-    "rsi_exit": 71.0312,
-    "ema_fast": 29.6851,
-    "ema_slow": 64.3548,
-    "volume_multiplier": 1.8343,
-    "min_rr": 4.3311
+    "risk_per_trade": 0.0284,
+    "reward_ratio": 5.2591,
+    "stop_loss_pct": 0.0402,
+    "trailing_stop_pct": 0.0561,
+    "rsi_entry": 21.9171,
+    "rsi_exit": 78.0171,
+    "ema_fast": 16.8249,
+    "ema_slow": 97.4614,
+    "volume_multiplier": 1.6941,
+    "min_rr": 4.1141
   },
   "sentinel_best_params": {
     "risk_per_trade": 0.0048,
