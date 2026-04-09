@@ -1499,7 +1499,19 @@ def autonomous_loop():
                 except Exception:
                     pass
                 market = fetch_market_snapshot()
-                cur = market.get(symbol, {}).get("price") or market.get("BTC", {}).get("price", 0)
+                cur = market.get(symbol, {}).get("price")
+                # Fallback: direct Coinbase spot price for assets not in market snapshot
+                if not cur:
+                    try:
+                        product = active.get("product", f"{symbol}-USD")
+                        r_price = requests.get(
+                            f"https://api.coinbase.com/v2/prices/{product.replace('-','/')}/spot",
+                            timeout=5
+                        )
+                        if r_price.status_code == 200:
+                            cur = float(r_price.json()["data"]["amount"])
+                    except Exception:
+                        pass
                 if cur and entry:
                     pnl_pct = (cur - entry) / entry if direction == "BUY" else (entry - cur) / entry
                     act(f"APEX: IN TRADE — {direction} {symbol} @ ${entry:,.4f} now ${cur:,.4f} ({pnl_pct*100:+.2f}%) held {int(hold_secs//60)}m")
@@ -1616,6 +1628,75 @@ def autonomous_loop():
         elif stage == "live_pending":
             # Only alert once — not every 15 min
             act(f"GRAD [{bot}]: LIVE PENDING — awaiting Ty approval (alert suppressed to avoid spam)")
+
+    # ── CHECK 5: Hive mind data quality — auto-clean bad entries ─────────────
+    # Any Sharpe > 1000 is a math artifact (std dev ≈ 0). Remove silently, revalidate.
+    SHARPE_CAP = 1000
+    strat_keys = ["sentinel_top_strategies", "apex_top_strategies",
+                  "drift_top_strategies", "titan_top_strategies"]
+    hive_dirty = False
+    artifact_log = []
+    for key in strat_keys:
+        strats = hive.get(key, [])
+        clean  = [s for s in strats if s.get("sharpe", 0) < SHARPE_CAP]
+        bad    = [s for s in strats if s.get("sharpe", 0) >= SHARPE_CAP]
+        if bad:
+            for b in bad:
+                artifact_log.append(f"{b['strategy']} {b['asset']} {b['timeframe']} sharpe={b['sharpe']:.0f}")
+                act(f"HIVE ARTIFACT REMOVED: {key} — {b['strategy']} {b['asset']} sharpe={b['sharpe']:.0f}")
+            hive[key] = clean
+            hive_dirty = True
+    if hive_dirty:
+        try:
+            (BASE / "shared" / "hive_mind.json").write_text(json.dumps(hive, indent=2))
+            act(f"HIVE: Cleaned {len(artifact_log)} artifact entries")
+            send(OWNER_ID,
+                 f"Cleaned {len(artifact_log)} bad Sharpe entries from hive mind.\n"
+                 f"Removed: {'; '.join(artifact_log[:3])}\n"
+                 f"Queuing HyperTrain revalidation.")
+            # Queue revalidation
+            pending_path = BASE / "memory" / "tasks" / "pending.md"
+            entry = f"\n- [AUTO_IMPROVE] Rerun HyperTrain — {len(artifact_log)} artifact Sharpe entries removed from hive. Revalidate with 50+ trade minimum. (queued {now.isoformat()})\n"
+            existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
+            pending_path.write_text(existing + entry)
+        except Exception as e:
+            act(f"HIVE: Clean error: {e}")
+    else:
+        act("HIVE: No artifact Sharpe entries detected")
+
+    # ── CHECK 6: Overall WR health — auto-trigger rebuild if < 40% after 100+ experiments ──
+    # Pull from sentinel_winners.json if fresh enough (< 24h old)
+    winners_file = BASE / "memory" / "sentinel_winners.json"
+    try:
+        if winners_file.exists():
+            wdata = json.loads(winners_file.read_text())
+            completed_ts = wdata.get("completed", "")
+            if completed_ts:
+                age_hours = (now - datetime.fromisoformat(completed_ts)).total_seconds() / 3600
+                if age_hours < 24:
+                    rebuild_needed = []
+                    for bot_result in wdata.get("bots", []):
+                        bot_name = bot_result.get("bot", "?")
+                        wr       = bot_result.get("win_rate", 100)
+                        if wr < 40:
+                            rebuild_needed.append(f"{bot_name} {wr:.1f}%WR")
+                            act(f"HEALTH [{bot_name}]: WR={wr:.1f}% — below 40% threshold, rebuild triggered")
+                    if rebuild_needed:
+                        already_running = bool(subprocess.run(
+                            ["pgrep", "-f", "sentinel_research"], capture_output=True, text=True
+                        ).stdout.strip())
+                        if not already_running:
+                            run_all_training()
+                            act(f"HYPERTRAIN: Relaunched — {', '.join(rebuild_needed)} WR too low")
+                            send(OWNER_ID,
+                                 f"HyperTrain relaunched — {', '.join(rebuild_needed)} flagged below 40% WR.\n"
+                                 f"Running now. Will report back when done.")
+                        else:
+                            act(f"HYPERTRAIN: Already running — rebuild queued for next cycle")
+                    else:
+                        act(f"HEALTH: All bots above 40% WR in last HyperTrain run")
+    except Exception as e:
+        act(f"HEALTH CHECK ERROR: {e}")
 
     act("=== AUTONOMOUS LOOP END ===")
 

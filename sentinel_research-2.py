@@ -471,7 +471,9 @@ def backtest_on_candles(candles: list, strategy: str, direction: str, params: di
     mean = avg_pnl
     var  = sum((t - mean) ** 2 for t in trades) / max(len(trades) - 1, 1)
     std  = var ** 0.5
-    sharpe = mean / std if std > 0 else 0.0
+    # Cap Sharpe at 100 — values above this are math artifacts (near-zero std dev).
+    # A real trading strategy with consistent returns never exceeds ~10.
+    sharpe = min(mean / std, 100.0) if std > 1e-8 else 0.0
 
     equity = peak = 1.0
     max_dd = 0.0
@@ -586,26 +588,34 @@ def autoresearch_hypothesis(current_params: dict, param_space: dict) -> dict:
         return {k: round(random.uniform(*v), 4) for k, v in param_space.items()}
 
 
+MIN_WINNER_TRADES = 50   # minimum experiments for a combo to be a valid "winner"
+
 def get_winners(conn):
-    cur = conn.execute("""
+    """
+    Valid winners must have:
+    - At least MIN_WINNER_TRADES (50) experiments — prevents overfitting on tiny samples
+    - WR >= 50%, positive avg P&L, Sharpe > 1.0
+    - Sharpe < 1000 guard in SQL (artifact filter — real Sharpe never exceeds ~10 in trading)
+    """
+    cur = conn.execute(f"""
         SELECT strategy, asset, timeframe,
                AVG(win) as wr, AVG(pnl_pct) as pnl,
                AVG(sharpe) as sh, COUNT(*) as n
         FROM experiments WHERE ftmo_compliant=1
         GROUP BY strategy, asset, timeframe
-        HAVING n>=20 AND wr>=0.50 AND pnl>0 AND sh>1.0
+        HAVING n>={MIN_WINNER_TRADES} AND wr>=0.50 AND pnl>0 AND sh>1.0 AND sh<1000
         ORDER BY pnl DESC LIMIT 20""")
     return cur.fetchall()
 
 
 def get_losers(conn):
-    cur = conn.execute("""
+    cur = conn.execute(f"""
         SELECT strategy, asset, timeframe,
                AVG(win) as wr, AVG(pnl_pct) as pnl,
                AVG(sharpe) as sh, COUNT(*) as n
         FROM experiments WHERE ftmo_compliant=1
         GROUP BY strategy, asset, timeframe
-        HAVING n>=20 AND (wr<0.40 OR pnl<0 OR sh<0.5)
+        HAVING n>={MIN_WINNER_TRADES} AND (wr<0.40 OR pnl<0 OR sh<0.5)
         ORDER BY pnl ASC LIMIT 20""")
     return cur.fetchall()
 

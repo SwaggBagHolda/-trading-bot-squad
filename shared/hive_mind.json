@@ -2,14 +2,6 @@
   "sentinel_top_strategies": [
     {
       "strategy": "mean_reversion",
-      "asset": "AVAX/USD",
-      "timeframe": "6h",
-      "win_rate": 84.3,
-      "avg_pnl": 0.8879,
-      "sharpe": 9402499535131.938
-    },
-    {
-      "strategy": "mean_reversion",
       "asset": "SPY",
       "timeframe": "4h",
       "win_rate": 72.53,
@@ -126,10 +118,10 @@
   "sentinel_last_trained": "2026-04-09T03:43:56.857462",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": 0.39,
-      "trades": 2,
+      "daily_pnl": 0.05,
+      "trades": 1,
       "wins": 1,
-      "win_rate": 0.5,
+      "win_rate": 1.0,
       "mode": "live_scalping"
     },
     "VOLT": {
@@ -236,14 +228,6 @@
   "apex_top_strategies": [
     {
       "strategy": "mean_reversion",
-      "asset": "AVAX/USD",
-      "timeframe": "6h",
-      "win_rate": 84.12,
-      "avg_pnl": 0.8845,
-      "sharpe": 9765686212454.607
-    },
-    {
-      "strategy": "mean_reversion",
       "asset": "SPY",
       "timeframe": "4h",
       "win_rate": 72.53,
@@ -291,14 +275,6 @@
   "drift_top_strategies": [
     {
       "strategy": "mean_reversion",
-      "asset": "AVAX/USD",
-      "timeframe": "6h",
-      "win_rate": 84.12,
-      "avg_pnl": 0.8845,
-      "sharpe": 9765686212454.607
-    },
-    {
-      "strategy": "mean_reversion",
       "asset": "SPY",
       "timeframe": "4h",
       "win_rate": 72.53,
@@ -344,14 +320,6 @@
     "min_rr": 2.4417
   },
   "titan_top_strategies": [
-    {
-      "strategy": "mean_reversion",
-      "asset": "AVAX/USD",
-      "timeframe": "6h",
-      "win_rate": 84.12,
-      "avg_pnl": 0.8845,
-      "sharpe": 9765686212454.607
-    },
     {
       "strategy": "mean_reversion",
       "asset": "SPY",
@@ -493,13 +461,34 @@
       "ENJ",
       "BLUR",
       "FARTCOIN",
+      "ENA",
       "WLFI",
       "FET",
-      "ENA",
       "POL",
-      "TAO"
+      "PEPE"
     ],
-    "scanned": "2026-04-09T06:07:29.355294",
+    "scanned": "2026-04-09T06:16:18.554568",
     "sources": "CoinGecko+CoinPaprika"
-  }
+  },
+  "apex_trade_lessons": [
+    {
+      "ts": "2026-04-09T06:11:38.196140",
+      "symbol": "FARTCOIN",
+      "product": "FARTCOIN-USD",
+      "direction": "SELL",
+      "signal_type": "momentum",
+      "entry": 0.17725,
+      "exit": 0.17715,
+      "pnl_pct": 0.00056,
+      "pnl_usd": 0.046,
+      "hold_secs": 157.320895,
+      "reason": "trail",
+      "outcome": "win",
+      "momentum": -0.004213,
+      "fvg_zone": null
+    }
+  ],
+  "apex_lessons_updated": "2026-04-09T06:11:38.196165",
+  "hive_last_cleaned": "2026-04-09T06:30:00",
+  "hive_clean_note": "Artifact Sharpe > 1000 entries removed. Min 50 trades enforced."
 }
