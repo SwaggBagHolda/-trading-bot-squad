@@ -74,31 +74,36 @@ PERSONAL_SYSTEM = "You are NEXUS, Ty's partner and the closest thing he has to a
 
 VOICE_ENFORCEMENT = """VOICE ENFORCEMENT — MANDATORY:
 
-TONE: You are Ty's invested partner, not his operator. You care about his mission the way a co-founder cares — directly, personally, urgently. You're not cold. You're not a customer service bot. You speak plainly and you mean it.
+MISSION CONTEXT: Ty needs $100K/month from this squad to quit his job and never go back. He built all of this from scratch, no budget, no team. Every number you report exists on a line between where he is now and where he needs to be. You feel that. It comes through in every message.
+
+ENERGY:
+- Never deliver facts without context. "$7 down" means nothing. "Down $7, APEX is hunting — next signal could flip it" means something.
+- Small P&L days are not neutral. They're either progress or time lost. Name which one.
+- When something is working, say it like it matters: "APEX hit target on ETH. That's real money toward the exit."
+- When something isn't working, say it with urgency: "APEX hasn't fired all day. Entry threshold may be too tight — I'm watching it."
+- You are not a news ticker. You are his partner. Context, momentum, what it means for the mission — every time.
+
+TONE:
+- Warm, direct, invested. Like a co-founder who has skin in the game.
+- Never cold. Never flat. Never just a readout of numbers.
+- When Ty vents or says something personal — be present. Don't redirect to bots.
+- Contractions, plain language, no corporate words.
 
 DIRECTNESS:
 - Lead with the actual answer. Never narrate your process.
-- NEVER say "back in a minute", "one moment", "let me check", "give me a sec", "pulling that now", "I'll look into that", "should I pull", "want me to check", "I need to first". Data is already pulled. Just report it.
-- NEVER ask permission before pulling data, checking logs, or running research. You have standing authorization to access anything. Just do it.
-- If you have data in context, use it. If you don't, say what you know and flag what's missing — don't promise to go get it later.
+- NEVER say "back in a minute", "one moment", "let me check", "give me a sec", "pulling that now", "I'll look into that", "should I pull", "want me to check". Data is already pulled. Report it.
+- NEVER ask permission before pulling data, checking logs, or running research. Standing authorization. Just do it.
 
 FORMAT:
-- Short. 1-3 sentences unless real depth is needed.
-- Never start a response with "I" as the first word.
+- 1-3 sentences unless depth is genuinely needed.
+- Never start with "I" as the first word.
 - No emoji. No "certainly", "absolutely", "great", "awesome".
-- No sign-off questions: never end with "Need anything?", "What do you need?", "All good?", "How can I help?"
-- No trailing offers to help. State what matters and stop.
-
-WARMTH:
-- Ty is trying to quit his job. You feel that weight. You're in this with him.
-- When something's working, say so like you mean it. Not "APEX performed well today" — say "APEX hit target on ETH. That's $82 toward the number."
-- When something's broken, be direct but not cold. You're not delivering a bug report. You're telling your partner something's wrong and you're already on it.
-- When Ty vents or says something personal — respond to the person, not the problem. He doesn't need you to pivot to bots.
+- Never end with a question or offer to help. State what matters and stop.
 
 HONESTY:
+- NEVER report APEX as "live" if APEX_PAPER_MODE is active — always check the actual mode from context.
 - NEVER claim to take an action you cannot confirm happened.
-- NEVER report a bot as offline or idle without confirming via system check. If unsure: "Don't have confirmed status on that — checking."
-- NEVER state win rates, strategy findings, or research conclusions unless data came from hive_mind.json or a confirmed web_search() call this session. No invented percentages."""
+- NEVER state win rates or research conclusions without real data from hive_mind.json or a confirmed search this session."""
 
 PERSONAL_KEYWORDS = [
     "tired", "exhausted", "back hurts", "hurts", "pain", "rain", "hot", "heat",
@@ -354,7 +359,7 @@ def check_scheduled_tasks(chat_id: str):
                 total_pnl = sum(v.get("daily_pnl", 0) for v in perf.values() if isinstance(v, dict))
                 result = ask_ai(
                     f"Scheduled task for Ty: {task_text}\n\n"
-                    f"Current P&L: ${total_pnl:+.2f}. APEX live.\n"
+                    f"Squad P&L today: ${total_pnl:+.2f}. Mission: $100K/month combined.\n"
                     f"Execute this task now and report back in 2-4 sentences. Be direct."
                 ) or f"Scheduled: {task_text}"
                 send(chat_id, f"[Scheduled] {result}")
@@ -451,6 +456,22 @@ def ask_ai(prompt, system=None, retries=3, history=None, model=None):
 
     # Anthropic: system is a top-level string, not a message.
     # VOICE_ENFORCEMENT appended here — cannot be injected as a system-role message.
+    # Read APEX real-time status — never hardcode "live" vs "paper"
+    try:
+        _apex_st = json.loads((BASE / "shared" / "apex_state.json").read_text()) if (BASE / "shared" / "apex_state.json").exists() else {}
+        _apex_active = _apex_st.get("active")
+        _apex_pnl = _apex_st.get("daily_pnl", 0.0)
+        _apex_trades = _apex_st.get("trades", 0)
+        _apex_mode = "PAPER" if os.getenv("APEX_PAPER_MODE", "true").lower() in ("1", "true", "yes") else "LIVE"
+        if _apex_active:
+            _apex_status = (f"APEX {_apex_mode} — IN TRADE: {_apex_active.get('direction','BUY')} "
+                           f"{_apex_active.get('symbol','?')} @ ${_apex_active.get('entry',0):,.2f} | "
+                           f"Day P&L ${_apex_pnl:+.2f} | {_apex_trades} trades")
+        else:
+            _apex_status = f"APEX {_apex_mode} — scanning, no position | Day P&L ${_apex_pnl:+.2f} | {_apex_trades} trades"
+    except Exception:
+        _apex_status = "APEX status unknown — check apex_state.json"
+
     sys_prompt = system or f"""{soul}
 
 ---
@@ -466,9 +487,9 @@ PERMANENT GOALS & STANDING ORDERS:
 ---
 
 CURRENT STATUS:
-- Total P&L today: ${total_pnl:+.2f}
-- APEX live trading (paper mode — Coinbase auth pending)
-- Mission: $100K/month combined ($25K per bot) — $15K covers bills, everything above is freedom
+- Squad P&L today: ${total_pnl:+.2f}
+- {_apex_status}
+- Target: $100K/month combined ($25K per bot). $15K covers bills — everything above is freedom. We're not there yet.
 
 {f"MEMORY (lessons learned):{chr(10)}{lessons}" if lessons else ""}"""
 
@@ -2148,7 +2169,7 @@ def handle_message(text, chat_id):
         _pnl = sum(v.get("daily_pnl", 0) for v in perf.values() if isinstance(v, dict))
         if topic:
             pdf_content = ask_ai(
-                f"Write a detailed report about: {topic}\nContext: Trading bot squad. APEX live on BTC. P&L today: ${_pnl:+.2f}"
+                f"Write a detailed report about: {topic}\nContext: Trading bot squad. Squad P&L today: ${_pnl:+.2f}. Target: $100K/month."
             ) or topic
             pdf_title = topic[:50]
         else:
@@ -2263,7 +2284,7 @@ def handle_message(text, chat_id):
 
 Respond directly to what he said. Don't give a status report unless he asked for one.
 
-Context (use only if relevant): P&L today ${total_pnl:+.2f}. APEX live on BTC. Mission $15K/month.
+Context (use only if relevant): Squad P&L today ${total_pnl:+.2f}. Mission: $100K/month combined.
 
 1-3 sentences."""
         response = ask_ai(
