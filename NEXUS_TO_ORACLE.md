@@ -2153,3 +2153,45 @@ Ty said: Can you update yourself to the latest version
 
 ## [2026-04-09 02:50]
 AutoResearch started PID 1725 at 2026-04-09T02:50:03.481648
+
+## [2026-04-09 03:20]
+AutoResearch started PID 2088 at 2026-04-09T03:20:37.084810
+
+## [2026-04-09 03:20]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 03:20]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 03:20]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 03:20]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 03:20]
+3am research queued: I don't have confirmed research on free crypto signal APIs available in 2026. Ru
+
+## [2026-04-09 03:20]
+Proactive heartbeat sent: APEX is chasing today — 3 trades, one winner, down 71 cents. Entry timing's off ...
+
+## [2026-04-09 03:20]
+Heartbeat safety checks: ['AutoResearch callback delivered', "Restarted: ['scheduler.py', 'paper_trading.py']", 'ORACLE down alert sent', 'Live P&L pace alert: $+0.00', '3am API research task queued']
+
+## [2026-04-09 03:50]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 03:50]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 03:50]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 03:50]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 03:50]
+Proactive heartbeat sent: APEX is 1-for-3 today while BTC barely moved—that's entry timing, not market con...
+
+## [2026-04-09 03:50]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'SENTINEL training queued', 'Kicked auto_improver (1 tasks)', 'Live P&L pace alert: $+0.00']

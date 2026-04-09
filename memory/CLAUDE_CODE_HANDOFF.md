@@ -40,7 +40,14 @@ All bugs go in memory/research/bugs.md. Don't repeat them.
 ## STACK
 - Exchange: Coinbase (API keys in .env)
 - Language: Python
-- Framework: TBD per bot
-- AutoResearch: strategy.py (Karpathy-style hypertraining)
-- Logging: SQLite → Google Sheets via gspread
-- Alerts: Telegram bot
+- Framework: Per-bot Python scripts (apex_coingecko.py, bot_curriculum.py, sentinel_research-2.py, etc.)
+- AutoResearch: sentinel_research-2.py (Karpathy-style hypertraining, writes shared/research_done.flag on complete)
+- Logging: hive_mind.json (shared state) → Google Sheets via Composio GOOGLESHEETS_BATCH_UPDATE
+- Alerts: Telegram bot (NEXUS sends; QUIET_MODE=False = night shift active)
+
+## RECENT DECISIONS (as of 2026-04-09)
+- **OpenRouter removed** — all models were 401. NEXUS runs Anthropic API directly (`claude-haiku-4-5-20251001`, upgrading to `claude-sonnet-4-6`).
+- **Key entry: `set_key_silent.py` only** — macOS osascript dialog, never touches stdout/logs.
+- **`run_paper_trading_tick()` PERMANENTLY disabled** — was fabricating random P&L. Do not re-enable.
+- **`load_dotenv(override=True)` is critical** — system env has corrupted key (`sk-sk-ant-api03-...`). Override ensures .env key wins.
+- **RESEARCH FABRICATION is a known NEXUS bug** — haiku model hallucinates stats in proactive messages. Do not trust unverified WR claims from logs.

@@ -27,7 +27,7 @@ load_dotenv(BASE / ".env", override=True)
 TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN")
 OWNER_ID = os.getenv("OWNER_TELEGRAM_CHAT_ID")
 ANTHROPIC_KEY       = os.getenv("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL     = "claude-haiku-4-5-20251001"
+ANTHROPIC_MODEL     = "claude-sonnet-4-6"
 COMPOSIO_KEY        = os.getenv("COMPOSIO_API_KEY", "")
 COMPOSIO_ENTITY_ID  = os.getenv("COMPOSIO_ENTITY_ID", "default")
 TRADE_LOG_SHEET_ID  = os.getenv("TRADE_LOG_SHEET_ID", "")
@@ -259,7 +259,7 @@ def transcribe_voice(file_id):
 
 def ask_ai(prompt, system=None, retries=3, history=None, model=None):
     """
-    Call Anthropic API directly (claude-haiku-4-5-20251001 by default).
+    Call Anthropic API directly (claude-sonnet-4-6 by default).
     history: list of {role, content} dicts (user/assistant only — no system roles).
     model: override with any claude-* model ID.
     """

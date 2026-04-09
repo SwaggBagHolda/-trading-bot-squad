@@ -357,3 +357,10 @@ Invalid API key · Fix external API key
 **Output:**
 Invalid API key · Fix external API key
 
+---
+## 2026-04-09 03:50 | FAILED
+**Task:** Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
+
+**Output:**
+claude CLI not found. Is it installed and in PATH?
+

@@ -1,52 +1,17 @@
 # Pending Tasks
 # Add tasks like:
-# - [TAG] refactor strategy.py entry logic to reduce false signals
-# Replace [TAG] with [DONE] to queue a task for execution.
+# - [TAG] description of task
+# Replace [TAG] with [DONE] to mark complete, [AUTO_IMPROVE] to queue for auto_improver.
 
+# --- ACTIVE ---
 
-- [DONE] Print the current date and time to a file called memory/tasks/bridge_test.txt
-- [DONE] Print the string BRIDGE_OK to a file called memory/tasks/bridge_test.txt
+# (No pending tasks as of 2026-04-09 consolidation pass)
+# All prior [DONE] tasks archived. See memory/tasks/completed.md for history.
 
-- [DONE] Fix: [nexus.log] [NEXUS] Bad response from mistralai/mistral-7b-instruct:free: {'error': {'message': 'No endpoints fo
-- [DONE] Fix: [apex_coingecko.log] Error: unsupported operand type(s) for -: 'datetime.datetime' and 'str'
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a task for execution.
-
-- [DONE] Fix: [nexus.log] [NEXUS] Bad response from mistralai/mistral-7b-instruct:free: {'error': {'message': 'No endpoints fo
-- [DONE] Fix: [apex_coingecko.log] Error: unsupported operand type(s) for -: 'datetime.datetime' and 'str'
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a task for execution.
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad response from mistralai/mistral
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: unsupported operand type(s) for -: 'dateti
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] Fix: [apex_coingecko.log] Error: unsupported operand type(s)
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] Running: Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to 
-- [DONE] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace
-
-- [DONE] In apex_coingecko.log: Error: unsupported operand type(s) for -: 'datetime.datetime' and 'str' — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a task for execution. — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad response from mistralai/mistral — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: unsupported operand type(s) for -: 'datetime.da... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [apex_coingecko.log] Error: unsupported operand type(s) — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] # Replace — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [auto_improver.log] [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad r... — diagnose root cause and fix
+# --- KNOWN ISSUES (not yet tasked) ---
+# - Wire AutoResearch results → update apex_coingecko.py entry params from hive_mind.json["apex_best_params"]
+# - NEXUS RESEARCH FABRICATION: haiku hallucinates stats in proactive messages — needs prompt engineering fix or model upgrade
+# - nexus_brain_v3.py crash root cause still unknown (silently dies after 2-4 messages) — check logs/nexus.log for [NEXUS CRASH] traceback
+# - APEX win rate: 33% on 3 trades — add fallback signal source when CoinGecko rate-limits (429)
+# - Gmail/Composio: COMPOSIO_API_KEY needs rotation; GitHub account EXPIRED at app.composio.dev
 - [DONE] Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
-- [DONE] Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: I don't have confirmed research on that — running AutoResearch now.
-
-Can't give you a real answer without current data. Free crypto signal APIs shift constantly, and I'm not going to invent one. I'll
-
-- [DONE] In nexus.log: [NEXUS] Voice transcription error: [Errno 2] No such file or directory: 'ffmpeg' — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In apex_coingecko.log: Error: unsupported operand type(s) for -: 'datetime.datet... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In apex_coingecko.log: Error: unsupported operand type(s) fo — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a ... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TA — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad resp... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.l — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: ... — diagnose root cause and fix
-
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In apex_coingecko.log: Error: unsupported operand type(s) for -: 'datetime.datet... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In apex_coingecko.log: Error: unsupported operand type(s) fo — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TAG] with  to queue a ... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] # Replace [TA — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.log] [NEXUS] Bad resp... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] [FAILED] Fix: [nexus.l — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] Running: In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_coingecko.log] Error: ... — diagnose root cause and fix
-- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED] In auto_improver.log: [AUTO_IMPROVER] Running: Fix: [apex_co — diagnose root cause and fix

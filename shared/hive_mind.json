@@ -4,9 +4,9 @@
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 83.81,
-      "avg_pnl": 0.8823,
-      "sharpe": 10090487305995.201
+      "win_rate": 84.3,
+      "avg_pnl": 0.8879,
+      "sharpe": 9402499535131.938
     },
     {
       "strategy": "mean_reversion",
@@ -46,8 +46,8 @@
       "strategy": "rsi_divergence",
       "asset": "AVAX/USD",
       "timeframe": "1m",
-      "win_rate": 0.0,
-      "avg_pnl": -0.2391,
+      "win_rate": 8.33,
+      "avg_pnl": -0.2214,
       "reason": "consistently_unprofitable"
     },
     {
@@ -62,15 +62,15 @@
       "strategy": "support_resistance",
       "asset": "BTC/USD",
       "timeframe": "6h",
-      "win_rate": 41.89,
-      "avg_pnl": -0.1087,
+      "win_rate": 42.02,
+      "avg_pnl": -0.1092,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "session_open",
       "asset": "LINK/USD",
       "timeframe": "1m",
-      "win_rate": 50.8,
+      "win_rate": 49.68,
       "avg_pnl": -0.0863,
       "reason": "consistently_unprofitable"
     },
@@ -78,32 +78,32 @@
       "strategy": "rsi_divergence",
       "asset": "LINK/USD",
       "timeframe": "1m",
-      "win_rate": 68.86,
-      "avg_pnl": -0.0816,
+      "win_rate": 69.97,
+      "avg_pnl": -0.0828,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "rsi_divergence",
       "asset": "DOGE/USD",
       "timeframe": "5m",
-      "win_rate": 71.43,
-      "avg_pnl": -0.0525,
-      "reason": "consistently_unprofitable"
-    },
-    {
-      "strategy": "rsi_divergence",
-      "asset": "ADA/USD",
-      "timeframe": "1m",
-      "win_rate": 68.61,
-      "avg_pnl": -0.0421,
+      "win_rate": 73.68,
+      "avg_pnl": -0.0476,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "ema_cross",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 33.13,
-      "avg_pnl": -0.0328,
+      "win_rate": 31.11,
+      "avg_pnl": -0.0349,
+      "reason": "consistently_unprofitable"
+    },
+    {
+      "strategy": "rsi_divergence",
+      "asset": "ADA/USD",
+      "timeframe": "1m",
+      "win_rate": 70.93,
+      "avg_pnl": -0.0329,
       "reason": "consistently_unprofitable"
     },
     {
@@ -111,25 +111,25 @@
       "asset": "DOGE/USD",
       "timeframe": "1m",
       "win_rate": 0.0,
-      "avg_pnl": -0.0214,
+      "avg_pnl": -0.0147,
       "reason": "consistently_unprofitable"
     },
     {
       "strategy": "mean_reversion",
       "asset": "SOL/USD",
       "timeframe": "6h",
-      "win_rate": 49.03,
-      "avg_pnl": -0.0166,
+      "win_rate": 51.96,
+      "avg_pnl": -0.0098,
       "reason": "consistently_unprofitable"
     }
   ],
-  "sentinel_last_trained": "2026-04-08T18:26:42.336032",
+  "sentinel_last_trained": "2026-04-09T03:43:56.857462",
   "bot_performance": {
     "APEX": {
-      "daily_pnl": 0.04,
-      "monthly_pnl": 0.04,
-      "trades": 8,
-      "win_rate": 0.25,
+      "daily_pnl": 0.0,
+      "monthly_pnl": 0.0,
+      "trades": 0,
+      "win_rate": 0,
       "status": "paper_trading",
       "active_position": true
     },
@@ -152,23 +152,20 @@
       "mode": "paper"
     },
     "DRIFT": {
-      "daily_pnl": 32.696278257864115,
-      "monthly_pnl": 32.71,
-      "trades": 34,
-      "win_rate": 0.5882352941176471,
+      "daily_pnl": 0.0,
+      "monthly_pnl": 0.0,
+      "trades": 0,
+      "win_rate": 0,
       "status": "paper_trading",
-      "active_position": true,
-      "mode": "backtesting",
-      "wins": 20
+      "active_position": false
     },
     "TITAN": {
       "daily_pnl": 0.0,
       "monthly_pnl": 0.0,
       "trades": 0,
-      "win_rate": 0.0,
-      "active_position": false,
-      "mode": "backtesting",
-      "wins": 0
+      "win_rate": 0,
+      "status": "paper_trading",
+      "active_position": true
     },
     "ANCHOR": {
       "daily_pnl": 0.0,
@@ -183,10 +180,9 @@
       "daily_pnl": 0.0,
       "monthly_pnl": 0.0,
       "trades": 0,
-      "win_rate": 0.0,
-      "active_position": false,
-      "mode": "backtesting",
-      "wins": 0
+      "win_rate": 0,
+      "status": "paper_trading",
+      "active_position": false
     },
     "ATLAS": {
       "daily_pnl": 0.0,
@@ -243,9 +239,9 @@
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 84.19,
-      "avg_pnl": 0.8904,
-      "sharpe": 10583278546520.514
+      "win_rate": 84.12,
+      "avg_pnl": 0.8845,
+      "sharpe": 9765686212454.607
     },
     {
       "strategy": "mean_reversion",
@@ -280,27 +276,27 @@
       "sharpe": 1.466
     }
   ],
-  "apex_last_trained": "2026-04-08T18:19:29.477260",
+  "apex_last_trained": "2026-04-09T03:27:05.362589",
   "apex_best_params": {
-    "risk_per_trade": 0.0146,
-    "reward_ratio": 1.7792,
-    "stop_loss_pct": 0.017,
-    "trailing_stop_pct": 0.0123,
-    "rsi_entry": 46.7334,
-    "rsi_exit": 67.902,
-    "ema_fast": 9.6607,
-    "ema_slow": 24.0603,
-    "volume_multiplier": 2.4942,
-    "min_rr": 1.9951
+    "risk_per_trade": 0.0111,
+    "reward_ratio": 2.4944,
+    "stop_loss_pct": 0.0198,
+    "trailing_stop_pct": 0.0252,
+    "rsi_entry": 40.4321,
+    "rsi_exit": 62.0651,
+    "ema_fast": 5.6154,
+    "ema_slow": 23.9812,
+    "volume_multiplier": 2.2171,
+    "min_rr": 2.1134
   },
   "drift_top_strategies": [
     {
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 84.19,
-      "avg_pnl": 0.8904,
-      "sharpe": 10583278546520.514
+      "win_rate": 84.12,
+      "avg_pnl": 0.8845,
+      "sharpe": 9765686212454.607
     },
     {
       "strategy": "mean_reversion",
@@ -335,27 +331,27 @@
       "sharpe": 1.466
     }
   ],
-  "drift_last_trained": "2026-04-08T18:21:53.671750",
+  "drift_last_trained": "2026-04-09T03:32:42.084755",
   "drift_best_params": {
-    "risk_per_trade": 0.0143,
-    "reward_ratio": 2.7624,
-    "stop_loss_pct": 0.0225,
-    "trailing_stop_pct": 0.0375,
-    "rsi_entry": 36.1753,
-    "rsi_exit": 76.3118,
-    "ema_fast": 17.7021,
-    "ema_slow": 52.0324,
-    "volume_multiplier": 1.5743,
-    "min_rr": 2.6895
+    "risk_per_trade": 0.0108,
+    "reward_ratio": 2.2337,
+    "stop_loss_pct": 0.0286,
+    "trailing_stop_pct": 0.0362,
+    "rsi_entry": 40.7989,
+    "rsi_exit": 70.3575,
+    "ema_fast": 13.7491,
+    "ema_slow": 47.0889,
+    "volume_multiplier": 1.4327,
+    "min_rr": 2.4417
   },
   "titan_top_strategies": [
     {
       "strategy": "mean_reversion",
       "asset": "AVAX/USD",
       "timeframe": "6h",
-      "win_rate": 84.19,
-      "avg_pnl": 0.8904,
-      "sharpe": 10583278546520.514
+      "win_rate": 84.12,
+      "avg_pnl": 0.8845,
+      "sharpe": 9765686212454.607
     },
     {
       "strategy": "mean_reversion",
@@ -390,30 +386,30 @@
       "sharpe": 1.466
     }
   ],
-  "titan_last_trained": "2026-04-08T18:24:19.416575",
+  "titan_last_trained": "2026-04-09T03:38:16.072593",
   "titan_best_params": {
-    "risk_per_trade": 0.0292,
-    "reward_ratio": 5.2471,
-    "stop_loss_pct": 0.0405,
-    "trailing_stop_pct": 0.0534,
-    "rsi_entry": 22.7478,
-    "rsi_exit": 74.2779,
-    "ema_fast": 22.9049,
-    "ema_slow": 75.9839,
-    "volume_multiplier": 1.0971,
-    "min_rr": 4.13
+    "risk_per_trade": 0.0248,
+    "reward_ratio": 4.8677,
+    "stop_loss_pct": 0.0306,
+    "trailing_stop_pct": 0.0599,
+    "rsi_entry": 25.0737,
+    "rsi_exit": 71.0312,
+    "ema_fast": 29.6851,
+    "ema_slow": 64.3548,
+    "volume_multiplier": 1.8343,
+    "min_rr": 4.3311
   },
   "sentinel_best_params": {
-    "risk_per_trade": 0.0044,
-    "reward_ratio": 2.8417,
-    "stop_loss_pct": 0.0203,
-    "trailing_stop_pct": 0.0121,
-    "rsi_entry": 32.2183,
-    "rsi_exit": 71.4152,
-    "ema_fast": 11.4578,
-    "ema_slow": 29.0552,
-    "volume_multiplier": 1.7305,
-    "min_rr": 2.3273
+    "risk_per_trade": 0.0048,
+    "reward_ratio": 2.125,
+    "stop_loss_pct": 0.023,
+    "trailing_stop_pct": 0.0297,
+    "rsi_entry": 41.3703,
+    "rsi_exit": 58.0316,
+    "ema_fast": 10.3363,
+    "ema_slow": 39.2913,
+    "volume_multiplier": 2.332,
+    "min_rr": 2.9001
   },
   "graduation": {
     "DRIFT": {
