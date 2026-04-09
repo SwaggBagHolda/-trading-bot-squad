@@ -2195,3 +2195,24 @@ Proactive heartbeat sent: APEX is 1-for-3 today while BTC barely moved—that's 
 
 ## [2026-04-09 03:50]
 Heartbeat safety checks: ['AutoResearch callback delivered', 'SENTINEL training queued', 'Kicked auto_improver (1 tasks)', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 04:13]
+Ty said: Research best BTC scalping strategy on the 1 minute chart and cite your sources"
+
+## [2026-04-09 04:14]
+Ty said: are you there?
+
+## [2026-04-09 04:14]
+Ty said: Research best BTC scalping strategy on the 1 minute chart and cite your sources"
+
+## [2026-04-09 04:14]
+Ty said: ?
+
+## [2026-04-09 04:19]
+Ty said: "What are the best scalping strategies for BTC right now?"
+
+## [2026-04-09 04:29]
+Ty said: "Why is BTC moving today? & how could we have capitalized on it?
+
+## [2026-04-09 04:30]
+Ty said: why dont you have a catalyst?
