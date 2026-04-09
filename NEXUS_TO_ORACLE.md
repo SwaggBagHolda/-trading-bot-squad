@@ -2405,3 +2405,45 @@ Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace aler
 
 ## [2026-04-09 10:58]
 AutoResearch started PID 3615 at 2026-04-09T10:58:41.679084
+
+## [2026-04-09 11:17]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 11:17]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 11:17]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 11:17]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 11:17]
+Proactive heartbeat sent: APEX's only open trade is a SELL on BLUR at $0.02 — micro-cap, low volume, not w...
+
+## [2026-04-09 11:17]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 11:29]
+AutoResearch started PID 3944 at 2026-04-09T11:29:05.616348
+
+## [2026-04-09 11:47]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-09 11:47]
+[GRADUATION] DRIFT backtesting: 34/100 trades | 58.8% WR | P&L +0.005%
+
+## [2026-04-09 11:47]
+[GRADUATION] TITAN backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 11:47]
+[GRADUATION] SENTINEL backtesting: 0/100 trades | 0.0% WR | P&L +0.000%
+
+## [2026-04-09 11:47]
+Proactive heartbeat sent: Mean reversion on SPY 4h is sitting at 72.53% WR right now — that's the stronges...
+
+## [2026-04-09 11:47]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Live P&L pace alert: $+0.00']
+
+## [2026-04-09 11:59]
+AutoResearch started PID 4257 at 2026-04-09T11:59:28.626989

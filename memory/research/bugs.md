@@ -100,3 +100,9 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 10:47]
 [RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's sitting at 50% WR today with $0.67 on two trades — that BLUR short is the one to watch, market's bleeding across "
+
+## [2026-04-09 11:17]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "APEX's only open trade is a SELL on BLUR at $0.02 — micro-cap, low volume, not where we're making real money. Best live "
+
+## [2026-04-09 11:47]
+[RESEARCH FABRICATION WARNING] Prompt: "You are NEXUS. It's been 30 minutes. You're texting Ty — one message, one thing.". Response: "Mean reversion on SPY 4h is sitting at 72.53% WR right now — that's the strongest signal in the hive. APEX's got a SELL "
