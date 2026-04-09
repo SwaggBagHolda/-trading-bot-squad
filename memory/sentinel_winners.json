@@ -1,31 +1,31 @@
 {
-  "completed": "2026-04-09T17:53:29.740306",
+  "completed": "2026-04-09T18:54:39.698560",
   "total_experiments": 40000,
-  "elapsed_seconds": 579.2,
+  "elapsed_seconds": 575.3,
   "data_source": "Coinbase public exchange API \u2014 real OHLCV",
   "bots": [
     {
       "bot": "DRIFT",
-      "win_rate": 15.17,
-      "avg_pnl": -0.06491997000000013,
-      "winners": 0
-    },
-    {
-      "bot": "TITAN",
-      "win_rate": 25.53,
-      "avg_pnl": -0.07459703999999974,
+      "win_rate": 16.82,
+      "avg_pnl": -0.07146142999999956,
       "winners": 0
     },
     {
       "bot": "APEX",
-      "win_rate": 16.3,
-      "avg_pnl": 0.09566809000000008,
+      "win_rate": 18.59,
+      "avg_pnl": 0.11662127999999956,
+      "winners": 0
+    },
+    {
+      "bot": "TITAN",
+      "win_rate": 24.63,
+      "avg_pnl": -0.05583699000000004,
       "winners": 0
     },
     {
       "bot": "SENTINEL",
-      "win_rate": 13.450000000000001,
-      "avg_pnl": -0.022524340000000042,
+      "win_rate": 14.760000000000002,
+      "avg_pnl": -0.026409510000000115,
       "winners": 0
     }
   ],
