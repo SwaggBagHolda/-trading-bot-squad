@@ -49,6 +49,7 @@
 | 34 | Re-enable HyperTrain after backtest validation | Codey | done | 2026-04-09 | 2026-04-09 |
 | 35 | Agent SDK Phase 1: nexus_agent.py with 5 tools + agent loop | Codey | done | 2026-04-09 | 2026-04-09 |
 | 36 | QMD installed + indexed (51 docs: 35 memory + 16 openclaw) + skill in OpenClaw | Codey | done | 2026-04-09 | 2026-04-09 |
+| 37 | Agent browser: Playwright skill + tools/browse.py (agent-browser plugin blocked) | Codey | done | 2026-04-09 | 2026-04-09 |
 
 ---
 
