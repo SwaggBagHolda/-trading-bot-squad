@@ -36,6 +36,16 @@
 | 21 | Install claude-mem plugin for OpenClaw | Codey | blocked | 2026-04-09 | — |
 | 22 | Ty set ELEVENLABS_API_KEY in .env | Ty | pending | 2026-04-09 | — |
 | 23 | Ty set COINBASE_API_KEY_NAME + COINBASE_PRIVATE_KEY in .env | Ty | pending | 2026-04-09 | — |
+| 24 | Foundation fix: confidence scores read+write in APEX | Codey | done | 2026-04-09 | 2026-04-09 |
+| 25 | Foundation fix: check_bot_health + auto_restart_bots for all processes | Codey | done | 2026-04-09 | 2026-04-09 |
+| 26 | Foundation fix: file locking on hive_mind.json (fcntl.flock) | Codey | done | 2026-04-09 | 2026-04-09 |
+| 27 | Foundation fix: SENTINEL position resolution (TP/SL/max_hold) | Codey | done | 2026-04-09 | 2026-04-09 |
+| 28 | Foundation fix: max_tokens 500→1500 in ask_ai() | Codey | done | 2026-04-09 | 2026-04-09 |
+| 29 | Agent SDK migration plan created | Codey | done | 2026-04-09 | 2026-04-09 |
+| 30 | Validate APEX trades firing at target rate + confidence updating | Codey | verified | 2026-04-09 | 2026-04-09 |
+| 31 | Validate SENTINEL positions open AND close with P&L | Codey | verified | 2026-04-09 | 2026-04-09 |
+| 32 | SENTINEL disk persistence for positions (survive restarts) | Codey | done | 2026-04-09 | 2026-04-09 |
+| 33 | SENTINEL duplicate position guard | Codey | done | 2026-04-09 | 2026-04-09 |
 
 ---
 

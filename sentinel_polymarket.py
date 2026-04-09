@@ -45,11 +45,46 @@ COINBASE_API = "https://api.coinbase.com/v2/prices"
 TELEGRAM_TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN", "")
 OWNER_CHAT_ID = os.getenv("OWNER_TELEGRAM_CHAT_ID", "")
 
-# Paper trading state
-PAPER_BALANCE = 1000.00  # Start with $1000 paper money
-PAPER_POSITIONS = []      # Active positions
-PAPER_HISTORY = []        # Closed trades
+# Paper trading state — persisted to disk
+POSITIONS_FILE = BASE / "shared" / "sentinel_positions.json"
+HISTORY_FILE   = BASE / "shared" / "sentinel_history.json"
 BET_SIZE = 10.00          # $10 per bet (paper)
+
+
+def _load_state():
+    """Load paper trading state from disk."""
+    positions, history, balance = [], [], 1000.00
+    try:
+        if POSITIONS_FILE.exists():
+            positions = json.loads(POSITIONS_FILE.read_text())
+    except Exception:
+        pass
+    try:
+        if HISTORY_FILE.exists():
+            data = json.loads(HISTORY_FILE.read_text())
+            history = data.get("trades", [])
+            balance = data.get("balance", 1000.00)
+    except Exception:
+        pass
+    return positions, history, balance
+
+
+def _save_state():
+    """Persist paper trading state to disk."""
+    try:
+        POSITIONS_FILE.write_text(json.dumps(PAPER_POSITIONS, indent=2))
+    except Exception:
+        pass
+    try:
+        HISTORY_FILE.write_text(json.dumps({
+            "balance": round(PAPER_BALANCE, 2),
+            "trades": PAPER_HISTORY,
+        }, indent=2))
+    except Exception:
+        pass
+
+
+PAPER_POSITIONS, PAPER_HISTORY, PAPER_BALANCE = _load_state()
 
 # Thresholds — loosened for real scalping (the $438K bot trades constantly)
 DIRECTIONAL_EDGE_THRESHOLD = 0.001   # 0.1% price move counts as directional signal
@@ -400,6 +435,11 @@ def paper_trade(opportunity):
         print("[SENTINEL] Paper balance exhausted")
         return None
 
+    # Don't open duplicate positions on same market+action
+    for pos in PAPER_POSITIONS:
+        if pos["market"] == market["question"] and pos["action"] == action:
+            return None
+
     trade = {
         "timestamp": datetime.now().isoformat(),
         "market": market["question"],
@@ -434,6 +474,8 @@ def paper_trade(opportunity):
             f.write(json.dumps(trade) + "\n")
     except Exception:
         pass
+
+    _save_state()
 
     msg = f"PAPER TRADE: {action} on '{market['question'][:60]}'\n"
     msg += f"Bet: ${bet:.2f} | Edge: {opportunity['edge_pct']*100:.1f}%\n"
@@ -530,6 +572,7 @@ def resolve_positions(markets):
         PAPER_POSITIONS.pop(i)
 
     if to_close:
+        _save_state()
         wins = sum(1 for t in PAPER_HISTORY if t.get("pnl", 0) > 0)
         total = len(PAPER_HISTORY)
         total_pnl = sum(t.get("pnl", 0) for t in PAPER_HISTORY)
