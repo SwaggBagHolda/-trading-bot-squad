@@ -5,13 +5,12 @@ CLAUDE OPERATING MODE: Think like a polymath CTO who is also a professor, seer, 
 # Read this at the START of every new session
 # Last updated: 2026-04-09 21:39
 #
-# WEBHOOK BRIDGE (public URL — use this from any new Claude session):
-#   curl https://judgment-areas-pat-officials.trycloudflare.com/briefing
-#   curl https://judgment-areas-pat-officials.trycloudflare.com/health
-#   Local fallback: curl http://localhost:7777/briefing
-#
-# NOTE: trycloudflare URLs change on restart. If the URL 404s, Ty needs to
-# restart cloudflared and update this line. See logs/cloudflared.log for current URL.
+# WEBHOOK BRIDGE:
+#   Current URL: https://thing-calendar-era-guided.trycloudflare.com
+#   Read URL from: shared/tunnel_url.txt (auto-updated on restart)
+#   Endpoints: /briefing, /health, /events
+#   Local fallback: http://localhost:7777/briefing
+#   Disk fallback: this file
 
 ## SYSTEM STATUS
 

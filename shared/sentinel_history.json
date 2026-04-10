@@ -1,5 +1,5 @@
 {
-  "balance": 827.56,
+  "balance": 851.86,
   "trades": [
     {
       "timestamp": "2026-04-09T18:49:26.086150",
@@ -304,6 +304,82 @@
       "shares": 86.95652173913044,
       "close_reason": "take_profit",
       "close_time": "2026-04-09T21:44:44.451304"
+    },
+    {
+      "timestamp": "2026-04-09T21:45:22.223268",
+      "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $72,294 (+0.4% vs $72,000) mom +0.53% | YES $0.585 | conv 66%",
+      "edge_pct": 0.41500000000000004,
+      "prices": [
+        0.585,
+        0.415
+      ],
+      "status": "closed",
+      "pnl": -1.0256,
+      "entry_price": 0.585,
+      "shares": 17.094017094017094,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T22:34:42.058428"
+    },
+    {
+      "timestamp": "2026-04-09T21:44:47.789056",
+      "market": "Will Bitcoin reach $74,000 April 6-12?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC moving up +0.55% toward $74,000 (2.4% away) | YES $0.490",
+      "edge_pct": 0.51,
+      "prices": [
+        0.49,
+        0.51
+      ],
+      "status": "closed",
+      "pnl": -1.2245,
+      "entry_price": 0.49,
+      "shares": 20.408163265306122,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T22:49:50.319270"
+    },
+    {
+      "timestamp": "2026-04-09T21:47:04.778532",
+      "market": "Will the price of Bitcoin be above $72,000 on April 11?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $72,246 (+0.3% vs $72,000) mom +0.21% | YES $0.582 | conv 65%",
+      "edge_pct": 0.4185,
+      "prices": [
+        0.5815,
+        0.4185
+      ],
+      "status": "closed",
+      "pnl": -1.5563,
+      "entry_price": 0.5815,
+      "shares": 17.196904557179707,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T22:55:08.514161"
+    },
+    {
+      "timestamp": "2026-04-09T21:54:28.240017",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,200 (-0.0% vs $2,200) mom -0.15% | YES $0.500 | conv 60%",
+      "edge_pct": 0.5,
+      "prices": [
+        0.5,
+        0.5
+      ],
+      "status": "closed",
+      "pnl": -1.9,
+      "entry_price": 0.5,
+      "shares": 20.0,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T22:55:08.514474"
     }
   ]
 }
