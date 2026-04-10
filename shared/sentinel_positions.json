@@ -238,20 +238,71 @@
     "shares": 17.54385964912281
   },
   {
-    "timestamp": "2026-04-10T04:42:39.457516",
+    "timestamp": "2026-04-10T05:28:00.114287",
     "market": "Will the price of Ethereum be between $2,100 and $2,200 on April 10?",
     "action": "BUY_YES",
     "bet_size": 10.0,
     "type": "directional",
-    "reason": "ETH $2,190 (+4.3% vs $2,100) mom +0.25% | YES $0.595 | conv 95%",
-    "edge_pct": 0.405,
+    "reason": "ETH $2,193 (+4.4% vs $2,100) mom +0.21% | YES $0.510 | conv 95%",
+    "edge_pct": 0.49,
     "prices": [
-      0.595,
-      0.405
+      0.51,
+      0.49
     ],
     "status": "open",
     "pnl": 0,
-    "entry_price": 0.595,
-    "shares": 16.80672268907563
+    "entry_price": 0.51,
+    "shares": 19.607843137254903
+  },
+  {
+    "timestamp": "2026-04-10T05:33:18.701259",
+    "market": "Will the price of Ethereum be above $2,200 on April 10?",
+    "action": "BUY_YES",
+    "bet_size": 10.0,
+    "type": "directional",
+    "reason": "ETH $2,194 (-0.3% vs $2,200) mom +0.07% | YES $0.420 | conv 46%",
+    "edge_pct": 0.5800000000000001,
+    "prices": [
+      0.42,
+      0.58
+    ],
+    "status": "open",
+    "pnl": 0,
+    "entry_price": 0.42,
+    "shares": 23.80952380952381
+  },
+  {
+    "timestamp": "2026-04-10T05:35:05.931327",
+    "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+    "action": "BUY_YES",
+    "bet_size": 10.0,
+    "type": "directional",
+    "reason": "BTC $71,812 (-0.3% vs $72,000) mom +0.02% | YES $0.415 | conv 46%",
+    "edge_pct": 0.585,
+    "prices": [
+      0.415,
+      0.585
+    ],
+    "status": "open",
+    "pnl": 0,
+    "entry_price": 0.415,
+    "shares": 24.096385542168676
+  },
+  {
+    "timestamp": "2026-04-10T05:39:14.066832",
+    "market": "Will Bitcoin reach $74,000 April 6-12?",
+    "action": "BUY_YES",
+    "bet_size": 10.0,
+    "type": "directional",
+    "reason": "BTC moving up +0.13% toward $74,000 (3.0% away) | YES $0.305",
+    "edge_pct": 0.6950000000000001,
+    "prices": [
+      0.305,
+      0.695
+    ],
+    "status": "open",
+    "pnl": 0,
+    "entry_price": 0.305,
+    "shares": 32.78688524590164
   }
 ]
