@@ -36,3 +36,12 @@
 Free REST API serving AI-generated BUY/HOLD/RISK signals across 60 coins, no API key cost, just attribution required.
 
 **How to wire it:** Hit t
+
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] CRITICAL: Rebuild HyperTrain backtest model — current simula — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] EMERGENCY REBUILD: TITAN has 0 winning combos. Research comp — diagnose root cause and fix

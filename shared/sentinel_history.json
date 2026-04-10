@@ -1,5 +1,5 @@
 {
-  "balance": 809.38,
+  "balance": 808.24,
   "trades": [
     {
       "timestamp": "2026-04-09T18:49:26.086150",
@@ -817,6 +817,25 @@
       "shares": 16.80672268907563,
       "close_reason": "stop_loss",
       "close_time": "2026-04-10T05:27:55.482154"
+    },
+    {
+      "timestamp": "2026-04-10T03:40:10.613731",
+      "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+      "action": "BUY_NO",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $71,724 (-0.4% vs $72,000) mom -0.04% | NO $0.615 | conv 56%",
+      "edge_pct": 0.385,
+      "prices": [
+        0.385,
+        0.615
+      ],
+      "status": "closed",
+      "pnl": -1.1382,
+      "entry_price": 0.615,
+      "shares": 16.260162601626018,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-10T06:58:07.744391"
     }
   ]
 }

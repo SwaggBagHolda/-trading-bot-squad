@@ -3061,3 +3061,78 @@ AutoResearch callback sent: 4 bots, top=mean_reversion
 
 ## [2026-04-10 05:58]
 Heartbeat safety checks: ['AutoResearch callback delivered']
+
+## [2026-04-10 06:00]
+Morning priority report sent at 06:00
+
+## [2026-04-10 06:08]
+AutoResearch started PID 11235 at 2026-04-10T06:08:29.371315
+
+## [2026-04-10 06:23]
+Ty said: Grand Rising what's this status of the bots
+
+## [2026-04-10 06:24]
+AutoResearch started PID 11418 at 2026-04-10T06:24:12.045280
+
+## [2026-04-10 06:24]
+Ty said: I'm still taking minimal trades and in the profits are small.That's not a good scalpel strategy.Something needs to change and need to make more trades with more of a profit
+
+## [2026-04-10 06:24]
+Ty said: I meant apex is taken minimal trade
+
+## [2026-04-10 06:27]
+Ty said: And if you see he's only doing one or two traits in an hour or half a day, then it shouldn't take over night to rescale.And adjust him double check your research.Pick a good strategy.Let me know what strategy you find with a one rate above seventy percent.And then have all the box do the same for their trading style.Find one strategy that's above seventy percent and have them paper trade.It
+
+## [2026-04-10 06:29]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-10 06:29]
+Heartbeat safety checks: ['AutoResearch callback delivered']
+
+## [2026-04-10 06:29]
+Ty said: Santa no longer doing F TMO. Sentinel's gonna be doing polymarket, arbitrage. Yes, I agree.With that plan, for all of the bots, except for Sentinel so go find a strategy each look on the website. Check the top traded firms. Find the best strategy for scalping for Apex. Swing trading day, trading and position hold an assigned it to each bot and let them practice it and tighten them up.Do what you need to do to make them profitable
+
+## [2026-04-10 06:29]
+Ty said: Something's wrong with your research.Give me a self check please
+
+## [2026-04-10 06:30]
+Ty said: Run a self check
+
+## [2026-04-10 06:30]
+Ty said: It's still the same eight tasks.Can you fix them
+
+## [2026-04-10 06:36]
+Ty said: Any luck?
+
+## [2026-04-10 06:39]
+Ty said: Can you run kaparthys are research and see what the problem is with?Why they are not working correctly?
+
+## [2026-04-10 06:39]
+AutoResearch started PID 11608 at 2026-04-10T06:39:58.688360
+
+## [2026-04-10 06:41]
+Ty said: I don't need the links for the sources, but isn't Kaparthy auto research about doing thousands of experiments in a condensed time to find one that works best?
+
+## [2026-04-10 06:43]
+Ty said: Straight, so we'll do it and let me know what you find
+
+## [2026-04-10 06:44]
+Ty said: O k so do it
+
+## [2026-04-10 06:45]
+Ty said: Kaparthe's research
+
+## [2026-04-10 06:45]
+Ty said: You just told me you found kapparki's auto research. I'll set it up on a couple strategies for bots and testing
+
+## [2026-04-10 06:46]
+Ty said: Okay, do that against live market data.And see what they come over
+
+## [2026-04-10 06:55]
+AutoResearch started PID 11803 at 2026-04-10T06:55:44.027092
+
+## [2026-04-10 06:59]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-10 06:59]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'Kicked auto_improver (8 tasks)']
