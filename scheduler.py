@@ -564,19 +564,19 @@ def main():
 
     # Auto-start cloudflared tunnel if binary exists and not already running
     cloudflared_bin = BASE / "bin" / "cloudflared"
-    if cloudflared_bin.exists():
+    tunnel_script = BASE / "start_tunnel.sh"
+    if cloudflared_bin.exists() and tunnel_script.exists():
         try:
             result = subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True, text=True)
             if result.returncode != 0:
-                tunnel_log = open(str(BASE / "logs" / "cloudflared.log"), "w")
                 subprocess.Popen(
-                    [str(cloudflared_bin), "tunnel", "--url", "http://localhost:7777"],
+                    ["bash", str(tunnel_script)],
                     cwd=str(BASE),
-                    stdout=tunnel_log,
-                    stderr=tunnel_log,
+                    stdout=open(str(BASE / "logs" / "tunnel_start.log"), "a"),
+                    stderr=subprocess.STDOUT,
                     start_new_session=True,
                 )
-                log("BRIDGE: Started cloudflared tunnel (check logs/cloudflared.log for public URL)")
+                log("BRIDGE: Started cloudflared tunnel via start_tunnel.sh")
             else:
                 log("BRIDGE: cloudflared tunnel already running")
         except Exception as e:
