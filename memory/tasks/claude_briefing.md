@@ -145,7 +145,7 @@ Ty has 30 days to prove this squad can pay his $15K/month bills. Every session m
 ### What matters in the next 30 days
 1. **Get APEX trading volume up** — needs 50+ trades/day to compound
 2. **Coinbase API keys** — current keys 401. Live trading blocked until Ty regenerates with Trade+View permissions.
-3. **Graduate first bot to live** — 100+ trades, >55% WR, >1.0 Sharpe, <5% max DD
+3. **Graduate first bot to live** — 100+ trades, >70% WR, >1.0 Sharpe, <5% max DD (algorithms, not humans — higher bar)
 4. **HyperTrain optimizing nightly** — 10K experiments, max 2 runs/day
 5. **DRIFT and TITAN online and trading** — both have schema bugs blocking trades
 

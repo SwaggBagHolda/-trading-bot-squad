@@ -72,7 +72,7 @@ DRIFT doesn't chase setups — it hunts the perfect storm: volume surge, price b
 - [ ] Sharpe ratio > 1.0
 - [ ] At least 3 trades that ran more than 10% without hitting TP cap (because there is none)
 - [ ] Profitable on 15 of 30 days minimum
-- [ ] Win rate > 55% both long and short
+- [ ] Win rate > 70% both long and short (algorithms — bar is higher than humans)
 - [ ] ZEUS approved
 
 ## AVATAR

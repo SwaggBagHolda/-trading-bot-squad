@@ -37,11 +37,15 @@ Free REST API serving AI-generated BUY/HOLD/RISK signals across 60 coins, no API
 
 **How to wire it:** Hit t
 
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] CRITICAL: Rebuild HyperTrain backtest model — current simula — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
-- [AUTO_IMPROVE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] EMERGENCY REBUILD: TITAN has 0 winning combos. Research comp — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: CRITICAL: Rebuild HyperTrain backtest model — curr... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] CRITICAL: Rebuild HyperTrain backtest model — current simula — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 1/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 2/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] Attempt 3/3 failed: EMERGENCY REBUILD: TITAN has 0 winning combos. Res... — diagnose root cause and fix
+- [DONE] In auto_improver.log: [AUTO_IMPROVER] [FAILED AFTER 3 RETRIES] EMERGENCY REBUILD: TITAN has 0 winning combos. Research comp — diagnose root cause and fix
+- [DONE] EMERGENCY REBUILD: TITAN has 0 winning combos (titan_top_strategies=[], hypertrain.py:131 still runs old EMA trend + RSI pullback). Previous rebuild was marked DONE but never actually ran — every attempt hit the old 5-min subprocess timeout. Now that auto_improver.py TASK_TIMEOUT is 20 min, research a different strategy type for 6h position trades (trend-following donchian breakout, or higher-timeframe Ichimoku kumo break, or weekly momentum), rewrite hypertrain.py TITAN block, run a 30-experiment AutoResearch batch on real Coinbase OHLCV, and update hive_mind.json titan_best_params + titan_top_strategies. Must per CLAUDE.md rule 9: AutoResearch before strategy changes. (re-queued 2026-04-10 after cascade diagnosis)
+  - REBUILT v2 2026-04-10: Donchian Breakout (Turtle-style) + 100-EMA regime + ADX(22) + 10-bar momentum confirm. 30 experiments across 9 Coinbase assets. 10/30 profitable (vs 0 before). Top: DOGE 50%WR PF1.59, AVAX 33%WR PF1.49, DOT 50%WR PF1.45, XRP 31%WR PF1.01. Also paginated _fetch_candles + bumped TITAN candle budget to 900 (position trader needs more history for EMA warmup).
+- [DONE] EMERGENCY REBUILD: DRIFT has 0 winning combos — same root cause as TITAN (timed out under old 5-min cap). Research a different strategy type for 15m day trades, rewrite hypertrain.py DRIFT block, run AutoResearch, update hive_mind.json drift_best_params + drift_top_strategies. (re-queued 2026-04-10 after cascade diagnosis)
+  - REBUILT v5 2026-04-10: Supertrend(10, 3.0) + EMA100 regime filter + 5-bar momentum confirm (Olivier Seban 2008, ATR-native intraday trend indicator). Replaces Keltner+ADX v4 which scored 26.9% WR on BTC 15m (whipsaw death). 30 experiments across 9 Coinbase 15m assets. 8/30 profitable (vs 0 before). Top: XRP 75%WR PF12.56, DOT 75%WR PF3.85, LINK 66.7%WR PF4.31, SOL 33%WR PF2.94, ETH 50%WR PF1.39, AVAX 25%WR PF1.89. hive_mind.json updated (drift_best_params, drift_top_strategies×6, drift_last_trained, drift_rebuild_notes).

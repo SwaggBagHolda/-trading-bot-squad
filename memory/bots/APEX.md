@@ -68,7 +68,7 @@ It doesn't think "$333 today" — it thinks "what's the most volatile asset righ
 - [ ] Sharpe ratio > 1.0
 - [ ] Profitable on 15 of 30 days minimum
 - [ ] ZEUS approved
-- [ ] Bidirectional win rate > 55% both long and short
+- [ ] Bidirectional win rate > 70% both long and short (algorithms — bar is higher than humans)
 
 ## AVATAR
 - Style: Electric, sharp, aggressive 3D action figure

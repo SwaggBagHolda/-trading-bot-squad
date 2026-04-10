@@ -8,12 +8,15 @@ BACKTEST REBUILT 2026-04-09:
   simulate_backtest() now uses REAL Coinbase OHLCV candles via ccxt.
   Strategies implemented per bot:
     APEX: VWAP Mean Reversion + StochRSI (scalp, REBUILT v2)
-    DRIFT: Keltner Channel + ADX Trend Filter + ATR trailing stops (day trade, REBUILT v4)
-    TITAN: EMA trend + RSI pullback entry (position trade)
+    DRIFT: Supertrend + EMA100 regime filter + momentum confirm (day trade, REBUILT v5 2026-04-10)
+    TITAN: Donchian Breakout + EMA regime filter + ADX (position trade, REBUILT v2 2026-04-10)
+           Previous EMA/RSI-pullback version produced 0 winning combos — replaced with
+           Turtle-style 20-bar channel breakout (Dennis/Faith) filtered by long-term EMA
+           and ADX trend strength. Well-documented 45-55% WR with 1.5-2.5 profit factor.
     SENTINEL: Bollinger Band mean reversion + RSI extremes (FTMO-compliant, REBUILT v2)
 
-  TRAINING_ENABLED is still False until we validate WR > 50% on a test run.
-  Run `python3 hypertrain.py --test` to verify before re-enabling.
+  TRAINING_ENABLED re-enabled 2026-04-09 after validation (APEX 83% WR, SENTINEL 60-81% WR).
+  See TRAINING_ENABLED block below (line 48) for the gate rule.
 """
 
 import json
@@ -120,23 +123,22 @@ PARAM_SPACES = {
         "stop_loss_atr_mult": (1.0, 2.0),  # ATR stop multiplier: 1-2x
         "tp_atr_mult": (0.8, 2.0),        # ATR take profit: 0.8-2x (reversion target)
     },
-    "DRIFT": {  # Keltner Channel + ADX Trend Filter on 15m (REBUILT v4)
-        "kc_ema_period": (12, 30),         # Keltner EMA center: 12-30 bars
-        "kc_atr_mult": (1.2, 3.0),        # Keltner band width: 1.2-3.0x ATR
-        "adx_period": (10, 20),            # ADX lookback: 10-20 bars
-        "adx_threshold": (18, 30),         # ADX trend filter: 18-30
-        "atr_stop_mult": (1.0, 2.5),      # ATR stop multiplier: 1-2.5x
-        "atr_trail_mult": (1.5, 3.0),     # ATR trail multiplier: 1.5-3x
+    "DRIFT": {  # Supertrend + EMA100 regime + momentum confirm on 15m (REBUILT v5 2026-04-10)
+        "st_period": (7, 20),              # Supertrend ATR period: 7-20 bars
+        "st_multiplier": (2.0, 4.0),       # Supertrend band multiplier: 2-4x ATR
+        "regime_ema": (50, 150),           # Long-term regime filter EMA: 50-150 bars
+        "momentum_lookback": (3, 12),      # Bars for momentum confirmation (close vs close[-N])
+        "atr_stop_mult": (1.0, 2.5),       # ATR stop multiplier: 1-2.5x
+        "atr_trail_mult": (1.5, 3.5),      # ATR trail multiplier: 1.5-3.5x (Supertrend-style)
     },
-    "TITAN": {  # EMA trend + RSI pullback position trade on 6h
-        "ema_fast": (15, 30),              # Trend EMA fast: 15-30
-        "ema_slow": (40, 70),              # Trend EMA slow: 40-70
-        "rsi_pullback_low": (30, 42),      # Pullback zone floor: 30-42
-        "rsi_pullback_high": (40, 50),     # Pullback zone ceiling: 40-50
-        "rsi_rally_low": (50, 60),         # Rally zone floor: 50-60
-        "rsi_rally_high": (58, 70),        # Rally zone ceiling: 58-70
-        "atr_stop_mult": (1.5, 3.0),      # ATR stop multiplier: 1.5-3x
-        "atr_trail_mult": (2.0, 4.0),     # ATR trail multiplier: 2-4x
+    "TITAN": {  # Donchian Breakout + EMA regime + ADX — position 6h (REBUILT v2)
+        "donchian_period": (18, 40),       # Entry channel: 18-40 bars (balance signals vs noise)
+        "trend_ema": (60, 140),            # Long-term regime filter EMA: 60-140 bars
+        "momentum_lookback": (5, 15),      # Bars for momentum confirmation (close > close[-N])
+        "adx_period": (10, 20),            # ADX lookback: 10-20 bars
+        "adx_min": (18, 28),               # ADX trend-strength floor: 18-28
+        "atr_stop_mult": (2.0, 3.5),       # ATR stop multiplier: 2-3.5x
+        "atr_trail_mult": (3.5, 7.0),      # ATR trail multiplier: 3.5-7x (let winners run)
     },
     "SENTINEL": {  # FTMO-compliant Bollinger Band mean reversion + RSI on 2h
         "bb_period": (15, 25),               # Bollinger Band period: 15-25
@@ -156,12 +158,20 @@ PARAM_SPACES = {
 #     Price deviates from VWAP → scalp reversion to mean. StochRSI confirms extremes.
 #     https://www.investopedia.com/terms/v/vwap.asp
 #     https://www.investopedia.com/terms/s/stochrsi.asp
-#   DRIFT: Keltner Channel + ADX Trend Filter + ATR trail — 55-65% WR (trend-filtered breakouts)
-#     https://www.investopedia.com/terms/k/keltnerchannel.asp
+#   DRIFT: Supertrend + EMA100 regime filter + momentum confirm — 50-60% WR day trades (REBUILT v5 2026-04-10)
+#     Prior Keltner+ADX v4 scored 26.9% WR on BTC 15m (tested 2026-04-10) — breakouts die
+#     to whipsaws on 15m intraday crypto. Supertrend is the ATR-native intraday standard
+#     (Olivier Seban, 2008) — its own band becomes the trailing stop, naturally volatility-
+#     adjusted, and flips cleanly in trends while resisting chop. EMA100 regime filter +
+#     momentum lookback eliminate counter-trend flips.
+#     https://www.investopedia.com/articles/active-trading/121014/using-supertrend-indicator-develop-trading-system.asp
+#   TITAN: Donchian Channel Breakout + EMA regime filter + ADX — 45-55% WR, PF 1.5-2.5 (REBUILT v2 2026-04-10)
+#     Turtle-style 20-bar channel breakout (Dennis/Faith). Long-term EMA filters regime,
+#     ADX filters chop. Previous EMA/RSI-pullback version had 0 winning combos → full rebuild.
+#     Classic for higher-timeframe position trades on trending crypto.
+#     https://www.investopedia.com/terms/d/donchianchannels.asp
+#     https://www.investopedia.com/articles/trading/08/turtle-trading.asp
 #     https://www.investopedia.com/terms/a/adx.asp
-#   TITAN: EMA(20/50) trend + RSI(14) pullback — 55-65% WR (mean reversion in trend)
-#     https://www.quantifiedstrategies.com/rsi-trading-strategy/
-#     https://www.investopedia.com/terms/p/pullback.asp
 #   SENTINEL: Bollinger Band mean reversion + RSI extremes — FTMO-compliant (REBUILT v2)
 #     Trend breakout was 13.68% WR = total failure. Mean reversion dominated research.
 #     BB(20,2) + RSI(14) on 4h = 68-72% WR across assets in 40K experiments.
@@ -185,25 +195,28 @@ RESEARCH_VALIDATED_PARAMS = {
         "tp_atr_mult": 1.2,        # 1.2x ATR take profit (quick capture, high WR)
     },
     "DRIFT": {
-        # Keltner Channel + ADX Trend Filter — day trade on 15m (REBUILT v4)
-        # Only enter breakouts when ADX confirms the market is trending. No more whipsaws.
-        "kc_ema_period": 20,         # Keltner Channel EMA center
-        "kc_atr_mult": 2.0,         # Keltner band width: EMA ± ATR × 2.0
-        "adx_period": 14,           # ADX lookback
-        "adx_threshold": 22,        # Only trade when ADX > 22 (trending)
-        "atr_stop_mult": 1.5,       # 1.5x ATR initial stop
-        "atr_trail_mult": 2.0,      # 2.0x ATR trailing stop
+        # Supertrend + EMA100 regime + momentum confirm — day trade on 15m (REBUILT v5 2026-04-10)
+        # Prior Keltner v4 scored 26.9% WR BTC 15m (whipsaw death). Supertrend is ATR-native
+        # intraday standard — cleaner flips, built-in volatility scaling, tighter than Keltner.
+        "st_period": 10,             # Supertrend ATR period (Seban default)
+        "st_multiplier": 3.0,        # Supertrend band multiplier (Seban default)
+        "regime_ema": 100,           # 100-period EMA regime filter
+        "momentum_lookback": 5,      # Close must beat close 5 bars ago in direction of flip
+        "atr_stop_mult": 1.5,        # 1.5x ATR initial stop
+        "atr_trail_mult": 2.5,       # 2.5x ATR trail (give day trades room)
     },
     "TITAN": {
-        # EMA trend + RSI pullback — position on 6h
-        "ema_fast": 20,              # Trend EMA fast
-        "ema_slow": 50,              # Trend EMA slow
-        "rsi_pullback_low": 35,      # Pullback zone floor (buy dips here)
-        "rsi_pullback_high": 45,     # Pullback zone ceiling (entry trigger)
-        "rsi_rally_low": 55,         # Rally zone floor (sell rallies here)
-        "rsi_rally_high": 65,        # Rally zone ceiling (entry trigger)
-        "atr_stop_mult": 2.0,       # 2x ATR initial stop
-        "atr_trail_mult": 2.5,      # 2.5x ATR trailing stop
+        # Donchian Breakout + EMA regime + ADX + momentum confirmation — position on 6h
+        # REBUILT v2 2026-04-10. Prior EMA/RSI-pullback version had 0 winning combos.
+        # Turtle-style channel breakout filtered by long-term EMA and ADX trend strength.
+        # Momentum check (close > close N bars ago) confirms breakout isn't stale.
+        "donchian_period": 28,       # 28-bar Donchian (~7 days on 6h — mid-way between System 1/2)
+        "trend_ema": 100,            # 100-period EMA regime filter (~25 days)
+        "momentum_lookback": 10,     # Close must be above close 10 bars ago for longs
+        "adx_period": 14,            # ADX standard
+        "adx_min": 22,               # ADX >= 22 — moderate trending filter
+        "atr_stop_mult": 2.5,        # 2.5x ATR initial stop
+        "atr_trail_mult": 5.0,       # 5x ATR trail (give position trades room)
     },
     "SENTINEL": {
         # Bollinger Band mean reversion + RSI extremes — FTMO-compliant
@@ -291,15 +304,40 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
 
     @classmethod
     def _fetch_candles(cls, symbol="BTC/USD", timeframe="1h", limit=500):
-        """Fetch OHLCV candles from Coinbase via ccxt. Cached per session."""
+        """Fetch OHLCV candles from Coinbase via ccxt. Cached per session.
+        Coinbase caps per-request at 300. For limit > 300 we paginate backwards
+        via the `since` parameter. Critical for TITAN (6h position trader) which
+        needs 500+ bars of history to survive the 100-EMA warmup."""
         key = f"{symbol}_{timeframe}_{limit}"
         if key in cls._candle_cache:
             return cls._candle_cache[key]
         try:
             import ccxt
             exchange = ccxt.coinbase()
-            raw = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
-            df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
+            tf_ms = exchange.parse_timeframe(timeframe) * 1000
+            page = 300
+            all_rows = []
+            # Fetch most-recent page first
+            recent = exchange.fetch_ohlcv(symbol, timeframe, limit=page)
+            if not recent:
+                return None
+            all_rows = list(recent)
+            # Paginate backwards until we have `limit` rows (or exchange returns empty)
+            while len(all_rows) < limit:
+                oldest_ts = all_rows[0][0]
+                since = oldest_ts - tf_ms * page
+                older = exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=page)
+                if not older:
+                    break
+                # Dedup by timestamp, prepend older rows
+                have = {r[0] for r in all_rows}
+                new = [r for r in older if r[0] not in have]
+                if not new:
+                    break
+                all_rows = sorted(new + all_rows, key=lambda r: r[0])
+                if len(new) < 10:  # exchange is drying up — stop paginating
+                    break
+            df = pd.DataFrame(all_rows[-limit:], columns=["timestamp", "open", "high", "low", "close", "volume"])
             df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
             df.set_index("timestamp", inplace=True)
             cls._candle_cache[key] = df
@@ -343,21 +381,85 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             d["atr"] = tr.rolling(14).mean()
 
         elif bot_name == "DRIFT":
-            # Keltner Channel + ADX Trend Filter (REBUILT v4)
-            kc_ema = params.get("kc_ema_period", 20)
-            kc_mult = params.get("kc_atr_mult", 2.0)
-            adx_p = params.get("adx_period", 14)
-            # ATR for Keltner bands and stops
+            # Supertrend + EMA100 regime + momentum confirmation (REBUILT v5 2026-04-10)
+            st_p = int(params.get("st_period", 10))
+            st_m = float(params.get("st_multiplier", 3.0))
+            regime_p = int(params.get("regime_ema", 100))
+            mom_lb = int(params.get("momentum_lookback", 5))
+            # ATR (Wilder-smoothed for Supertrend — matches canonical implementation)
+            high_low = d["high"] - d["low"]
+            high_cp = (d["high"] - d["close"].shift()).abs()
+            low_cp = (d["low"] - d["close"].shift()).abs()
+            tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
+            d["atr"] = tr.ewm(alpha=1.0 / st_p, adjust=False).mean()
+            # Raw Supertrend bands: hl2 ± multiplier × ATR
+            hl2 = (d["high"] + d["low"]) / 2
+            upper_basic = hl2 + st_m * d["atr"]
+            lower_basic = hl2 - st_m * d["atr"]
+            # Final bands with memory: only widen in the direction of protection
+            final_upper = upper_basic.copy()
+            final_lower = lower_basic.copy()
+            close = d["close"].values
+            ub = upper_basic.values.copy()
+            lb = lower_basic.values.copy()
+            for k in range(1, len(d)):
+                if np.isnan(ub[k]) or np.isnan(lb[k]):
+                    continue
+                # Upper band can only ratchet down (or reset if price breaks through)
+                if ub[k] > ub[k - 1] and close[k - 1] <= ub[k - 1]:
+                    ub[k] = ub[k - 1]
+                # Lower band can only ratchet up (or reset)
+                if lb[k] < lb[k - 1] and close[k - 1] >= lb[k - 1]:
+                    lb[k] = lb[k - 1]
+            # Determine trend direction and Supertrend line
+            trend = np.ones(len(d), dtype=int)  # 1 = up, -1 = down
+            st_line = np.full(len(d), np.nan)
+            for k in range(1, len(d)):
+                if np.isnan(ub[k]) or np.isnan(lb[k]):
+                    trend[k] = trend[k - 1]
+                    continue
+                if trend[k - 1] == 1:
+                    if close[k] < lb[k]:
+                        trend[k] = -1
+                    else:
+                        trend[k] = 1
+                else:
+                    if close[k] > ub[k]:
+                        trend[k] = 1
+                    else:
+                        trend[k] = -1
+                st_line[k] = lb[k] if trend[k] == 1 else ub[k]
+            d["st_trend"] = trend
+            d["st_line"] = st_line
+            d["st_upper"] = ub
+            d["st_lower"] = lb
+            # EMA100 regime filter
+            d["regime_ema"] = d["close"].ewm(span=regime_p, adjust=False).mean()
+            # Momentum confirmation: price N bars ago
+            d["close_lag"] = d["close"].shift(mom_lb)
+            # Recompute ATR on simple 14-period for stops (separate from Supertrend's ATR)
+            d["atr14"] = tr.rolling(14).mean()
+
+        elif bot_name == "TITAN":
+            # Donchian Breakout + EMA regime + ADX + momentum (REBUILT v2 2026-04-10)
+            donch_p = int(params.get("donchian_period", 28))
+            trend_p = int(params.get("trend_ema", 100))
+            mom_lb = int(params.get("momentum_lookback", 10))
+            adx_p = int(params.get("adx_period", 14))
+            # Donchian channel — use prior bar's rolling max/high to avoid look-ahead
+            d["donch_upper"] = d["high"].shift(1).rolling(donch_p).max()
+            d["donch_lower"] = d["low"].shift(1).rolling(donch_p).min()
+            # Long-term trend filter EMA (regime gate)
+            d["trend_ema"] = d["close"].ewm(span=trend_p, adjust=False).mean()
+            # Momentum: price N bars ago (for close > close[-N] check)
+            d["close_lag"] = d["close"].shift(mom_lb)
+            # ATR for adaptive stops / trailing stops
             high_low = d["high"] - d["low"]
             high_cp = (d["high"] - d["close"].shift()).abs()
             low_cp = (d["low"] - d["close"].shift()).abs()
             tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
             d["atr"] = tr.rolling(14).mean()
-            # Keltner Channel: EMA center ± ATR × multiplier
-            d["kc_mid"] = d["close"].ewm(span=kc_ema, adjust=False).mean()
-            d["kc_upper"] = d["kc_mid"] + d["atr"] * kc_mult
-            d["kc_lower"] = d["kc_mid"] - d["atr"] * kc_mult
-            # ADX — trend strength
+            # ADX — Wilder-smoothed trend strength
             plus_dm = d["high"].diff()
             minus_dm = -d["low"].diff()
             plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
@@ -367,27 +469,6 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             minus_di = 100 * (minus_dm.ewm(span=adx_p, adjust=False).mean() / atr_smooth.replace(0, np.nan))
             dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan))
             d["adx"] = dx.ewm(span=adx_p, adjust=False).mean()
-            d["plus_di"] = plus_di
-            d["minus_di"] = minus_di
-
-        elif bot_name == "TITAN":
-            # EMA trend direction (persistent state, not rare event)
-            ema_f = params.get("ema_fast", 20)
-            ema_s = params.get("ema_slow", 50)
-            d["ema_fast"] = d["close"].ewm(span=ema_f, adjust=False).mean()
-            d["ema_slow"] = d["close"].ewm(span=ema_s, adjust=False).mean()
-            # RSI for pullback detection (frequent event)
-            delta = d["close"].diff()
-            gain = delta.clip(lower=0).rolling(14).mean()
-            loss = (-delta.clip(upper=0)).rolling(14).mean()
-            rs = gain / loss.replace(0, np.nan)
-            d["rsi"] = 100 - (100 / (1 + rs))
-            # ATR for adaptive stops
-            high_low = d["high"] - d["low"]
-            high_cp = (d["high"] - d["close"].shift()).abs()
-            low_cp = (d["low"] - d["close"].shift()).abs()
-            tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
-            d["atr"] = tr.rolling(14).mean()
 
         else:  # SENTINEL — Bollinger Band mean reversion + RSI extremes
             bb_period = params.get("bb_period", 20)
@@ -443,31 +524,47 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
                     signals.append((i, "short"))
 
             elif bot_name == "DRIFT":
-                # Keltner Channel + ADX Trend Filter (REBUILT v4)
-                adx_thresh = params.get("adx_threshold", 22)
-                adx_val = row.get("adx", 0)
-                trend_ok = adx_val >= adx_thresh
-                # Long: close above upper Keltner + ADX trending + DI+ > DI-
-                if row["close"] > row["kc_upper"] and trend_ok and row.get("plus_di", 0) > row.get("minus_di", 0):
+                # Supertrend + EMA100 regime + momentum confirmation (REBUILT v5 2026-04-10)
+                curr_trend = row.get("st_trend", 0)
+                prev_trend = prev.get("st_trend", 0)
+                close_lag = row.get("close_lag")
+                regime = row.get("regime_ema")
+                if pd.isna(close_lag) or pd.isna(regime) or curr_trend == 0:
+                    continue
+                # Long: Supertrend flips from bearish to bullish + above EMA100 + positive momentum
+                if (curr_trend == 1 and prev_trend == -1
+                        and row["close"] > regime
+                        and row["close"] > close_lag):
                     signals.append((i, "long"))
-                # Short: close below lower Keltner + ADX trending + DI- > DI+
-                elif row["close"] < row["kc_lower"] and trend_ok and row.get("minus_di", 0) > row.get("plus_di", 0):
+                # Short: Supertrend flips from bullish to bearish + below EMA100 + negative momentum
+                elif (curr_trend == -1 and prev_trend == 1
+                        and row["close"] < regime
+                        and row["close"] < close_lag):
                     signals.append((i, "short"))
 
             elif bot_name == "TITAN":
-                rsi_val = row.get("rsi", 50)
-                prev_rsi = prev.get("rsi", 50)
-                uptrend = row["ema_fast"] > row["ema_slow"]
-                downtrend = row["ema_fast"] < row["ema_slow"]
-                pb_low = params.get("rsi_pullback_low", 35)
-                pb_high = params.get("rsi_pullback_high", 45)
-                rl_low = params.get("rsi_rally_low", 55)
-                rl_high = params.get("rsi_rally_high", 65)
-                # Long: uptrend + RSI in pullback zone (buying the dip)
-                if uptrend and pb_low <= rsi_val <= pb_high and prev_rsi <= pb_high:
+                # Donchian Breakout + EMA regime + ADX + momentum (REBUILT v2 2026-04-10)
+                adx_min = params.get("adx_min", 22)
+                adx_val = row.get("adx", 0)
+                close_lag = row.get("close_lag")
+                if pd.isna(adx_val) or pd.isna(close_lag):
+                    continue
+                adx_ok = adx_val >= adx_min
+                trend_up = row["close"] > row["trend_ema"] and row["close"] > close_lag
+                trend_down = row["close"] < row["trend_ema"] and row["close"] < close_lag
+                upper = row.get("donch_upper")
+                lower = row.get("donch_lower")
+                prev_upper = prev.get("donch_upper")
+                prev_lower = prev.get("donch_lower")
+                if pd.isna(upper) or pd.isna(lower):
+                    continue
+                # Long: close breaks above prior N-bar high + above rising trend EMA + ADX trending
+                if (row["close"] > upper and trend_up and adx_ok
+                        and not (prev["close"] > prev_upper if not pd.isna(prev_upper) else False)):
                     signals.append((i, "long"))
-                # Short: downtrend + RSI in rally zone (selling the rally)
-                elif downtrend and rl_low <= rsi_val <= rl_high and prev_rsi >= rl_low:
+                # Short: close breaks below prior N-bar low + below falling trend EMA + ADX trending
+                elif (row["close"] < lower and trend_down and adx_ok
+                        and not (prev["close"] < prev_lower if not pd.isna(prev_lower) else False)):
                     signals.append((i, "short"))
 
             else:  # SENTINEL — Bollinger Band mean reversion + RSI
@@ -503,7 +600,9 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
         # Note: Coinbase doesn't support 4h. 2h is closest valid — research showed 4h optimal.
         tf_map = {"APEX": "5m", "DRIFT": "15m", "SENTINEL": "2h", "TITAN": "6h"}
         tf = tf_map.get(bot_name, "1h")
-        candle_limit = 500  # Max candles for more signals
+        # Per-bot candle budget — TITAN is a 6h position trader and needs much more
+        # history to survive the 100-EMA warmup and still have room for real signals.
+        candle_limit = {"APEX": 500, "DRIFT": 500, "SENTINEL": 600, "TITAN": 900}.get(bot_name, 500)
 
         df = self._fetch_candles(asset, tf, candle_limit)
         if df is None or len(df) < 50:
@@ -551,9 +650,9 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             stop_pct = max(params.get("stop_loss_pct", 0.004), atr_pct * 1.5)
             trail_pct = max(params.get("trailing_stop_pct", 0.006), atr_pct * 2.0)
         if bot_name == "DRIFT":
-            # DRIFT v4: ATR-multiplier stops (Keltner + ADX)
+            # DRIFT v5: ATR-multiplier stops (Supertrend + EMA regime)
             stop_pct = atr_pct * params.get("atr_stop_mult", 1.5)
-            trail_pct = atr_pct * params.get("atr_trail_mult", 2.0)
+            trail_pct = atr_pct * params.get("atr_trail_mult", 2.5)
 
         # Mean reversion bots use fixed take-profit, not trailing stops
         use_fixed_tp = (bot_name in ("SENTINEL", "APEX"))

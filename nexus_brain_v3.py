@@ -2363,10 +2363,11 @@ def autonomous_loop():
             no_improve = data.get("paper_trades_since_improve", 0)
 
             # Update confidence score based on recent performance
+            # Bots are algorithms — bar is higher than human traders (70% min for confidence boost)
             if trades > 0:
-                if wr > 0.55:
+                if wr > 0.70:
                     conf = min(conf + 0.01, 1.0)  # slight boost each check if winning
-                elif wr < 0.45:
+                elif wr < 0.50:
                     conf = max(conf - 0.01, 0.1)  # slight drop if losing
                 data["confidence_score"] = round(conf, 3)
                 data["position_size_multiplier"] = round(conf * (1.5 if status == "live" else 1.0), 3)
@@ -2380,7 +2381,7 @@ def autonomous_loop():
 
             # COACHING DECISIONS
             # Graduate: paper bot meets all requirements
-            if status == "paper" and trades >= grad_req.get("min_trades", 100) and wr >= grad_req.get("min_wr", 0.55):
+            if status == "paper" and trades >= grad_req.get("min_trades", 100) and wr >= grad_req.get("min_wr", 0.70):
                 data["status"] = "live"
                 data["position_size_multiplier"] = round(conf * 1.5, 3)
                 act(f"COACH: {bot_name} GRADUATED TO LIVE — {wr*100:.1f}% WR on {trades} trades, conf={conf:.2f}")
@@ -2585,15 +2586,16 @@ def proactive_check():
     except Exception as e:
         log_bug(f"APEX idle check error: {e}")
 
-    # CHECK 0: Win rate emergency — any live bot below 55% WR triggers immediate action
+    # CHECK 0: Win rate emergency — any live bot below 70% WR triggers immediate action
+    # Bots are algorithms — bar is higher than human traders. 70% is the floor.
     try:
         for bot, data in perf.items():
             if not isinstance(data, dict): continue
             if data.get("mode") != "live": continue
             wr     = data.get("win_rate", 1.0)
             trades = data.get("trades", 0)
-            if trades >= 5 and wr < 0.55:
-                task = f"EMERGENCY: {bot} win rate is {wr*100:.1f}% over {trades} trades — below 55% threshold. Pull recent trade log from hive_mind.json, diagnose what's failing (entry too early? stop too tight? wrong direction bias?), run AutoResearch via sentinel_research-2.py, and return a specific fix with updated params."
+            if trades >= 5 and wr < 0.70:
+                task = f"EMERGENCY: {bot} win rate is {wr*100:.1f}% over {trades} trades — below 70% threshold. Pull recent trade log from hive_mind.json, diagnose what's failing (entry too early? stop too tight? wrong direction bias?), run AutoResearch via sentinel_research-2.py, and return a specific fix with updated params."
                 pending_path = BASE / "memory" / "tasks" / "pending.md"
                 existing = pending_path.read_text() if pending_path.exists() else "# Pending Tasks\n\n"
                 if f"EMERGENCY: {bot}" not in existing:
@@ -3165,10 +3167,14 @@ def handle_message(text, chat_id):
                         if "auto_improver fixed" in ll:
                             continue
                         # Skip auto_improver's own task-running output — prevents cascade loops
-                        # where selfcheck sees "[AUTO_IMPROVER] [FAILED]" and creates a new task
+                        # where selfcheck sees "[AUTO_IMPROVER] [FAILED]" and creates a new task.
+                        # Also skip any line that already references auto_improver.log as a task source —
+                        # those are meta-tasks from prior selfcheck runs and recurse exponentially.
                         if log_name == "auto_improver.log" and any(skip in ll for skip in [
-                            "[auto_improver] running:", "[auto_improver] [failed]",
-                            "[auto_improver] found", "[auto_improver] done",
+                            "[auto_improver] running:", "[auto_improver] [failed",
+                            "[auto_improver] found", "[auto_improver] [done",
+                            "[auto_improver] attempt", "[auto_improver] --run-now",
+                            "[auto_improver] started", "in auto_improver.log:",
                         ]):
                             continue
                         findings.append((log_name, line.strip()))

@@ -4,8 +4,10 @@ bot_curriculum.py — Graduation system for DRIFT, TITAN, SENTINEL
 Forward-tests each bot on live CoinGecko market data.
 Tracks trades in hive_mind.json graduation section.
 Graduation path:
-  backtesting → 100 trades + 55%+ WR + positive P&L → paper
-  paper       → 200 trades + 55%+ WR + positive P&L → live (requires Ty approval)
+  backtesting → 100 trades + 70%+ WR + positive P&L → paper
+  paper       → 200 trades + 70%+ WR + positive P&L → live (requires Ty approval)
+
+  Bots are algorithms — no emotion, no fatigue. Bar is higher than a human trader.
 
 Run: nohup python3 -u bot_curriculum.py >> logs/curriculum.log 2>&1 &
 """
@@ -25,7 +27,7 @@ HIVE = BASE / "shared" / "hive_mind.json"
 SCAN_INTERVAL  = 300   # 5 min between price scans
 TRADE_TIMEOUT  = 3600  # max 1 hour in a simulated position (scalper/swing hybrid)
 
-WIN_RATE_THRESHOLD = 0.55
+WIN_RATE_THRESHOLD = 0.70
 MIN_TRADES_BACKTEST = 100
 MIN_TRADES_PAPER    = 200
 
@@ -172,7 +174,7 @@ def maybe_graduate(hive, bot, grad):
             hive["bot_performance"][bot]["mode"] = "paper"
             print(f"[{bot}] *** GRADUATED TO PAPER *** {t} trades | {wr*100:.1f}% WR | {pnl:+.3f}% P&L")
             # Telegram alert via Telegram API direct (no nexus dependency)
-            _notify(f"{bot} GRADUATED TO PAPER TRADING\n{t} trades | {wr*100:.1f}% WR | P&L {pnl:+.2f}%\nNext: {grad['paper_target']} paper trades at 55%+ WR to go live.")
+            _notify(f"{bot} GRADUATED TO PAPER TRADING\n{t} trades | {wr*100:.1f}% WR | P&L {pnl:+.2f}%\nNext: {grad['paper_target']} paper trades at 70%+ WR to go live.")
 
     elif stage == "paper":
         t  = grad["paper_trades"]
@@ -273,7 +275,7 @@ def main():
     print("=" * 55)
     print("BOT CURRICULUM RUNNER")
     print("DRIFT | TITAN | SENTINEL — Forward Test on Live Data")
-    print(f"Graduation: 100 trades @ 55%+ WR → paper | 200 more → live")
+    print(f"Graduation: 100 trades @ 70%+ WR → paper | 200 more → live")
     print("=" * 55)
 
     while True:

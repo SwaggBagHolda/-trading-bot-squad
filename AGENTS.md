@@ -277,7 +277,8 @@ Before ANY strategy change (entry/exit logic, stop sizes, signal parameters):
 - ORACLE finding real alpha with backtest data
 
 ### Phase 2 — Graduation (Paper → Live)
-- A bot passes curriculum: 100+ trades, >55% WR, >1.0 Sharpe, <5% max DD
+- A bot passes curriculum: 100+ trades, >70% WR, >1.0 Sharpe, <5% max DD
+  - Bots are algorithms — no emotion, no fatigue. Bar is higher than a human trader.
 - ZEUS approves promotion
 - Bot goes live on Coinbase with small position sizes
 - 1.5x position size + 5 additional assets as reward

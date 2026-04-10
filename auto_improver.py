@@ -11,6 +11,7 @@ Usage:
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -27,6 +28,29 @@ load_dotenv(BASE / ".env", override=True)
 
 CHECK_INTERVAL = 5 * 60  # 5 minutes
 MAX_RETRIES    = 3        # max attempts per task before permanently marking failed
+# Subprocess wall-time per claude CLI invocation. Emergency rebuilds
+# (research + rewrite strategy + backtest) routinely run 10-15 min; the
+# old 5-min cap was the root cause of TITAN/DRIFT/HyperTrain rebuilds
+# failing three retries in a row with "Task timed out after 5 minutes".
+TASK_TIMEOUT   = int(os.environ.get("AUTO_IMPROVER_TASK_TIMEOUT", 20 * 60))
+
+
+def _resolve_claude_cli():
+    """Locate the claude CLI even when launched under a minimal launchd/cron PATH."""
+    augmented = os.pathsep.join([
+        os.environ.get("PATH", ""),
+        str(Path.home() / ".local" / "bin"),
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+    ])
+    found = shutil.which("claude", path=augmented)
+    if found:
+        return found
+    fallback = Path.home() / ".local" / "bin" / "claude"
+    return str(fallback) if fallback.exists() else "claude"
+
+
+CLAUDE_BIN = _resolve_claude_cli()
 
 
 def read_pending():
@@ -59,12 +83,19 @@ def run_claude(task):
     # stored OAuth credentials (~/.claude/). The .env key is for OpenRouter/bots,
     # not for Claude Code CLI auth. Passing it overrides stored auth → "Invalid API key".
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    # Ensure claude's own dir + common bin dirs are on PATH for any child tools it spawns.
+    claude_dir = str(Path(CLAUDE_BIN).parent)
+    existing_path = env.get("PATH", "")
+    env["PATH"] = os.pathsep.join([
+        p for p in [claude_dir, str(Path.home() / ".local" / "bin"),
+                    "/opt/homebrew/bin", "/usr/local/bin", existing_path] if p
+    ])
     try:
         result = subprocess.run(
-            ["claude", "--dangerously-skip-permissions", "-p", task],
+            [CLAUDE_BIN, "--dangerously-skip-permissions", "-p", task],
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=TASK_TIMEOUT,
             cwd=BASE,
             env=env
         )
@@ -72,9 +103,9 @@ def run_claude(task):
         success = result.returncode == 0
         return success, output
     except subprocess.TimeoutExpired:
-        return False, "Task timed out after 5 minutes."
+        return False, f"Task timed out after {TASK_TIMEOUT // 60} minutes."
     except FileNotFoundError:
-        return False, "claude CLI not found. Is it installed and in PATH?"
+        return False, f"claude CLI not found at {CLAUDE_BIN}. Check ~/.local/bin/claude."
     except Exception as e:
         return False, f"Error: {e}"
 
