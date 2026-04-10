@@ -409,6 +409,14 @@ def run_research_cycle():
                     f" {now_str}"
                 )
                 briefing.write_text(content)
+                # Push to webhook bridge
+                try:
+                    import requests as _req
+                    _req.post("http://localhost:7777/briefing",
+                              json={"content": content}, timeout=3)
+                    log("BRIDGE: Briefing pushed after research update")
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -540,7 +548,22 @@ def main():
     log(f"PID: {os.getpid()}")
     log("=" * 55)
 
-    # Startup message removed — no Telegram noise on boot
+    # Auto-start webhook bridge if not already running
+    try:
+        import requests as _req
+        _req.get("http://localhost:7777/health", timeout=2)
+        log("BRIDGE: Webhook bridge already running")
+    except Exception:
+        bridge_script = BASE / "webhook_bridge.py"
+        if bridge_script.exists():
+            subprocess.Popen(
+                ["python3", str(bridge_script)],
+                cwd=str(BASE),
+                stdout=open(str(BASE / "logs" / "bridge.log"), "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            log("BRIDGE: Started webhook bridge on localhost:7777")
 
     tick = 0
     last_6hr = datetime.now() - timedelta(hours=6)  # Force first 6hr report soon

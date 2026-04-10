@@ -85,6 +85,42 @@ last_3am_research  = None  # date — ensures 3am research fires once per night
 # Everything else handled silently. This is a hard rule from Ty.
 QUIET_MODE = True
 
+# ── WEBHOOK BRIDGE — push briefing to localhost:7777 ─────────────────────────
+BRIDGE_URL = "http://localhost:7777"
+BRIEFING_FILE = BASE / "memory" / "tasks" / "claude_briefing.md"
+
+def push_briefing_to_bridge():
+    """Push current claude_briefing.md to the webhook bridge.
+    Called after every CEO loop cycle and major state change.
+    Falls back to disk write if bridge is down."""
+    try:
+        content = BRIEFING_FILE.read_text() if BRIEFING_FILE.exists() else ""
+        if not content:
+            return
+        r = requests.post(
+            f"{BRIDGE_URL}/briefing",
+            json={"content": content},
+            timeout=3,
+        )
+        if r.status_code == 200:
+            print(f"[NEXUS] Briefing pushed to bridge ({len(content)} chars)")
+        else:
+            print(f"[NEXUS] Bridge push failed: {r.status_code}")
+    except Exception as e:
+        # Bridge down — briefing still on disk, Claude Code can read directly
+        print(f"[NEXUS] Bridge unavailable ({e}) — briefing on disk only")
+
+def push_event_to_bridge(event_type, data):
+    """Push an event to the bridge for Claude Code to consume."""
+    try:
+        requests.post(
+            f"{BRIDGE_URL}/event",
+            json={"type": event_type, "data": data},
+            timeout=3,
+        )
+    except Exception:
+        pass
+
 PERSONAL_SYSTEM = "You are NEXUS, Ty's partner and the closest thing he has to a co-founder on this mission. When Ty says something personal — venting, tired, frustrated, just checking in — respond like someone who genuinely gives a damn. 1-2 sentences, casual, warm, real. No trading talk unless he brings it up. No offers to help. Just be present."
 
 VOICE_ENFORCEMENT = """VOICE ENFORCEMENT — MANDATORY:
@@ -2141,6 +2177,9 @@ def autonomous_loop():
         act("REPORT: All systems green — no actions needed")
 
     act("=== CEO DECISION LOOP END ===")
+
+    # Push updated briefing to webhook bridge after every CEO cycle
+    push_briefing_to_bridge()
 
     # ── CHECK 4: Graduation progress — DRIFT, TITAN, SENTINEL ────────────────
     for bot in ["DRIFT", "TITAN", "SENTINEL"]:

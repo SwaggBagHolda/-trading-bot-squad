@@ -115,26 +115,26 @@ Every new session, Codey runs this entire sequence before doing ANYTHING else.
 No waiting for Ty. No asking what to do. Just run it.
 
 1. Re-read this CLAUDE.md
-2. Read memory/SYSTEM.md
-3. Read memory/CLAUDE_CODE_HANDOFF.md
-4. Read memory/NEXUS_TO_ORACLE.md — messages from NEXUS
-5. Run /dream to consolidate memory from prior sessions
-6. **System health check — fix before proceeding:**
+2. **Read NEXUS briefing from webhook bridge** — `curl http://localhost:7777/briefing` (falls back to `memory/tasks/claude_briefing.md` if bridge is down)
+3. Read memory/SYSTEM.md
+4. Read memory/CLAUDE_CODE_HANDOFF.md
+5. Read memory/NEXUS_TO_ORACLE.md — messages from NEXUS
+6. Run /dream to consolidate memory from prior sessions
+7. **System health check — fix before proceeding:**
+   - `curl http://localhost:7777/health` — is the webhook bridge running? If not, start it: `python3 webhook_bridge.py &`
    - `ps aux | grep scheduler.py` — is the scheduler running? If not, restart it.
    - `ps aux | grep nexus` — is NEXUS alive? If not, flag it.
    - `ps aux | grep apex` — is APEX running? If not, flag it.
    - `ps aux | grep oracle` — is ORACLE running? If not, flag it.
-   - `npx openclaw status` — is OpenClaw gateway healthy?
-   - `python3 hypertrain.py` — check if HyperTrain runs or reports halted/errors.
    - `tail -20 logs/scheduler.log` — any errors in last 20 lines?
    - Fix any issues found immediately. Don't move on until systems are green.
-7. Check memory/tasks/pending.md for pending tasks from NEXUS
-8. **Send Ty a single Telegram status message** via the send_telegram function or Telegram API:
+8. Check memory/tasks/pending.md for pending tasks from NEXUS
+9. **Send Ty a single Telegram status message** via the send_telegram function or Telegram API:
    - Which systems are up/down
    - Any issues found and fixed
    - What Codey is working on this session
-9. Then proceed to tasks. If Ty gave instructions, follow them. Otherwise work pending.md.
-10. At END of session: update memory/ORACLE_TO_NEXUS.md with decisions made
+10. Then proceed to tasks. If Ty gave instructions, follow them. Otherwise work pending.md.
+11. At END of session: update memory/ORACLE_TO_NEXUS.md with decisions made
 
 ## GRADUATION PATH
 Phase 1: All bots paper trade on Coinable
