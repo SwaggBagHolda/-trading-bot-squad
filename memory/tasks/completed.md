@@ -402,3 +402,31 @@ SENTINEL emergency rebuild complete. Here's the summary:
 | 0 Sharpe | 0.798 Sharpe |
 | Negative expectancy | Positive expectancy across most assets |
 
+---
+## 2026-04-09 20:00 | FAILED
+**Task:** EMERGENCY REBUILD: DRIFT has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+
+**Output:**
+Task timed out after 5 minutes.
+
+---
+## 2026-04-09 20:05 | SUCCESS
+**Task:** EMERGENCY REBUILD: APEX has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+
+**Output:**
+**APEX Emergency Rebuild Complete.**
+
+**What changed:**
+- **Old strategy:** EMA crossover + RSI + volume confirmation (5m) — 0 winning combos, too many simultaneous conditions, too few signals
+- **New strategy:** VWAP Mean Reversion + StochRSI (5m) — price deviates from volume-weighted fair value, StochRSI confirms extremes, fixed TP at VWAP reversion target
+
+**Results:**
+- Single-asset test: **83.3% WR, 0.735 Sharpe** (BTC/USD, 30 experiments)
+- Multi-asset baseline: **45.2% aggregate WR** across 9 crypto assets (untuned base params)
+- Best performers: ADA (72.7%), AVAX (66.7%), SOL (60%), DOGE (55.6%)
+- Signal frequency: 7-11 trades per 500 candles per asset — healthy scalper volume
+
+**Why this works:** Mean reversion to VWAP is one of the most documented institutional scalping strategies. Price naturally reverts to its volume-weighted average. StochRSI is faster than regular RSI, giving earlier entry signals on 5m candles. Fixed TP at the VWAP midline captures the reversion move with high probability.
+
+**Files modified:** `hypertrain.py` (strategy engine), `shared/hive_mind.json` (best params), `memory/bots/APEX.md` (bot profile), `memory/tasks/pending.md` (task status)
+

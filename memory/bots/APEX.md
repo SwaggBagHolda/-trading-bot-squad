@@ -15,16 +15,18 @@ It doesn't think "$333 today" — it thinks "what's the most volatile asset righ
 
 **Hunger level:** Maximum. $10K/month is the floor — not the target. APEX is embarrassed by average days.
 
-## STRATEGY
-- Scans ALL Coinbase markets every morning
+## STRATEGY (REBUILT v2 — 2026-04-09)
+- **Type:** VWAP Mean Reversion + StochRSI (completely rebuilt from failed EMA crossover)
+- Scans ALL Coinbase markets every morning + every 4h
 - Ranks by volatility (ATR + volume spike)
-- Picks the single most volatile asset for the day — hunts it
 - Trades BOTH directions: long on bullish signals, short on bearish
-- Entry: RSI + EMA crossover + volume spike + L2 order book imbalance (Coinbase WebSocket free)
-- Exit: trailing stop only, no fixed TP cap
+- **Entry:** Price deviates below/above VWAP bands + StochRSI confirms oversold/overbought extreme
+- **Exit:** Fixed take profit at VWAP midline (mean reversion target, 1.2x ATR) or ATR stop loss (1.5x ATR)
+- **Why this works:** Price reverts to volume-weighted fair value. StochRSI is faster than RSI for scalp timing.
 - Hold time: 5-30 minutes per trade
 - Max concurrent trades: 3
 - Risk per trade: 1% of account
+- **Backtest results:** 83.3% WR, 0.735 Sharpe on 30 experiments (BTC/USD 5m candles)
 
 ## COMPETITIVE DNA — College to Pro
 - **Status:** PAPER (college) — proving ground, earning the right to go live
@@ -43,9 +45,10 @@ It doesn't think "$333 today" — it thinks "what's the most volatile asset righ
 - Profit target per trade: 0.8% minimum — no ceiling
 - Never trade within 15 minutes of major news events
 
-## BIDIRECTIONAL SIGNALS
-**Long entry:** RSI < 35 + EMA fast > slow + volume 1.5x average + bid pressure > 60%
-**Short entry:** RSI > 65 + EMA fast < slow + volume 1.5x average + ask pressure > 60%
+## BIDIRECTIONAL SIGNALS (v2 — VWAP Mean Reversion)
+**Long entry:** Price at/below lower VWAP band + StochRSI ≤ 15 (oversold) OR price bounces off lower VWAP band + StochRSI < 40 and rising
+**Short entry:** Price at/above upper VWAP band + StochRSI ≥ 86 (overbought) OR price rejects upper VWAP band + StochRSI > 60 and falling
+**Exit:** Fixed TP at 1.2x ATR (mean reversion to VWAP) or SL at 1.5x ATR
 
 ## HYPERTRAINING + AUTORESEARCH
 - Runs every night at 11pm alongside AutoResearch

@@ -136,3 +136,6 @@ All bugs logged here. Never repeat the same bug twice.
 
 ## [2026-04-09 17:48]
 [RESEARCH FABRICATION WARNING] Prompt: 'Ty said: ""Good - honest. Now give me the exact action plan. What are you doing '. Response: '**Next 24 hours — concrete moves:**\n\n1. **Hypertrain all four bots** — running AutoResearch loops on APEX, DRIFT, TITAN,'
+
+## [2026-04-09 20:10]
+[RESEARCH FABRICATION WARNING] Prompt: 'Ty asked: "how\'s apex?"\n\nReal research data (use ONLY this — no fabrication):\nNo'. Response: "Real talk — APEX is struggling. 37.5% win rate over 8 trades, down $0.05 on the day. That's well below the 55% threshold"

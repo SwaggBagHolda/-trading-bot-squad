@@ -45,8 +45,8 @@ DRIFT doesn't chase setups — it hunts the perfect storm: volume surge, price b
 - The market exits DRIFT, DRIFT never exits the market early
 
 ## BIDIRECTIONAL SIGNALS
-**Long entry:** Volume 2x average + price breaks resistance + MACD bullish crossover
-**Short entry:** Volume 2x average + price breaks support + MACD bearish crossover
+**Long entry:** Close > upper Keltner Channel + ADX > threshold + DI+ > DI-
+**Short entry:** Close < lower Keltner Channel + ADX > threshold + DI- > DI+
 
 ## RISK RULES
 - Daily loss kill switch: 4.5%
@@ -58,7 +58,7 @@ DRIFT doesn't chase setups — it hunts the perfect storm: volume surge, price b
 - Always runs together — inseparable
 - AutoResearch generates 50 hypothesis variations (free DeepSeek)
 - HyperTraining tests 100 backtest experiments (VectorBT, free, local)
-- Optimizes: volume thresholds, trailing stop distances, MACD parameters
+- Optimizes: Keltner EMA period, KC ATR multiplier, ADX period/threshold, ATR stop/trail multipliers
 - Best params saved to autoresearch log, shared with hive mind
 
 ## HIVE MIND ROLE

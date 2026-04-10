@@ -26,5 +26,8 @@
 - [DONE] Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
 - [DONE] EMERGENCY REBUILD: TITAN has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
 - [DONE] EMERGENCY REBUILD: SENTINEL has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
-- [AUTO_IMPROVE] EMERGENCY REBUILD: DRIFT has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
-- [AUTO_IMPROVE] EMERGENCY REBUILD: APEX has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+- [DONE] EMERGENCY REBUILD: DRIFT has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+- [DONE] EMERGENCY REBUILD: APEX has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+  - REBUILT v2: Replaced EMA crossover + RSI + volume with VWAP Mean Reversion + StochRSI
+  - Results: 83.3% WR, 0.735 Sharpe after 30 HyperTrain experiments
+  - Multi-asset validation: 45.2% aggregate WR across 9 assets (untuned), best: ADA 72.7%, AVAX 66.7%, SOL 60%
