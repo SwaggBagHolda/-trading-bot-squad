@@ -805,6 +805,15 @@ def run():
                     last_close = datetime.now()
                     save_state(None, None, daily_pnl, trades, wins)
 
+                    # Apply any queued parameter changes now that trade is closed
+                    try:
+                        from nexus_agent import apply_queued_params
+                        applied = apply_queued_params()
+                        if applied:
+                            print(f"[APEX] Applied queued params after trade close: {applied}")
+                    except Exception as e:
+                        print(f"[APEX] Queue drain error: {e}")
+
             # ── Look for next trade ───────────────────────────────────────────
             else:
                 cooldown_elapsed = (datetime.now() - last_close).total_seconds()

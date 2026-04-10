@@ -105,8 +105,63 @@ def _check_hive() -> str:
     return json.dumps({"bot_performance": result, "processes": procs}, indent=2)
 
 
-def _adjust_threshold(bot_name: str, param_name: str, new_value: float) -> str:
-    """Adjust a bot parameter in hive_mind.json via nexus_apex_overrides."""
+def _apex_has_open_trade() -> bool:
+    """Check if APEX has an active live trade via shared/apex_state.json."""
+    state_file = BASE / "shared" / "apex_state.json"
+    if not state_file.exists():
+        return False
+    try:
+        state = json.loads(state_file.read_text())
+        active = state.get("active")
+        return active is not None and isinstance(active, dict) and "symbol" in active
+    except Exception:
+        return False
+
+
+def _queue_param_change(bot_name: str, param_name: str, new_value: float) -> str:
+    """Queue a parameter change for after the current trade closes."""
+    queue_file = BASE / "shared" / "param_queue.json"
+    queue = []
+    if queue_file.exists():
+        try:
+            queue = json.loads(queue_file.read_text())
+        except Exception:
+            queue = []
+    entry = {
+        "bot": bot_name, "param": param_name, "value": new_value,
+        "queued_at": datetime.now().isoformat(), "reason": "apex_in_trade",
+    }
+    # Deduplicate — replace existing entry for same bot+param
+    queue = [q for q in queue if not (q["bot"] == bot_name and q["param"] == param_name)]
+    queue.append(entry)
+    queue_file.write_text(json.dumps(queue, indent=2))
+    _log_action("queue_param_change", entry)
+    return json.dumps({"status": "queued_until_trade_closes", **entry})
+
+
+def apply_queued_params():
+    """Apply any queued parameter changes. Called when APEX trade closes."""
+    queue_file = BASE / "shared" / "param_queue.json"
+    if not queue_file.exists():
+        return []
+    try:
+        queue = json.loads(queue_file.read_text())
+    except Exception:
+        return []
+    if not queue:
+        return []
+    applied = []
+    for entry in queue:
+        result = _adjust_threshold_direct(entry["bot"], entry["param"], entry["value"])
+        applied.append(f"{entry['bot']}.{entry['param']}={entry['value']}")
+    # Clear the queue
+    queue_file.write_text("[]")
+    _log_action("applied_queued_params", {"applied": applied})
+    return applied
+
+
+def _adjust_threshold_direct(bot_name: str, param_name: str, new_value: float) -> str:
+    """Direct parameter write — no trade guard. Used internally after guard check."""
     hive = _hive_read()
     override_key = f"nexus_{bot_name.lower()}_overrides"
     overrides = hive.get(override_key, {})
@@ -114,7 +169,6 @@ def _adjust_threshold(bot_name: str, param_name: str, new_value: float) -> str:
     overrides[param_name] = new_value
     hive[override_key] = overrides
     _hive_write(hive)
-
     _log_action("adjust_threshold", {
         "bot": bot_name, "param": param_name,
         "old": old_value, "new": new_value,
@@ -123,6 +177,15 @@ def _adjust_threshold(bot_name: str, param_name: str, new_value: float) -> str:
         "status": "updated", "bot": bot_name,
         "param": param_name, "old_value": old_value, "new_value": new_value,
     })
+
+
+def _adjust_threshold(bot_name: str, param_name: str, new_value: float) -> str:
+    """Adjust a bot parameter in hive_mind.json via nexus_apex_overrides.
+    LIVE TRADE GUARD: if APEX has an open trade, queues the change instead."""
+    if bot_name.upper() == "APEX" and _apex_has_open_trade():
+        print(f"[AGENT] APEX in trade — queuing {param_name}={new_value} until trade closes")
+        return _queue_param_change(bot_name, param_name, new_value)
+    return _adjust_threshold_direct(bot_name, param_name, new_value)
 
 
 def _force_close_trade(bot_name: str, reason: str = "agent_decision") -> str:

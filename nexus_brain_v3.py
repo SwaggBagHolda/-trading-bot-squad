@@ -2130,9 +2130,14 @@ def autonomous_loop():
                             if AGENT_SDK_AVAILABLE:
                                 agent_adjust_threshold("APEX", "min_momentum", new_mom)
                             else:
-                                nexus_write_hive_param("nexus_apex_overrides",
-                                    {"min_momentum": new_mom, "cooldown": 5},
-                                    f"Idle {idle_min}m — loosening")
+                                # Guard: don't adjust mid-trade
+                                from nexus_agent import _apex_has_open_trade
+                                if _apex_has_open_trade():
+                                    act(f"APEX: in trade — queuing threshold change")
+                                else:
+                                    nexus_write_hive_param("nexus_apex_overrides",
+                                        {"min_momentum": new_mom, "cooldown": 5},
+                                        f"Idle {idle_min}m — loosening")
                             act(f"APEX: idle {idle_min}m — loosened momentum {old_mom*100:.4f}% → {new_mom*100:.4f}%")
                             actions_taken.append(f"Loosened APEX threshold (idle {idle_min}m)")
                     except Exception:
@@ -2304,10 +2309,14 @@ def autonomous_loop():
                 agent_adjust_threshold("APEX", "cooldown", 5)
                 act(f"CONSEQUENCE [SDK]: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
             else:
-                nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
-                                       f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
-                act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
-            # Removed — no Telegram noise for threshold adjustments (CEO loop handles reporting)
+                # Guard: don't adjust mid-trade
+                from nexus_agent import _apex_has_open_trade
+                if _apex_has_open_trade():
+                    act(f"CONSEQUENCE: APEX in trade — queuing threshold change")
+                else:
+                    nexus_write_hive_param("nexus_apex_overrides", {"min_momentum": new_momentum, "cooldown": 5},
+                                           f"APEX only {apex_trades} trades by {now.strftime('%H:%M')} — loosening threshold {old_momentum*100:.4f}% → {new_momentum*100:.4f}%")
+                    act(f"CONSEQUENCE: APEX {apex_trades} trades — loosened momentum to {new_momentum*100:.4f}%")
     except Exception as e:
         act(f"CONSEQUENCE 7b error: {e}")
 
