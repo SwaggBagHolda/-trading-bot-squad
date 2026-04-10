@@ -115,7 +115,7 @@ Every new session, Codey runs this entire sequence before doing ANYTHING else.
 No waiting for Ty. No asking what to do. Just run it.
 
 1. Re-read this CLAUDE.md
-2. **Read NEXUS briefing from webhook bridge** — `curl http://localhost:7777/briefing` (falls back to `memory/tasks/claude_briefing.md` if bridge is down)
+2. **Read NEXUS briefing from webhook bridge** — `curl https://judgment-areas-pat-officials.trycloudflare.com/briefing` (local fallback: `curl http://localhost:7777/briefing`, disk fallback: `memory/tasks/claude_briefing.md`). NOTE: trycloudflare URL changes on restart — check `logs/cloudflared.log` if 404.
 3. Read memory/SYSTEM.md
 4. Read memory/CLAUDE_CODE_HANDOFF.md
 5. Read memory/NEXUS_TO_ORACLE.md — messages from NEXUS

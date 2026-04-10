@@ -53,3 +53,4 @@ apex_final_clean.py
 # Temporary
 *.tmp
 *.bak
+bin/

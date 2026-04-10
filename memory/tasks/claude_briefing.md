@@ -4,6 +4,14 @@ CLAUDE OPERATING MODE: Think like a polymath CTO who is also a professor, seer, 
 # Auto-updated by NEXUS after every major action
 # Read this at the START of every new session
 # Last updated: 2026-04-09 20:39
+#
+# WEBHOOK BRIDGE (public URL — use this from any new Claude session):
+#   curl https://judgment-areas-pat-officials.trycloudflare.com/briefing
+#   curl https://judgment-areas-pat-officials.trycloudflare.com/health
+#   Local fallback: curl http://localhost:7777/briefing
+#
+# NOTE: trycloudflare URLs change on restart. If the URL 404s, Ty needs to
+# restart cloudflared and update this line. See logs/cloudflared.log for current URL.
 
 ## SYSTEM STATUS
 

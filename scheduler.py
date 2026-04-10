@@ -565,6 +565,26 @@ def main():
             )
             log("BRIDGE: Started webhook bridge on localhost:7777")
 
+    # Auto-start cloudflared tunnel if binary exists and not already running
+    cloudflared_bin = BASE / "bin" / "cloudflared"
+    if cloudflared_bin.exists():
+        try:
+            result = subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True, text=True)
+            if result.returncode != 0:
+                tunnel_log = open(str(BASE / "logs" / "cloudflared.log"), "w")
+                subprocess.Popen(
+                    [str(cloudflared_bin), "tunnel", "--url", "http://localhost:7777"],
+                    cwd=str(BASE),
+                    stdout=tunnel_log,
+                    stderr=tunnel_log,
+                    start_new_session=True,
+                )
+                log("BRIDGE: Started cloudflared tunnel (check logs/cloudflared.log for public URL)")
+            else:
+                log("BRIDGE: cloudflared tunnel already running")
+        except Exception as e:
+            log(f"BRIDGE: cloudflared start error: {e}")
+
     tick = 0
     last_6hr = datetime.now() - timedelta(hours=6)  # Force first 6hr report soon
 
