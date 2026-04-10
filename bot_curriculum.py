@@ -11,12 +11,15 @@ Run: nohup python3 -u bot_curriculum.py >> logs/curriculum.log 2>&1 &
 """
 
 import json
+import sys
 import time
 import requests
 from datetime import datetime
 from pathlib import Path
 
 BASE = Path.home() / "trading-bot-squad"
+if str(BASE) not in sys.path:
+    sys.path.insert(0, str(BASE))
 HIVE = BASE / "shared" / "hive_mind.json"
 
 SCAN_INTERVAL  = 300   # 5 min between price scans
@@ -182,21 +185,30 @@ def maybe_graduate(hive, bot, grad):
             _notify(f"{bot} READY FOR LIVE TRADING — AWAITING YOUR APPROVAL\n{t} paper trades | {wr*100:.1f}% WR | P&L {pnl:+.2f}%\nReply /approve_{bot.lower()} to go live.")
 
 
-def _notify(msg):
+def _notify(msg, force=False):
     import os
     from dotenv import load_dotenv
     load_dotenv(BASE / ".env", override=True)
     token   = os.getenv("NEXUS_TELEGRAM_TOKEN", "")
     chat_id = os.getenv("OWNER_TELEGRAM_CHAT_ID", "")
-    if token and chat_id:
-        try:
-            requests.post(
-                f"https://api.telegram.org/bot{token}/sendMessage",
-                json={"chat_id": chat_id, "text": msg},
-                timeout=10
-            )
-        except:
-            pass
+    if not token or not chat_id:
+        return
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[CURRICULUM] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        print(f"[CURRICULUM] SILENT_MODE (fallback block): {msg[:80]}...")
+        return
+    try:
+        requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat_id, "text": msg},
+            timeout=10
+        )
+    except:
+        pass
 
 
 def run_bot_scan(bot, coin_id, symbol):

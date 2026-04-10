@@ -20,7 +20,7 @@ PARAMETER SPACES: Built from real research (April 2026):
   Sources: tradelikemaster.com/how-to-pass-ftmo-challenge-2026, propjournal.net/guides/how-to-pass-ftmo
 """
 
-import json, random, sqlite3, requests, os, time
+import json, random, sqlite3, requests, os, sys, time
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
@@ -28,6 +28,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE = Path.home() / "trading-bot-squad"
+if str(BASE) not in sys.path:
+    sys.path.insert(0, str(BASE))
 load_dotenv(BASE / ".env")
 
 TELEGRAM_TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN")
@@ -162,9 +164,17 @@ TIMEFRAMES = ["1m", "5m", "15m", "1h", "6h"]
 
 
 # ── Telegram ───────────────────────────────────────────────────────────────────
-def tg(msg):
+def tg(msg, force=False):
     if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
         print(msg); return
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[SENTINEL-R2] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        print(f"[SENTINEL-R2] SILENT_MODE (fallback block): {msg[:80]}...")
+        return
     try:
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",

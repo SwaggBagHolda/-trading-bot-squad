@@ -330,7 +330,18 @@ def place_order(product_id, side, usd_amount):
         return {"success": True, "paper": True, "order_id": f"PAPER-{uuid.uuid4().hex[:8]}"}, 200
     return result, status
 
-def tg(msg):
+def tg(msg, force=False):
+    """Send to Telegram — respects SILENT_MODE."""
+    if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
+        return
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[APEX] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        print(f"[APEX] SILENT_MODE (fallback block): {msg[:80]}...")
+        return
     try:
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
                       json={"chat_id": OWNER_CHAT_ID, "text": msg}, timeout=8)

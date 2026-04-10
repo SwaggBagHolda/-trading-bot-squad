@@ -30,7 +30,17 @@ MAX_DAILY_LOSS = 0.05
 SCAN_INTERVAL = 30
 MIN_STRENGTH = 0.35
 
-def tg(msg):
+def tg(msg, force=False):
+    if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
+        return
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[APEX] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        print(f"[APEX] SILENT_MODE (fallback block): {msg[:80]}...")
+        return
     try:
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
                       json={"chat_id": OWNER_CHAT_ID, "text": msg}, timeout=10)
