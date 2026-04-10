@@ -63,6 +63,16 @@ last_autonomous = datetime.now() - timedelta(seconds=300)  # fire immediately on
 AUTONOMOUS_INTERVAL = 300  # 5 minutes — CEO checks in constantly
 last_hypertrain_trigger = datetime.now() - timedelta(hours=6)  # allow immediate first trigger
 HYPERTRAIN_COOLDOWN = 6 * 3600  # 6 hours between CEO-triggered HyperTrain runs
+
+# ── SILENT_MODE — global noise filter ────────────────────────────────────────
+# When True, blocks ALL autonomous send() calls except:
+#   - Final HyperTrain summaries (sentinel_hypertrain.py final_msg)
+#   - WARDEN reports (scheduler.py)
+#   - Trade notifications (actual buy/sell executions)
+#   - CEO loop Phase 5 consolidated reports
+#   - Direct Telegram reply to user messages
+# Everything else is suppressed. Ty explicitly asked for this.
+SILENT_MODE = True
 last_heartbeat = datetime.now()
 last_memory_consolidation = datetime.now()
 last_income_idea = datetime.now()
@@ -255,13 +265,20 @@ MAX_HISTORY = 20
 _voice_reply_mode = [False]
 
 def smart_send(chat_id, text):
-    """Send text, or voice+text when Ty spoke to NEXUS via voice note."""
+    """Send text, or voice+text when Ty spoke to NEXUS via voice note.
+    Always force=True — this is a direct reply to the user."""
     if _voice_reply_mode[0] and ELEVENLABS_KEY and len(text) < 2500:
         send_voice(chat_id, text)
     else:
-        send(chat_id, text)
+        send(chat_id, text, force=True)
 
-def send(chat_id, text):
+def send(chat_id, text, force=False):
+    """Send Telegram message. In SILENT_MODE, only force=True messages go through.
+    force=True is used for: user replies, CEO Phase 5 reports, trade notifications, WARDEN reports.
+    All autonomous chatter (checkpoints, restarts, threshold changes) uses force=False and gets suppressed."""
+    if SILENT_MODE and not force:
+        print(f"[NEXUS] SILENT_MODE suppressed: {text[:80]}...")
+        return
     try:
         if len(text) > 4000:
             for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
@@ -275,7 +292,7 @@ def send(chat_id, text):
 def send_voice(chat_id, text):
     """Convert text to speech via ElevenLabs free tier and send as Telegram voice note."""
     if not ELEVENLABS_KEY:
-        send(chat_id, text)  # Fallback to text if no key
+        send(chat_id, text, force=True)  # Fallback to text if no key — user reply
         return
     try:
         from elevenlabs import ElevenLabs
@@ -303,7 +320,7 @@ def send_voice(chat_id, text):
         print(f"[NEXUS] Voice message sent ({len(audio_bytes)} bytes)")
     except Exception as e:
         print(f"[NEXUS] Voice send failed ({e}), falling back to text")
-        send(chat_id, text)
+        send(chat_id, text, force=True)
 
 def get_updates(offset=None):
     try:
@@ -669,7 +686,7 @@ def check_scheduled_tasks(chat_id: str):
                     f"Squad P&L today: ${total_pnl:+.2f}. Mission: $100K/month combined.\n"
                     f"Execute this task now and report back in 2-4 sentences. Be direct."
                 ) or f"Scheduled: {task_text}"
-                send(chat_id, f"[Scheduled] {result}")
+                send(chat_id, f"[Scheduled] {result}", force=True)
             except Exception as e:
                 print(f"[NEXUS] Scheduled task error: {e}")
 
@@ -995,6 +1012,20 @@ def smart_research(query):
     query = query.strip().strip('"').strip("'").strip()
     query = re.sub(r'\s+', ' ', query)
     q_lower = query.lower()
+
+    # ── TRADING CONTEXT GUARD ────────────────────────────────────────────────
+    # Bot names alone (APEX, DRIFT, etc.) return video game / unrelated results.
+    # Always append crypto trading context if the query lacks it.
+    trading_context_words = ["crypto", "trading", "strategy", "algorithmic", "backtest",
+                             "scalp", "swing", "indicator", "bitcoin", "ethereum",
+                             "coinbase", "binance", "exchange", "defi", "token",
+                             "blockchain", "forex", "futures", "perpetual", "leverage"]
+    bot_names = ["apex", "drift", "titan", "sentinel", "nova", "volt", "anchor", "atlas"]
+    has_trading_context = any(w in q_lower for w in trading_context_words)
+    has_bot_name_only = any(b in q_lower for b in bot_names) and not has_trading_context
+    if not has_trading_context:
+        query = f"{query} crypto trading strategy"
+        q_lower = query.lower()
 
     crypto_tokens = ["btc", "eth", "sol", "xrp", "doge", "avax", "bitcoin",
                      "ethereum", "solana", "crypto", "altcoin", "defi", "token"]
@@ -1563,8 +1594,8 @@ def check_oracle_messages():
             lines = content.split("\n")
             instructions = [l.replace("[PENDING]", "").strip() for l in lines if "[PENDING]" in l]
             if instructions:
-                send(OWNER_ID, f"📨 ORACLE sent {len(instructions)} instruction(s):\n\n" +
-                     "\n".join(f"• {i}" for i in instructions))
+                oracle_msg = f"📨 ORACLE sent {len(instructions)} instruction(s):\n\n" + "\n".join(f"• {i}" for i in instructions)
+                send(OWNER_ID, oracle_msg, force=True)
             content = content.replace("[PENDING]", "[DONE ✅]")
             open(ORACLE_MSG, "w").write(content)
     except Exception as e:
@@ -1810,7 +1841,7 @@ def relay_from_claude(message: str):
     """Process a message relayed from Claude Code via the bridge file.
     Claude writes to shared/claude_to_nexus.json, NEXUS picks it up."""
     try:
-        send(OWNER_ID, f"[Claude Code] {message}")
+        send(OWNER_ID, f"[Claude Code] {message}", force=True)
         log_to_oracle(f"Claude relayed: {message[:100]}")
     except Exception as e:
         print(f"[NEXUS] Relay error: {e}")
@@ -2104,7 +2135,7 @@ def autonomous_loop():
     if actions_taken:
         report = f"CEO loop ({now.strftime('%H:%M')}) — {len(actions_taken)} action(s):\n"
         report += "\n".join(f"• {a}" for a in actions_taken)
-        send(OWNER_ID, report)
+        send(OWNER_ID, report, force=True)  # CEO consolidated report — always send
         act(f"REPORT: Sent {len(actions_taken)} actions to Ty")
     else:
         act("REPORT: All systems green — no actions needed")
@@ -3194,7 +3225,7 @@ def handle_message(text, chat_id):
     if re.search(r"(youtube\.com/watch|youtu\.be/|youtube\.com/shorts)", text_lower):
         url_match = re.search(r"https?://[^\s]+", text)
         if url_match:
-            send(chat_id, "Pulling YouTube info...")
+            send(chat_id, "Pulling YouTube info...", force=True)
             result = summarize_youtube(url_match.group(0))
             reply(result[:1000])
             return
@@ -3480,7 +3511,7 @@ def run():
                             handle_message(transcribed, chat_id)
                             _voice_reply_mode[0] = False
                         else:
-                            send(chat_id, "Couldn't transcribe that one. Try again or type it.")
+                            send(chat_id, "Couldn't transcribe that one. Try again or type it.", force=True)
 
             # ── Scheduled tasks — check every loop iteration ──────────────
             if OWNER_ID:
