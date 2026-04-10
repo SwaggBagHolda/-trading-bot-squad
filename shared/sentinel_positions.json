@@ -221,54 +221,71 @@
     "shares": 192.30769230769232
   },
   {
-    "timestamp": "2026-04-10T01:10:25.126050",
-    "market": "Will the price of Bitcoin be above $72,000 on April 10?",
-    "action": "BUY_YES",
-    "bet_size": 10.0,
-    "type": "directional",
-    "reason": "BTC $72,042 (+0.1% vs $72,000) mom -0.10% | YES $0.545 | conv 51%",
-    "edge_pct": 0.45499999999999996,
-    "prices": [
-      0.545,
-      0.455
-    ],
-    "status": "open",
-    "pnl": 0,
-    "entry_price": 0.545,
-    "shares": 18.34862385321101
-  },
-  {
-    "timestamp": "2026-04-10T01:30:24.454698",
+    "timestamp": "2026-04-10T02:25:08.875202",
     "market": "Will the price of Bitcoin be between $70,000 and $72,000 on April 10?",
     "action": "BUY_YES",
     "bet_size": 10.0,
     "type": "directional",
-    "reason": "BTC $72,242 (+3.2% vs $70,000) mom +0.26% | YES $0.380 | conv 95%",
-    "edge_pct": 0.62,
+    "reason": "BTC $71,986 (+2.8% vs $70,000) mom -0.16% | YES $0.465 | conv 85%",
+    "edge_pct": 0.5349999999999999,
     "prices": [
-      0.38,
-      0.62
+      0.465,
+      0.535
     ],
     "status": "open",
     "pnl": 0,
-    "entry_price": 0.38,
-    "shares": 26.31578947368421
+    "entry_price": 0.465,
+    "shares": 21.50537634408602
   },
   {
-    "timestamp": "2026-04-10T01:40:59.285046",
+    "timestamp": "2026-04-10T02:34:33.767930",
     "market": "Will the price of Ethereum be above $2,200 on April 10?",
+    "action": "BUY_NO",
+    "bet_size": 10.0,
+    "type": "directional",
+    "reason": "ETH $2,191 (-0.4% vs $2,200) mom -0.04% | NO $0.590 | conv 56%",
+    "edge_pct": 0.41000000000000003,
+    "prices": [
+      0.41,
+      0.59
+    ],
+    "status": "open",
+    "pnl": 0,
+    "entry_price": 0.59,
+    "shares": 16.949152542372882
+  },
+  {
+    "timestamp": "2026-04-10T02:38:06.704421",
+    "market": "Will the price of Bitcoin be above $72,000 on April 11?",
     "action": "BUY_YES",
     "bet_size": 10.0,
     "type": "directional",
-    "reason": "ETH $2,199 (-0.0% vs $2,200) mom -0.16% | YES $0.495 | conv 59%",
-    "edge_pct": 0.505,
+    "reason": "BTC $71,908 (-0.1% vs $72,000) mom -0.13% | YES $0.502 | conv 58%",
+    "edge_pct": 0.498,
     "prices": [
-      0.495,
-      0.505
+      0.502,
+      0.498
     ],
     "status": "open",
     "pnl": 0,
-    "entry_price": 0.495,
-    "shares": 20.2020202020202
+    "entry_price": 0.502,
+    "shares": 19.9203187250996
+  },
+  {
+    "timestamp": "2026-04-10T02:40:29.335361",
+    "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+    "action": "BUY_YES",
+    "bet_size": 10.0,
+    "type": "directional",
+    "reason": "BTC $71,969 (-0.0% vs $72,000) mom -0.02% | YES $0.485 | conv 49%",
+    "edge_pct": 0.515,
+    "prices": [
+      0.485,
+      0.515
+    ],
+    "status": "open",
+    "pnl": 0,
+    "entry_price": 0.485,
+    "shares": 20.61855670103093
   }
 ]
