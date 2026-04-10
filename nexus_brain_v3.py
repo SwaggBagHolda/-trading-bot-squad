@@ -1541,7 +1541,7 @@ def generate_outreach(target_type="prop_firm"):
             "- Rule-based entries: EMA cross + RSI divergence\n"
             "- Max risk per trade: 0.5%\n"
             "- Trailing stops only — no fixed TP\n"
-            "- Backtested on 10,000 simulated trades: 55%+ WR\n\n"
+            "- Backtested on 10,000 simulated trades: 70%+ WR\n\n"
             "Looking to start the $10K challenge this week.\n\n"
             "Happy to share the strategy documentation.\n\n"
             "— Ty"
