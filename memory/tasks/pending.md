@@ -31,3 +31,8 @@
   - REBUILT v2: Replaced EMA crossover + RSI + volume with VWAP Mean Reversion + StochRSI
   - Results: 83.3% WR, 0.735 Sharpe after 30 HyperTrain experiments
   - Multi-asset validation: 45.2% aggregate WR across 9 assets (untuned), best: ADA 72.7%, AVAX 66.7%, SOL 60%
+- [AUTO_IMPROVE] Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: **MyCryptoSignal** — `https://www.mycryptosignal.com/`
+
+Free REST API serving AI-generated BUY/HOLD/RISK signals across 60 coins, no API key cost, just attribution required.
+
+**How to wire it:** Hit t
