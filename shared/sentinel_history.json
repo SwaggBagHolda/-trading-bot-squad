@@ -1,5 +1,5 @@
 {
-  "balance": 822.31,
+  "balance": 827.56,
   "trades": [
     {
       "timestamp": "2026-04-09T18:49:26.086150",
@@ -171,6 +171,139 @@
       "shares": 23.80952380952381,
       "close_reason": "stop_loss",
       "close_time": "2026-04-09T20:24:43.722619"
+    },
+    {
+      "timestamp": "2026-04-09T19:32:02.749567",
+      "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+      "action": "BUY_NO",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $71,721 (-0.4% vs $72,000) mom -0.08% | NO $0.565 | conv 56%",
+      "edge_pct": 0.43500000000000005,
+      "prices": [
+        0.435,
+        0.565
+      ],
+      "status": "closed",
+      "pnl": -1.0619,
+      "entry_price": 0.565,
+      "shares": 17.69911504424779,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T21:19:45.386368"
+    },
+    {
+      "timestamp": "2026-04-09T21:02:13.830641",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,192 (-0.3% vs $2,200) mom -0.10% | YES $0.440 | conv 55%",
+      "edge_pct": 0.56,
+      "prices": [
+        0.44,
+        0.56
+      ],
+      "status": "closed",
+      "pnl": -1.5909,
+      "entry_price": 0.44,
+      "shares": 22.727272727272727,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T21:24:52.401251"
+    },
+    {
+      "timestamp": "2026-04-09T21:25:29.685122",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,186 (-0.6% vs $2,200) mom -0.27% | YES $0.370 | conv 51%",
+      "edge_pct": 0.63,
+      "prices": [
+        0.37,
+        0.63
+      ],
+      "status": "closed",
+      "pnl": 2.2973,
+      "entry_price": 0.37,
+      "shares": 27.027027027027028,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T21:34:32.182179"
+    },
+    {
+      "timestamp": "2026-04-09T19:45:04.535774",
+      "market": "Will Bitcoin reach $74,000 April 6-12?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC moving up +0.20% toward $74,000 (3.1% away) | YES $0.385",
+      "edge_pct": 0.615,
+      "prices": [
+        0.385,
+        0.615
+      ],
+      "status": "closed",
+      "pnl": 2.0779,
+      "entry_price": 0.385,
+      "shares": 25.974025974025974,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T21:39:38.239432"
+    },
+    {
+      "timestamp": "2026-04-09T20:48:02.946316",
+      "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $71,955 (-0.1% vs $72,000) mom +0.03% | YES $0.445 | conv 49%",
+      "edge_pct": 0.5549999999999999,
+      "prices": [
+        0.445,
+        0.555
+      ],
+      "status": "closed",
+      "pnl": 2.4719,
+      "entry_price": 0.445,
+      "shares": 22.47191011235955,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T21:39:38.239914"
+    },
+    {
+      "timestamp": "2026-04-09T19:30:20.570186",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_NO",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,189 (-0.5% vs $2,200) mom -0.03% | NO $0.550 | conv 58%",
+      "edge_pct": 0.44999999999999996,
+      "prices": [
+        0.45,
+        0.55
+      ],
+      "status": "closed",
+      "pnl": -1.5455,
+      "entry_price": 0.55,
+      "shares": 18.18181818181818,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T21:44:44.450355"
+    },
+    {
+      "timestamp": "2026-04-09T20:35:33.863275",
+      "market": "Will Bitcoin reach $76,000 April 6-12?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC moving up +0.45% toward $76,000 (5.6% away) | YES $0.115",
+      "edge_pct": 0.885,
+      "prices": [
+        0.115,
+        0.885
+      ],
+      "status": "closed",
+      "pnl": 2.6087,
+      "entry_price": 0.115,
+      "shares": 86.95652173913044,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T21:44:44.451304"
     }
   ]
 }
