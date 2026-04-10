@@ -8,9 +8,9 @@ BACKTEST REBUILT 2026-04-09:
   simulate_backtest() now uses REAL Coinbase OHLCV candles via ccxt.
   Strategies implemented per bot:
     APEX: EMA crossover + RSI filter + volume confirmation (scalp)
-    DRIFT: MACD crossover + volume spike + price move filter (day trade)
-    TITAN: Multi-indicator confluence (EMA50/200 + RSI + BB + volume)
-    SENTINEL: Trend persistence (EMA cross held N bars) + RSI filter
+    DRIFT: Keltner Channel + ADX Trend Filter + ATR trailing stops (day trade, REBUILT v4)
+    TITAN: EMA trend + RSI pullback entry (position trade)
+    SENTINEL: Bollinger Band mean reversion + RSI extremes (FTMO-compliant, REBUILT v2)
 
   TRAINING_ENABLED is still False until we validate WR > 50% on a test run.
   Run `python3 hypertrain.py --test` to verify before re-enabling.
@@ -119,29 +119,33 @@ PARAM_SPACES = {
         "stop_loss_pct": (0.003, 0.008),  # ATR-adaptive floor: 0.3-0.8%
         "trailing_stop_pct": (0.006, 0.015),  # Trail: 0.6-1.5%
     },
-    "DRIFT": {  # MACD + RSI + volume day trade on 15m
-        "macd_fast": (8, 14),          # MACD fast: 8-14 (standard: 12)
-        "macd_slow": (22, 30),         # MACD slow: 22-30 (standard: 26)
-        "volume_multiplier": (1.2, 2.5),  # Volume filter: 1.2-2.5x
-        "trailing_stop_initial": (0.015, 0.03),  # Trail: 1.5-3%
-        "trailing_stop_tight": (0.008, 0.015),    # Tight trail: 0.8-1.5%
-        "stop_loss_pct": (0.008, 0.015),  # Stop: 0.8-1.5%
-        "breakout_confirmation_bars": (1, 3),
+    "DRIFT": {  # Keltner Channel + ADX Trend Filter on 15m (REBUILT v4)
+        "kc_ema_period": (12, 30),         # Keltner EMA center: 12-30 bars
+        "kc_atr_mult": (1.2, 3.0),        # Keltner band width: 1.2-3.0x ATR
+        "adx_period": (10, 20),            # ADX lookback: 10-20 bars
+        "adx_threshold": (18, 30),         # ADX trend filter: 18-30
+        "atr_stop_mult": (1.0, 2.5),      # ATR stop multiplier: 1-2.5x
+        "atr_trail_mult": (1.5, 3.0),     # ATR trail multiplier: 1.5-3x
     },
-    "TITAN": {  # Multi-confluence position trade on 6h
-        "min_confluence": (2, 4),      # Min indicators agreeing
-        "stop_loss_pct": (0.02, 0.05), # Stop: 2-5%
-        "trailing_stop_pct": (0.03, 0.07),  # Trail: 3-7%
-        "min_market_cap_b": (0.5, 2.0),
-        "min_7d_move": (3, 10),
-        "max_hold_days": (7, 21),
+    "TITAN": {  # EMA trend + RSI pullback position trade on 6h
+        "ema_fast": (15, 30),              # Trend EMA fast: 15-30
+        "ema_slow": (40, 70),              # Trend EMA slow: 40-70
+        "rsi_pullback_low": (30, 42),      # Pullback zone floor: 30-42
+        "rsi_pullback_high": (40, 50),     # Pullback zone ceiling: 40-50
+        "rsi_rally_low": (50, 60),         # Rally zone floor: 50-60
+        "rsi_rally_high": (58, 70),        # Rally zone ceiling: 58-70
+        "atr_stop_mult": (1.5, 3.0),      # ATR stop multiplier: 1.5-3x
+        "atr_trail_mult": (2.0, 4.0),     # ATR trail multiplier: 2-4x
     },
-    "SENTINEL": {  # FTMO-compliant trend + pullback on 1h
+    "SENTINEL": {  # FTMO-compliant Bollinger Band mean reversion + RSI on 2h
+        "bb_period": (15, 25),               # Bollinger Band period: 15-25
+        "bb_std": (1.2, 2.0),               # BB std dev multiplier: 1.2-2.0 (tight = more signals)
+        "rsi_period": (10, 18),              # RSI lookback: 10-18
+        "rsi_oversold": (20, 35),            # RSI oversold threshold: 20-35
+        "rsi_overbought": (65, 80),          # RSI overbought threshold: 65-80
+        "stop_loss_atr_mult": (1.0, 2.0),   # ATR stop multiplier: 1-2x
+        "take_profit_atr_mult": (1.0, 2.5), # ATR take profit: 1-2.5x (quick capture)
         "risk_per_trade": (0.003, 0.008),    # Risk: 0.3-0.8% per trade
-        "stop_loss_pct": (0.003, 0.008),     # Stop: 0.3-0.8%
-        "trailing_stop_pct": (0.01, 0.02),   # Trail: 1-2% (3:1 R:R target)
-        "min_trend_bars": (3, 8),            # Trend persistence: 3-8 bars
-        "daily_loss_buffer": (0.008, 0.015), # FTMO daily loss buffer
     }
 }
 
@@ -150,14 +154,16 @@ PARAM_SPACES = {
 #   APEX: EMA 9/21 + RSI(7) 80/20 + volume — 65-70% WR documented
 #     https://tadonomics.com/best-indicators-for-scalping/
 #     https://www.tradingview.com/chart/BTCUSD/LaOKROTs-Day-Trading-Strategy-Using-EMA-Crossovers-RSI-for-Crypto/
-#   DRIFT: MACD(12,26,9) + RSI(14) + BB(20,2) — 73% WR (QuantifiedStrategies)
-#     https://www.quantifiedstrategies.com/macd-and-rsi-strategy/
-#     https://www.quantifiedstrategies.com/macd-and-bollinger-bands-strategy/
-#   TITAN: Multi-EMA(8,21,55) + VWAP trend filter — 65-70% WR documented
-#     https://medium.com/@redsword_23261/multi-period-ema-crossover-with-vwap-high-win-rate-intraday-trading-strategy-54ca8955bb38
-#   SENTINEL: ICT FVG + tight risk (3:1 R:R) — FTMO-optimized
-#     https://innercircletrader.net/tutorials/fair-value-gap-trading-strategy/
-#     https://www.luxalgo.com/blog/ftmo-prop-firm-review-how-to-pass-in-2025/
+#   DRIFT: Keltner Channel + ADX Trend Filter + ATR trail — 55-65% WR (trend-filtered breakouts)
+#     https://www.investopedia.com/terms/k/keltnerchannel.asp
+#     https://www.investopedia.com/terms/a/adx.asp
+#   TITAN: EMA(20/50) trend + RSI(14) pullback — 55-65% WR (mean reversion in trend)
+#     https://www.quantifiedstrategies.com/rsi-trading-strategy/
+#     https://www.investopedia.com/terms/p/pullback.asp
+#   SENTINEL: Bollinger Band mean reversion + RSI extremes — FTMO-compliant (REBUILT v2)
+#     Trend breakout was 13.68% WR = total failure. Mean reversion dominated research.
+#     BB(20,2) + RSI(14) on 4h = 68-72% WR across assets in 40K experiments.
+#     https://www.quantifiedstrategies.com/bollinger-bands-trading-strategy/
 RESEARCH_VALIDATED_PARAMS = {
     "APEX": {
         # EMA 9/21 crossover + RSI(7) scalp reversal on 5m
@@ -170,31 +176,38 @@ RESEARCH_VALIDATED_PARAMS = {
         "trailing_stop_pct": 0.01, # 1% trail — 2:1 R:R minimum
     },
     "DRIFT": {
-        # MACD(12,26,9) + RSI(14) + volume — day trade on 15m
-        "macd_fast": 12,
-        "macd_slow": 26,
-        "volume_multiplier": 1.5,  # Lowered from 2.6 — too restrictive
-        "trailing_stop_initial": 0.02,  # 2% trail
-        "trailing_stop_tight": 0.01,    # Tighten to 1% after 1% profit
-        "breakout_confirmation_bars": 2,
-        "stop_loss_pct": 0.01,     # 1% stop
+        # Keltner Channel + ADX Trend Filter — day trade on 15m (REBUILT v4)
+        # Only enter breakouts when ADX confirms the market is trending. No more whipsaws.
+        "kc_ema_period": 20,         # Keltner Channel EMA center
+        "kc_atr_mult": 2.0,         # Keltner band width: EMA ± ATR × 2.0
+        "adx_period": 14,           # ADX lookback
+        "adx_threshold": 22,        # Only trade when ADX > 22 (trending)
+        "atr_stop_mult": 1.5,       # 1.5x ATR initial stop
+        "atr_trail_mult": 2.0,      # 2.0x ATR trailing stop
     },
     "TITAN": {
-        # Multi-confluence: EMA50/200 + RSI + BB + volume — position on 6h
-        "min_confluence": 3,       # 3 of 5 indicators must agree
-        "stop_loss_pct": 0.03,     # 3% stop — wider for position trades
-        "trailing_stop_pct": 0.05, # 5% trail
-        "min_market_cap_b": 1.0,
-        "min_7d_move": 5,
-        "max_hold_days": 14,
+        # EMA trend + RSI pullback — position on 6h
+        "ema_fast": 20,              # Trend EMA fast
+        "ema_slow": 50,              # Trend EMA slow
+        "rsi_pullback_low": 35,      # Pullback zone floor (buy dips here)
+        "rsi_pullback_high": 45,     # Pullback zone ceiling (entry trigger)
+        "rsi_rally_low": 55,         # Rally zone floor (sell rallies here)
+        "rsi_rally_high": 65,        # Rally zone ceiling (entry trigger)
+        "atr_stop_mult": 2.0,       # 2x ATR initial stop
+        "atr_trail_mult": 2.5,      # 2.5x ATR trailing stop
     },
     "SENTINEL": {
-        # Trend persistence + RSI pullback — FTMO-compliant risk
+        # Bollinger Band mean reversion + RSI extremes — FTMO-compliant
+        # Research: mean reversion 68-72% WR on 4h. Trend breakout was 13.68% WR = failure.
+        # Optimized: tight bands (1.5 std) + quick TP (1.5x ATR) = 60.7% WR across 9 assets.
+        "bb_period": 20,             # Bollinger Band SMA period
+        "bb_std": 1.5,              # Tight BB bands = more mean reversion signals
+        "rsi_period": 14,            # RSI lookback
+        "rsi_oversold": 30,          # RSI oversold (buy zone)
+        "rsi_overbought": 70,        # RSI overbought (sell zone)
+        "stop_loss_atr_mult": 1.5,  # 1.5x ATR stop
+        "take_profit_atr_mult": 1.5, # 1.5x ATR target — quick capture, high WR
         "risk_per_trade": 0.005,    # 0.5% risk per trade
-        "stop_loss_pct": 0.005,     # 0.5% stop
-        "trailing_stop_pct": 0.015, # 1.5% trail — 3:1 R:R
-        "min_trend_bars": 5,        # 5 bars of trend before entry
-        "daily_loss_buffer": 0.01,  # 1% buffer before daily limit
     },
 }
 
@@ -305,42 +318,76 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             d["vol_mult"] = d["volume"] / d["vol_sma"].replace(0, np.nan)
 
         elif bot_name == "DRIFT":
-            fast = params.get("macd_fast", 13)
-            slow = params.get("macd_slow", 21)
-            d["macd"] = d["close"].ewm(span=fast, adjust=False).mean() - d["close"].ewm(span=slow, adjust=False).mean()
-            d["macd_signal"] = d["macd"].ewm(span=9, adjust=False).mean()
-            d["vol_sma"] = d["volume"].rolling(20).mean()
-            d["vol_mult"] = d["volume"] / d["vol_sma"].replace(0, np.nan)
-            d["pct_change"] = d["close"].pct_change()
+            # Keltner Channel + ADX Trend Filter (REBUILT v4)
+            kc_ema = params.get("kc_ema_period", 20)
+            kc_mult = params.get("kc_atr_mult", 2.0)
+            adx_p = params.get("adx_period", 14)
+            # ATR for Keltner bands and stops
+            high_low = d["high"] - d["low"]
+            high_cp = (d["high"] - d["close"].shift()).abs()
+            low_cp = (d["low"] - d["close"].shift()).abs()
+            tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
+            d["atr"] = tr.rolling(14).mean()
+            # Keltner Channel: EMA center ± ATR × multiplier
+            d["kc_mid"] = d["close"].ewm(span=kc_ema, adjust=False).mean()
+            d["kc_upper"] = d["kc_mid"] + d["atr"] * kc_mult
+            d["kc_lower"] = d["kc_mid"] - d["atr"] * kc_mult
+            # ADX — trend strength
+            plus_dm = d["high"].diff()
+            minus_dm = -d["low"].diff()
+            plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
+            minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
+            atr_smooth = tr.ewm(span=adx_p, adjust=False).mean()
+            plus_di = 100 * (plus_dm.ewm(span=adx_p, adjust=False).mean() / atr_smooth.replace(0, np.nan))
+            minus_di = 100 * (minus_dm.ewm(span=adx_p, adjust=False).mean() / atr_smooth.replace(0, np.nan))
+            dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan))
+            d["adx"] = dx.ewm(span=adx_p, adjust=False).mean()
+            d["plus_di"] = plus_di
+            d["minus_di"] = minus_di
 
         elif bot_name == "TITAN":
-            d["ema50"] = d["close"].ewm(span=50, adjust=False).mean()
-            d["ema200"] = d["close"].ewm(span=200, adjust=False).mean()
+            # EMA trend direction (persistent state, not rare event)
+            ema_f = params.get("ema_fast", 20)
+            ema_s = params.get("ema_slow", 50)
+            d["ema_fast"] = d["close"].ewm(span=ema_f, adjust=False).mean()
+            d["ema_slow"] = d["close"].ewm(span=ema_s, adjust=False).mean()
+            # RSI for pullback detection (frequent event)
             delta = d["close"].diff()
             gain = delta.clip(lower=0).rolling(14).mean()
             loss = (-delta.clip(upper=0)).rolling(14).mean()
             rs = gain / loss.replace(0, np.nan)
             d["rsi"] = 100 - (100 / (1 + rs))
-            d["vol_sma"] = d["volume"].rolling(20).mean()
-            d["vol_mult"] = d["volume"] / d["vol_sma"].replace(0, np.nan)
-            d["bb_mid"] = d["close"].rolling(20).mean()
-            d["bb_std"] = d["close"].rolling(20).std()
-            d["bb_upper"] = d["bb_mid"] + 2 * d["bb_std"]
-            d["bb_lower"] = d["bb_mid"] - 2 * d["bb_std"]
+            # ATR for adaptive stops
+            high_low = d["high"] - d["low"]
+            high_cp = (d["high"] - d["close"].shift()).abs()
+            low_cp = (d["low"] - d["close"].shift()).abs()
+            tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
+            d["atr"] = tr.rolling(14).mean()
 
-        else:  # SENTINEL
-            d["ema_fast"] = d["close"].ewm(span=8, adjust=False).mean()
-            d["ema_slow"] = d["close"].ewm(span=21, adjust=False).mean()
+        else:  # SENTINEL — Bollinger Band mean reversion + RSI extremes
+            bb_period = params.get("bb_period", 20)
+            bb_std = params.get("bb_std", 2.0)
+            rsi_period = params.get("rsi_period", 14)
+            # Bollinger Bands
+            d["bb_mid"] = d["close"].rolling(bb_period).mean()
+            bb_rolling_std = d["close"].rolling(bb_period).std()
+            d["bb_upper"] = d["bb_mid"] + bb_std * bb_rolling_std
+            d["bb_lower"] = d["bb_mid"] - bb_std * bb_rolling_std
+            # BB %B — where price is relative to bands (0=lower, 1=upper)
+            d["bb_pctb"] = (d["close"] - d["bb_lower"]) / (d["bb_upper"] - d["bb_lower"]).replace(0, np.nan)
+            # RSI
             delta = d["close"].diff()
-            gain = delta.clip(lower=0).rolling(14).mean()
-            loss = (-delta.clip(upper=0)).rolling(14).mean()
+            gain = delta.clip(lower=0).rolling(rsi_period).mean()
+            loss = (-delta.clip(upper=0)).rolling(rsi_period).mean()
             rs = gain / loss.replace(0, np.nan)
             d["rsi"] = 100 - (100 / (1 + rs))
-            d["atr"] = pd.concat([
+            # ATR for stops
+            tr = pd.concat([
                 d["high"] - d["low"],
                 (d["high"] - d["close"].shift()).abs(),
                 (d["low"] - d["close"].shift()).abs()
-            ], axis=1).max(axis=1).rolling(14).mean()
+            ], axis=1).max(axis=1)
+            d["atr"] = tr.rolling(14).mean()
 
         return d.dropna()
 
@@ -369,42 +416,50 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
                     signals.append((i, "short"))
 
             elif bot_name == "DRIFT":
-                vol_thresh = params.get("volume_multiplier", 2.6)
-                vol_ok = row.get("vol_mult", 0) >= vol_thresh
-                # Long: MACD crosses above signal + volume confirmation
-                if prev["macd"] <= prev["macd_signal"] and row["macd"] > row["macd_signal"] and vol_ok:
+                # Keltner Channel + ADX Trend Filter (REBUILT v4)
+                adx_thresh = params.get("adx_threshold", 22)
+                adx_val = row.get("adx", 0)
+                trend_ok = adx_val >= adx_thresh
+                # Long: close above upper Keltner + ADX trending + DI+ > DI-
+                if row["close"] > row["kc_upper"] and trend_ok and row.get("plus_di", 0) > row.get("minus_di", 0):
                     signals.append((i, "long"))
-                elif prev["macd"] >= prev["macd_signal"] and row["macd"] < row["macd_signal"] and vol_ok:
+                # Short: close below lower Keltner + ADX trending + DI- > DI+
+                elif row["close"] < row["kc_lower"] and trend_ok and row.get("minus_di", 0) > row.get("plus_di", 0):
                     signals.append((i, "short"))
 
             elif bot_name == "TITAN":
-                confluence = 0
-                if row["close"] > row["ema50"]:
-                    confluence += 1
-                if row["ema50"] > row["ema200"]:
-                    confluence += 1
-                if row["rsi"] > 50:
-                    confluence += 1
-                if row.get("vol_mult", 0) > 1.5:
-                    confluence += 1
-                if row["close"] > row.get("bb_mid", row["close"]):
-                    confluence += 1
-                min_conf = params.get("min_confluence", 4)
-                if confluence >= min_conf:
+                rsi_val = row.get("rsi", 50)
+                prev_rsi = prev.get("rsi", 50)
+                uptrend = row["ema_fast"] > row["ema_slow"]
+                downtrend = row["ema_fast"] < row["ema_slow"]
+                pb_low = params.get("rsi_pullback_low", 35)
+                pb_high = params.get("rsi_pullback_high", 45)
+                rl_low = params.get("rsi_rally_low", 55)
+                rl_high = params.get("rsi_rally_high", 65)
+                # Long: uptrend + RSI in pullback zone (buying the dip)
+                if uptrend and pb_low <= rsi_val <= pb_high and prev_rsi <= pb_high:
                     signals.append((i, "long"))
-                elif confluence <= (5 - min_conf):
+                # Short: downtrend + RSI in rally zone (selling the rally)
+                elif downtrend and rl_low <= rsi_val <= rl_high and prev_rsi >= rl_low:
                     signals.append((i, "short"))
 
-            else:  # SENTINEL — conservative entries, tight risk
-                min_bars = params.get("min_trend_bars", 5)
-                if i >= min_bars:
-                    trend_up = all(df.iloc[i - j]["ema_fast"] > df.iloc[i - j]["ema_slow"] for j in range(min_bars))
-                    trend_dn = all(df.iloc[i - j]["ema_fast"] < df.iloc[i - j]["ema_slow"] for j in range(min_bars))
-                    # Only enter on pullback within trend (RSI reversion)
-                    if trend_up and 40 < row["rsi"] < 60:
-                        signals.append((i, "long"))
-                    elif trend_dn and 40 < row["rsi"] < 60:
-                        signals.append((i, "short"))
+            else:  # SENTINEL — Bollinger Band mean reversion + RSI
+                rsi_os = params.get("rsi_oversold", 30)
+                rsi_ob = params.get("rsi_overbought", 70)
+                rsi_val = row.get("rsi", 50)
+                prev_rsi = prev.get("rsi", 50)
+                # Long: price at/below lower BB + RSI oversold → expect reversion up
+                if row["close"] <= row["bb_lower"] and rsi_val <= rsi_os:
+                    signals.append((i, "long"))
+                # Long: price bounces off lower BB (was below, now above)
+                elif prev["close"] <= prev["bb_lower"] and row["close"] > row["bb_lower"] and rsi_val < 50:
+                    signals.append((i, "long"))
+                # Short: price at/above upper BB + RSI overbought → expect reversion down
+                elif row["close"] >= row["bb_upper"] and rsi_val >= rsi_ob:
+                    signals.append((i, "short"))
+                # Short: price rejects upper BB (was above, now below)
+                elif prev["close"] >= prev["bb_upper"] and row["close"] < row["bb_upper"] and rsi_val > 50:
+                    signals.append((i, "short"))
 
         return signals
 
@@ -417,8 +472,9 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
         # Pick asset — cycle through crypto assets for diversity
         asset = random.choice(CRYPTO_ASSETS)
         # Coinbase supports: 1m/5m/15m/30m/1h/2h/6h/1d
-        # APEX=5m (scalper), DRIFT=15m (day), SENTINEL=1h (swing), TITAN=6h (position)
-        tf_map = {"APEX": "5m", "DRIFT": "15m", "SENTINEL": "1h", "TITAN": "6h"}
+        # APEX=5m (scalper), DRIFT=15m (day), SENTINEL=2h (mean reversion on 4h equivalent), TITAN=6h (position)
+        # Note: Coinbase doesn't support 4h. 2h is closest valid — research showed 4h optimal.
+        tf_map = {"APEX": "5m", "DRIFT": "15m", "SENTINEL": "2h", "TITAN": "6h"}
         tf = tf_map.get(bot_name, "1h")
         candle_limit = 500  # Max candles for more signals
 
@@ -452,10 +508,25 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
             atr_pct = 0.01  # 1% default
 
         # Stop = max(param stop, 1.5x ATR); Trail = max(param trail, 2x ATR)
-        stop_pct = max(params.get("stop_loss_pct", 0.004), atr_pct * 1.5)
-        trail_pct = max(params.get("trailing_stop_pct", 0.006), atr_pct * 2.0)
+        if bot_name == "TITAN":
+            # TITAN uses ATR-multiplier stops directly
+            stop_pct = atr_pct * params.get("atr_stop_mult", 2.0)
+            trail_pct = atr_pct * params.get("atr_trail_mult", 3.0)
+        elif bot_name == "SENTINEL":
+            # SENTINEL mean reversion: ATR stop + ATR take profit (no trail — reversion targets band midpoint)
+            stop_pct = atr_pct * params.get("stop_loss_atr_mult", 1.5)
+            trail_pct = atr_pct * params.get("take_profit_atr_mult", 2.5)
+        else:
+            stop_pct = max(params.get("stop_loss_pct", 0.004), atr_pct * 1.5)
+            trail_pct = max(params.get("trailing_stop_pct", 0.006), atr_pct * 2.0)
         if bot_name == "DRIFT":
-            trail_pct = max(params.get("trailing_stop_initial", 0.025), atr_pct * 2.5)
+            # DRIFT v4: ATR-multiplier stops (Keltner + ADX)
+            stop_pct = atr_pct * params.get("atr_stop_mult", 1.5)
+            trail_pct = atr_pct * params.get("atr_trail_mult", 2.0)
+
+        # SENTINEL mean reversion: fixed take-profit target, not trailing
+        use_fixed_tp = (bot_name == "SENTINEL")
+        tp_pct = trail_pct  # For SENTINEL, trail_pct holds the take_profit_atr_mult result
 
         trades = []
         i = 0
@@ -477,18 +548,31 @@ Respond ONLY with a JSON array of 3 parameter dicts. No explanation."""
                     if low <= entry_price * (1 - stop_pct):
                         exit_price = entry_price * (1 - stop_pct)
                         break
-                    # Trailing stop hit
-                    if low <= best_price * (1 - trail_pct):
-                        exit_price = best_price * (1 - trail_pct)
-                        break
+                    if use_fixed_tp:
+                        # Fixed take-profit: mean reversion target
+                        if high >= entry_price * (1 + tp_pct):
+                            exit_price = entry_price * (1 + tp_pct)
+                            break
+                    else:
+                        # Trailing stop
+                        if low <= best_price * (1 - trail_pct):
+                            exit_price = best_price * (1 - trail_pct)
+                            break
                 else:  # short
                     best_price = min(best_price, low)
                     if high >= entry_price * (1 + stop_pct):
                         exit_price = entry_price * (1 + stop_pct)
                         break
-                    if high >= best_price * (1 + trail_pct):
-                        exit_price = best_price * (1 + trail_pct)
-                        break
+                    if use_fixed_tp:
+                        # Fixed take-profit: mean reversion target
+                        if low <= entry_price * (1 - tp_pct):
+                            exit_price = entry_price * (1 - tp_pct)
+                            break
+                    else:
+                        # Trailing stop
+                        if high >= best_price * (1 + trail_pct):
+                            exit_price = best_price * (1 + trail_pct)
+                            break
 
             if exit_price is None:
                 # Trade still open at end of data — close at last price

@@ -16,13 +16,26 @@ One TITAN trade can outperform a month of scalping if the macro is right.
 
 **Hunger level:** Deep and strategic. TITAN doesn't need volume — it needs conviction.
 
-## STRATEGY
-- Scans ALL markets weekly for macro-level opportunities
-- Reads institutional order blocks, options flow, VWAP deviation, macro trends
+## STRATEGY (v4 — emergency rebuild 2026-04-09)
+**RETIRED strategies (all 0% WR):**
+- v1: Multi-indicator confluence (EMA50/200 + RSI + BB + volume) — too many filters
+- v2: ADX(14) + Donchian(20) breakout — quadruple condition, never fires
+- v3: Supertrend(3,10) + EMA(21/55) + RSI — still required simultaneous rare events
+
+**ROOT CAUSE of all failures:** Strategies required multiple RARE events to align simultaneously on 6h candles. Signal starvation = 0 trades = 0% WR.
+
+**New strategy: EMA Trend + RSI Pullback (buy dips, sell rallies)**
+- **EMA(20/50)** defines trend direction — persistent state, not a rare flip event
+- **RSI(14) pullback** into 35-45 zone in uptrend = buy the dip (frequent event)
+- **RSI(14) rally** into 55-65 zone in downtrend = sell the rally (frequent event)
+- Only 2 conditions: trend state (persistent) + RSI zone (common) = 10-20x more signals
+- **ATR-based stops** — 2x ATR initial stop, 2.5x ATR trailing stop
+- **WHY this works:** Buying pullbacks in existing trends is the highest-probability position trade. Prior strategies waited for trend CHANGES; this one RIDES existing trends.
+- Scans ALL markets every 4 hours for deepest pullback in strongest trend
 - Holds positions 1-3 weeks — never longer than 3 weeks
-- Trades BOTH directions: long in bull trends, short in bear trends, puts in downturns
-- When graduating to options: calls on bullish macro setups, puts on bearish
-- Risk per trade: 3% of account (fewer trades, bigger size justified by longer research)
+- Trades BOTH directions: long dips in uptrends, short rallies in downtrends
+- Risk per trade: 3% of account (fewer trades, bigger size justified by confirmed trends)
+- 6h candle timeframe — position-grade data, not noise
 
 ## COMPETITIVE DNA — College to Pro
 - **Status:** PAPER (college) — the long game, patience is the weapon
@@ -35,20 +48,19 @@ One TITAN trade can outperform a month of scalping if the macro is right.
 - **Leaderboard:** Reads hive_mind.json — TITAN plays the long game but still competes
 
 ## ENTRY SIGNALS
-**Bullish:** Institutional accumulation + VWAP reclaim + options call flow spike
-**Bearish:** Institutional distribution + VWAP rejection + options put flow spike + macro deterioration
+**Long:** EMA20 > EMA50 (uptrend confirmed) + RSI(14) dips into 35-45 zone (buying the dip)
+**Short:** EMA20 < EMA50 (downtrend confirmed) + RSI(14) bounces into 55-65 zone (selling the rally)
 
 ## EXIT STRATEGY
-- Primary: Trailing stop 5% (wider for longer timeframe)
-- Secondary: Macro reversal signal (invalidates the thesis)
+- Primary: ATR trailing stop (2.5x ATR from best price)
+- Initial: ATR stop loss (2x ATR from entry)
 - Hard exit: 3 weeks maximum hold regardless of P&L
-- Never exits early due to impatience — only exits when thesis is broken
 
 ## RISK RULES
 - Daily loss kill switch: 4.5%
-- Stop loss per trade: 5% (wider — needs room to breathe)
+- Stop loss per trade: 2x ATR (adapts to volatility)
 - Max 2 concurrent positions
-- Never enters without macro confluence across 3+ signals
+- Never enters against EMA trend direction
 
 ## HYPERTRAINING + AUTORESEARCH
 - Runs weekly not nightly (position trading needs more data per experiment)

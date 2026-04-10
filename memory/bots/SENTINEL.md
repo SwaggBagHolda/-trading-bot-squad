@@ -24,13 +24,19 @@ It knows that passing FTMO is more valuable than any single trade.
 - 5 SENTINEL clones on $200K accounts = $36,000/month
 - FTMO scales 25% every 4 profitable months automatically
 
-## STRATEGY
-- Scans FTMO-approved instruments: forex, indices, metals, crypto
-- Conservative trend-following — 0.5% risk per trade maximum
+## STRATEGY — MEAN REVERSION v2 (rebuilt 2026-04-09)
+- **Type:** Bollinger Band mean reversion + RSI extremes
+- **Timeframe:** 2h (Coinbase closest to 4h; validated at 60.7-81.2% WR)
+- **Why mean reversion:** Trend breakout was 13.68% WR = total failure. Mean reversion dominated all top strategies in 40K-experiment research.
+- **Key insight:** Tight BB bands (1.5 std) + quick take-profit (1.5x ATR) = highest WR
+- Scans crypto on Coinbase (BTC, ETH, SOL, ADA, AVAX, LINK, DOGE, DOT, XRP)
+- 0.5% risk per trade maximum
 - Trades BOTH directions within FTMO rules
-- Long in uptrends, short in downtrends — FTMO allows both
-- Entry: Clean trend confirmation with multiple timeframe alignment
-- Exit: Trailing stop or thesis invalidation
+- **Entry (long):** Price at/below lower BB + RSI ≤ 30, or BB lower band bounce with RSI < 50
+- **Entry (short):** Price at/above upper BB + RSI ≥ 70, or BB upper band rejection with RSI > 50
+- **Stop:** 1.5x ATR (adaptive to volatility)
+- **Target:** 1.5x ATR fixed take-profit (quick capture, no trailing)
+- **Exit:** Fixed take-profit or stop-loss (mean reversion = capture the snap-back, don't trail)
 
 ## FTMO RULES — HARDCODED, NEVER VIOLATED
 - Max daily loss: 5% (SENTINEL kills at 4% — 1% buffer)

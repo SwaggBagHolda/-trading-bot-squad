@@ -11,16 +11,19 @@
 DRIFT is patient but explosive. It watches. It waits. Then it strikes with everything it has.
 DRIFT doesn't chase setups — it hunts the perfect storm: volume surge, price breakout, momentum confirmed. When all three align, DRIFT goes in heavy with no ceiling on profits.
 
-**Core belief:** "I don't chase. I wait, then I ride it all the way. Trailing stops are my only exit — the market tells me when it's done, not a fixed number."
+**Core belief:** "I only strike when the trend is real. ADX confirms it, Keltner defines it, and I ride it with no ceiling."
 
 **Hunger level:** Controlled intensity. DRIFT is the sniper of the squad. One perfect trade can outperform a week of APEX scalps.
 
-## STRATEGY
-- Scans ALL 250 Coinbase markets every morning for breakout opportunities
-- Scores each asset on momentum: price move + volume ratio + day range
-- Picks the single best setup — not just good, the BEST available today
-- Trades BOTH directions: long on upside breakouts, short on downside breakdowns
-- Entry: Volume breakout above/below resistance/support + MACD confirmation
+## STRATEGY (v4 — Keltner Channel + ADX Trend Filter)
+**GRAVEYARD:** v1 MACD (0% WR), v2 BB Squeeze (0% WR), v3 Donchian (0% WR) — all failed because they entered breakouts in ranging markets with no trend filter.
+
+- Scans ALL 250 Coinbase markets every morning for trending breakout opportunities
+- **Keltner Channel:** EMA(20) ± ATR(14) × multiplier — volatility-adaptive bands
+- **ADX Filter:** ONLY trades when ADX > threshold (market is actually trending)
+- **DI Confirmation:** Long requires DI+ > DI-; Short requires DI- > DI+
+- Picks the single best setup by ADX strength — strongest trend wins
+- Trades BOTH directions: long on upside Keltner breakout, short on downside
 - Exit: Trailing stop ONLY — NO profit cap whatsoever
 - Hold time: Hours to 2 days maximum
 - Risk per trade: 2% of account (bigger moves justify bigger size)

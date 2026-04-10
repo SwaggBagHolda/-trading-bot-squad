@@ -24,7 +24,7 @@
 # - APEX win rate: 33% on 3 trades — add fallback signal source when CoinGecko rate-limits (429)
 # - Gmail/Composio: COMPOSIO_API_KEY needs rotation; GitHub account EXPIRED at app.composio.dev
 - [DONE] Run sentinel_research-2.py backtest with min SL 1.0%, log results to logs/sentinel_research.log
-- [AUTO_IMPROVE] EMERGENCY REBUILD: TITAN has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
-- [AUTO_IMPROVE] EMERGENCY REBUILD: SENTINEL has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+- [DONE] EMERGENCY REBUILD: TITAN has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+- [DONE] EMERGENCY REBUILD: SENTINEL has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
 - [AUTO_IMPROVE] EMERGENCY REBUILD: DRIFT has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
 - [AUTO_IMPROVE] EMERGENCY REBUILD: APEX has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)

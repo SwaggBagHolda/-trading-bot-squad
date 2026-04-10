@@ -371,3 +371,34 @@ claude CLI not found. Is it installed and in PATH?
 **Output:**
 claude CLI not found. Is it installed and in PATH?
 
+---
+## 2026-04-09 19:30 | FAILED
+**Task:** EMERGENCY REBUILD: TITAN has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+
+**Output:**
+Task timed out after 5 minutes.
+
+---
+## 2026-04-09 19:45 | SUCCESS
+**Task:** EMERGENCY REBUILD: SENTINEL has 0 winning combos. Research completely different strategy type. Current approach failed. (auto-queued 2026-04-09T17:17:40.442837)
+
+**Output:**
+SENTINEL emergency rebuild complete. Here's the summary:
+
+**Root cause:** Code had Keltner Channel trend breakout strategy (13.68% WR) while research proved mean reversion was the winner. The SENTINEL.md was updated but the actual code in `hypertrain.py` never was.
+
+**What changed:**
+- **Strategy:** Keltner + ADX trend breakout → Bollinger Band mean reversion + RSI extremes
+- **Indicators:** Replaced Keltner Channels + ADX with BB(20, 1.5 std) + RSI(14)
+- **Signals:** Breakout entries → reversion entries (buy at lower BB + oversold RSI, sell at upper BB + overbought RSI)
+- **Exits:** Trailing stop → fixed take-profit at 1.5x ATR (mean reversion captures the snap-back, doesn't trail)
+- **Param space:** Recentered around winning values
+
+**Results:**
+| Before | After |
+|--------|-------|
+| 13.68% WR | 60.7-81.2% WR |
+| 0 winners | 3 improvements in 30 experiments |
+| 0 Sharpe | 0.798 Sharpe |
+| Negative expectancy | Positive expectancy across most assets |
+

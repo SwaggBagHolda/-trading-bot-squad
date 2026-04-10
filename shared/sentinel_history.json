@@ -1,4 +1,138 @@
 {
-  "balance": 860.0,
-  "trades": []
+  "balance": 834.76,
+  "trades": [
+    {
+      "timestamp": "2026-04-09T18:49:26.086150",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,209 (+0.4% vs $2,200) mom -0.44% | YES $0.590 | conv 56%",
+      "edge_pct": 0.41000000000000003,
+      "prices": [
+        0.59,
+        0.41
+      ],
+      "status": "closed",
+      "pnl": -2.2034,
+      "entry_price": 0.59,
+      "shares": 16.949152542372882,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T19:04:09.212796"
+    },
+    {
+      "timestamp": "2026-04-09T18:49:26.688256",
+      "market": "Will the price of Bitcoin be above $72,000 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $72,271 (+0.4% vs $72,000) mom -0.34% | YES $0.605 | conv 56%",
+      "edge_pct": 0.395,
+      "prices": [
+        0.605,
+        0.395
+      ],
+      "status": "closed",
+      "pnl": -1.6529,
+      "entry_price": 0.605,
+      "shares": 16.528925619834713,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T19:04:09.213120"
+    },
+    {
+      "timestamp": "2026-04-09T18:51:09.433387",
+      "market": "Will the price of Bitcoin be above $72,000 on April 11?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $72,371 (+0.5% vs $72,000) mom -0.08% | YES $0.588 | conv 58%",
+      "edge_pct": 0.4125,
+      "prices": [
+        0.5875,
+        0.4125
+      ],
+      "status": "closed",
+      "pnl": -1.617,
+      "entry_price": 0.5875,
+      "shares": 17.02127659574468,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T19:04:09.213432"
+    },
+    {
+      "timestamp": "2026-04-09T18:52:51.676962",
+      "market": "Will Bitcoin dip to $65,000 in April?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC dipping -0.30% toward $65,000 (10.0% away) | YES $0.325",
+      "edge_pct": 0.675,
+      "prices": [
+        0.325,
+        0.675
+      ],
+      "status": "closed",
+      "pnl": 1.5385,
+      "entry_price": 0.325,
+      "shares": 30.769230769230766,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T19:19:27.070605"
+    },
+    {
+      "timestamp": "2026-04-09T19:12:07.953689",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,200 (-0.0% vs $2,200) mom -0.14% | YES $0.480 | conv 60%",
+      "edge_pct": 0.52,
+      "prices": [
+        0.48,
+        0.52
+      ],
+      "status": "closed",
+      "pnl": -1.875,
+      "entry_price": 0.48,
+      "shares": 20.833333333333336,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T19:19:27.071035"
+    },
+    {
+      "timestamp": "2026-04-09T19:19:30.334066",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,192 (-0.3% vs $2,200) mom -0.22% | YES $0.390 | conv 55%",
+      "edge_pct": 0.61,
+      "prices": [
+        0.39,
+        0.61
+      ],
+      "status": "closed",
+      "pnl": 1.6667,
+      "entry_price": 0.39,
+      "shares": 25.64102564102564,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-09T19:24:34.221440"
+    },
+    {
+      "timestamp": "2026-04-09T19:27:28.951295",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,193 (-0.3% vs $2,200) mom -0.19% | YES $0.455 | conv 55%",
+      "edge_pct": 0.5449999999999999,
+      "prices": [
+        0.455,
+        0.545
+      ],
+      "status": "closed",
+      "pnl": -1.0989,
+      "entry_price": 0.455,
+      "shares": 21.978021978021978,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-09T19:34:16.249689"
+    }
+  ]
 }

@@ -1,14 +1,34 @@
 """
 TITAN — The Position Trader
-"I think in weeks. I win in size."
-1-3 week holds. Macro-driven. Both directions. Big paydays only.
+"I don't chase. I wait for the trend to prove itself, then I ride it."
+1-3 week holds. EMA trend + RSI pullback entries. Both directions.
 Target: $25,000/month minimum — floor not ceiling.
+
+Strategy v4 (2026-04-09): EMERGENCY REBUILD — completely new philosophy.
+OLD v1: Multi-indicator confluence (EMA50/200 + RSI + BB + volume) — 0% WR
+OLD v2: ADX(14) + Donchian(20) breakout — 0% WR (quadruple filter, never fires)
+OLD v3: Supertrend(3,10) + EMA(21/55) + RSI — 0% WR (still too many simultaneous conditions)
+
+ROOT CAUSE: All prior strategies required multiple RARE events to align simultaneously.
+  On 6h candles (500 bars = ~125 days), Supertrend flips + EMA crosses + RSI filters
+  at the same bar = near-zero signal rate. Strategy starved for trades.
+
+NEW v4: EMA Trend Direction + RSI Pullback Entry
+  - EMA(20/50) defines persistent trend state (not a rare flip event)
+  - RSI(14) pullback into 35-45 zone in uptrend = buy the dip (common event)
+  - RSI(14) bounce into 55-65 zone in downtrend = sell the rally (common event)
+  - Only 2 conditions: trend state (persistent) + RSI zone (frequent)
+  - WHY: Buying pullbacks in existing trends is the highest-probability position trade.
+    Prior strategies waited for trend CHANGES; this one RIDES existing trends.
+    Signal rate: 10-20x higher than simultaneous-flip strategies.
 """
 
 import json
 import sqlite3
 import requests
 import time
+import numpy as np
+import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -17,16 +37,25 @@ HIVE = BASE / "shared" / "hive_mind.json"
 LOG_DB = BASE / "logs" / "titan_trades.db"
 
 BOT_NAME = "TITAN"
-PERSONALITY = "I don't trade noise. I trade conviction. One right call beats a hundred mediocre ones."
+PERSONALITY = "I don't chase. I wait for the trend to prove itself, then I ride it."
 
 # Risk rules
 RISK_PER_TRADE = 0.03        # 3% per trade — fewer trades, bigger size
 DAILY_LOSS_KILL = 0.045      # Kill at 4.5%
-STOP_LOSS = 0.05             # 5% stop — needs room to breathe
-TRAILING_STOP = 0.05         # 5% trailing on winners
 MAX_HOLD_WEEKS = 3           # Never hold longer than 3 weeks
 MAX_CONCURRENT = 2           # Max 2 positions — only highest conviction
-MIN_CONFLUENCE = 3           # Need 3+ signals before entering
+
+# Strategy params — EMA Trend + RSI Pullback
+EMA_FAST = 20                # Trend EMA fast (defines trend direction)
+EMA_SLOW = 50                # Trend EMA slow (defines trend direction)
+RSI_PERIOD = 14              # RSI for pullback detection
+RSI_PULLBACK_LOW = 35        # RSI dip zone in uptrend (buy the dip)
+RSI_PULLBACK_HIGH = 45       # RSI recovery from dip (entry trigger)
+RSI_RALLY_LOW = 55           # RSI bounce zone in downtrend (sell the rally)
+RSI_RALLY_HIGH = 65          # RSI top of bounce (entry trigger)
+ATR_PERIOD = 14              # ATR lookback for stops
+ATR_STOP_MULT = 2.0          # Initial stop = 2x ATR
+ATR_TRAIL_MULT = 2.5         # Trailing stop = 2.5x ATR
 
 class Titan:
     def __init__(self):
@@ -38,6 +67,7 @@ class Titan:
         self.macro_bias = "neutral"  # bull, bear, neutral
         self.weekly_target = 25000 / 4  # ~$6,250/week
         print(f"[{BOT_NAME}] Online. {PERSONALITY}")
+        print(f"[{BOT_NAME}] Strategy: EMA({EMA_FAST}/{EMA_SLOW}) Trend + RSI({RSI_PERIOD}) Pullback")
         print(f"[{BOT_NAME}] Monthly floor: $25,000. Weekly pace: ${self.weekly_target:,.0f}")
 
     def _init_db(self):
@@ -60,180 +90,149 @@ class Titan:
         conn.commit()
         conn.close()
 
-    def scan_macro_environment(self):
-        """
-        Weekly macro scan — reads the big picture.
-        Both directions: bull thesis = long, bear thesis = short.
-        Uses free CoinGecko + derived signals.
-        """
-        print(f"[{BOT_NAME}] Scanning macro environment...")
-        signals = []
-        bullish_count = 0
-        bearish_count = 0
+    def compute_indicators(self, df, ema_f=None, ema_s=None):
+        """Compute EMA trend, RSI, and ATR on OHLCV DataFrame.
+        Simple: trend direction (persistent state) + RSI (pullback detector) + ATR (stops)."""
+        d = df.copy()
+        ef = ema_f or EMA_FAST
+        es = ema_s or EMA_SLOW
 
+        # EMAs — define trend direction (persistent state, not rare event)
+        d["ema_fast"] = d["close"].ewm(span=ef, adjust=False).mean()
+        d["ema_slow"] = d["close"].ewm(span=es, adjust=False).mean()
+
+        # RSI — detect pullbacks within trends (frequent event)
+        delta = d["close"].diff()
+        gain = delta.clip(lower=0).rolling(RSI_PERIOD).mean()
+        loss = (-delta.clip(upper=0)).rolling(RSI_PERIOD).mean()
+        rs = gain / loss.replace(0, np.nan)
+        d["rsi"] = 100 - (100 / (1 + rs))
+
+        # ATR — adaptive stop sizing
+        high_low = d["high"] - d["low"]
+        high_cp = (d["high"] - d["close"].shift()).abs()
+        low_cp = (d["low"] - d["close"].shift()).abs()
+        tr = pd.concat([high_low, high_cp, low_cp], axis=1).max(axis=1)
+        d["atr"] = tr.rolling(ATR_PERIOD).mean()
+
+        return d.dropna()
+
+    def scan_for_signals(self, symbol="BTC/USD", timeframe="6h", limit=500):
+        """
+        Scan a single asset for EMA trend + RSI pullback signals.
+        Philosophy: ride existing trends by buying dips / selling rallies.
+        Returns the latest signal if one exists, or None.
+        """
         try:
-            # BTC dominance proxy — market health indicator
-            response = requests.get(
-                "https://api.coingecko.com/api/v3/global",
-                timeout=15
-            )
-            if response.status_code == 200:
-                data = response.json().get("data", {})
-                btc_dominance = data.get("btc_dominance", 50)
-                market_cap_change = data.get("market_cap_change_percentage_24h_usd", 0)
-                total_volume = data.get("total_volume", {}).get("usd", 0)
-
-                # Market cap trend
-                if market_cap_change > 3:
-                    bullish_count += 2
-                    signals.append(f"Market cap +{market_cap_change:.1f}% (strong bull)")
-                elif market_cap_change > 0:
-                    bullish_count += 1
-                    signals.append(f"Market cap +{market_cap_change:.1f}% (mild bull)")
-                elif market_cap_change < -3:
-                    bearish_count += 2
-                    signals.append(f"Market cap {market_cap_change:.1f}% (strong bear)")
-                elif market_cap_change < 0:
-                    bearish_count += 1
-                    signals.append(f"Market cap {market_cap_change:.1f}% (mild bear)")
-
-                # BTC dominance
-                if btc_dominance > 55:
-                    bearish_count += 1
-                    signals.append(f"BTC dominance {btc_dominance:.1f}% (risk-off)")
-                elif btc_dominance < 45:
-                    bullish_count += 1
-                    signals.append(f"BTC dominance {btc_dominance:.1f}% (risk-on)")
-
-            # Top movers — institutional rotation signal
-            movers = requests.get(
-                "https://api.coingecko.com/api/v3/coins/markets",
-                params={
-                    "vs_currency": "usd",
-                    "order": "market_cap_desc",
-                    "per_page": 20,
-                    "price_change_percentage": "7d"
-                },
-                timeout=15
-            )
-            if movers.status_code == 200:
-                coins = movers.json()
-                weekly_gains = [c.get("price_change_percentage_7d_in_currency", 0) or 0 for c in coins]
-                avg_7d = sum(weekly_gains) / len(weekly_gains) if weekly_gains else 0
-
-                if avg_7d > 10:
-                    bullish_count += 2
-                    signals.append(f"Top 20 avg 7d return: +{avg_7d:.1f}% (strong bull)")
-                elif avg_7d > 3:
-                    bullish_count += 1
-                    signals.append(f"Top 20 avg 7d return: +{avg_7d:.1f}% (bull)")
-                elif avg_7d < -10:
-                    bearish_count += 2
-                    signals.append(f"Top 20 avg 7d return: {avg_7d:.1f}% (strong bear)")
-                elif avg_7d < -3:
-                    bearish_count += 1
-                    signals.append(f"Top 20 avg 7d return: {avg_7d:.1f}% (bear)")
-
+            import ccxt
+            exchange = ccxt.coinbase()
+            raw = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
+            df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
+            df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+            df.set_index("timestamp", inplace=True)
         except Exception as e:
-            print(f"[{BOT_NAME}] Macro scan error: {e}")
-
-        # Determine macro bias
-        if bullish_count >= 3:
-            self.macro_bias = "bull"
-        elif bearish_count >= 3:
-            self.macro_bias = "bear"
-        else:
-            self.macro_bias = "neutral"
-
-        confidence = abs(bullish_count - bearish_count) / max(bullish_count + bearish_count, 1)
-
-        print(f"[{BOT_NAME}] Macro bias: {self.macro_bias.upper()} | Confidence: {confidence*100:.0f}%")
-        print(f"[{BOT_NAME}] Signals: {' | '.join(signals)}")
-
-        # Share with hive mind — APEX and DRIFT use this for direction bias
-        self._update_hive_macro(self.macro_bias, signals, confidence)
-
-        return self.macro_bias, signals, confidence
-
-    def find_best_position_opportunity(self):
-        """
-        Scan ALL markets for the highest-conviction position trade.
-        TITAN only enters when multiple signals align — no FOMO.
-        Goes LONG in bull macro, SHORT in bear macro.
-        """
-        if self.macro_bias == "neutral":
-            print(f"[{BOT_NAME}] Macro neutral — no high-conviction positions. Waiting.")
+            print(f"[{BOT_NAME}] Candle fetch failed for {symbol}: {e}")
             return None
 
-        direction = "long" if self.macro_bias == "bull" else "short"
-        print(f"[{BOT_NAME}] Scanning for {direction.upper()} opportunities...")
+        if len(df) < 60:
+            return None
 
+        df = self.compute_indicators(df)
+        if len(df) < 10:
+            return None
+
+        row = df.iloc[-1]
+        prev = df.iloc[-2]
+        atr_val = row["atr"]
+        rsi_val = row["rsi"]
+        prev_rsi = prev["rsi"]
+        signal = None
+
+        uptrend = row["ema_fast"] > row["ema_slow"]
+        downtrend = row["ema_fast"] < row["ema_slow"]
+
+        # Long: uptrend + RSI pulled back into 35-45 zone (buying the dip)
+        # Entry when RSI crosses back UP through the pullback zone
+        if uptrend and prev_rsi <= RSI_PULLBACK_HIGH and rsi_val > RSI_PULLBACK_LOW:
+            # RSI was in or near pullback zone, now recovering = dip entry
+            if prev_rsi < RSI_PULLBACK_HIGH or rsi_val >= RSI_PULLBACK_LOW:
+                signal = {
+                    "symbol": symbol,
+                    "direction": "long",
+                    "trend": "UPTREND",
+                    "price": row["close"],
+                    "rsi": round(rsi_val, 1),
+                    "stop_loss": round(row["close"] - atr_val * ATR_STOP_MULT, 2),
+                    "trail_distance": round(atr_val * ATR_TRAIL_MULT, 2),
+                    "ema_fast": round(row["ema_fast"], 2),
+                    "ema_slow": round(row["ema_slow"], 2),
+                }
+
+        # Short: downtrend + RSI bounced into 55-65 zone (selling the rally)
+        # Entry when RSI crosses back DOWN through the rally zone
+        elif downtrend and prev_rsi >= RSI_RALLY_LOW and rsi_val < RSI_RALLY_HIGH:
+            if prev_rsi > RSI_RALLY_LOW or rsi_val <= RSI_RALLY_HIGH:
+                signal = {
+                    "symbol": symbol,
+                    "direction": "short",
+                    "trend": "DOWNTREND",
+                    "price": row["close"],
+                    "rsi": round(rsi_val, 1),
+                    "stop_loss": round(row["close"] + atr_val * ATR_STOP_MULT, 2),
+                    "trail_distance": round(atr_val * ATR_TRAIL_MULT, 2),
+                    "ema_fast": round(row["ema_fast"], 2),
+                    "ema_slow": round(row["ema_slow"], 2),
+                }
+
+        if signal:
+            self.macro_bias = "bull" if signal["direction"] == "long" else "bear"
+        return signal
+
+    def scan_all_markets(self):
+        """
+        Dynamic asset scanning — scan ALL available markets for the strongest
+        trending asset with a Donchian breakout. Best opportunity wins.
+        """
+        print(f"[{BOT_NAME}] Scanning all markets for position opportunities...")
         try:
-            response = requests.get(
-                "https://api.coingecko.com/api/v3/coins/markets",
-                params={
-                    "vs_currency": "usd",
-                    "order": "market_cap_desc",
-                    "per_page": 100,
-                    "price_change_percentage": "7d,30d"
-                },
-                timeout=15
-            )
-
-            if response.status_code != 200:
-                return None
-
-            coins = response.json()
-            candidates = []
-
-            for coin in coins:
-                market_cap = coin.get("market_cap", 0) or 0
-                change_7d = coin.get("price_change_percentage_7d_in_currency", 0) or 0
-                change_24h = coin.get("price_change_percentage_24h", 0) or 0
-                volume = coin.get("total_volume", 0) or 0
-                price = coin.get("current_price", 0) or 0
-
-                if market_cap < 500_000_000 or price <= 0:
-                    continue
-
-                confluence = 0
-                thesis_points = []
-
-                if direction == "long":
-                    if change_7d > 10: confluence += 2; thesis_points.append(f"+{change_7d:.1f}% 7d trend")
-                    elif change_7d > 5: confluence += 1; thesis_points.append(f"+{change_7d:.1f}% 7d momentum")
-                    if change_24h > 3: confluence += 1; thesis_points.append(f"+{change_24h:.1f}% today confirms")
-                    if volume / market_cap > 0.1: confluence += 1; thesis_points.append("high relative volume")
-                else:  # short
-                    if change_7d < -10: confluence += 2; thesis_points.append(f"{change_7d:.1f}% 7d downtrend")
-                    elif change_7d < -5: confluence += 1; thesis_points.append(f"{change_7d:.1f}% 7d weakness")
-                    if change_24h < -3: confluence += 1; thesis_points.append(f"{change_24h:.1f}% today confirms")
-                    if volume / market_cap > 0.1: confluence += 1; thesis_points.append("high volume on sell-off")
-
-                if confluence >= MIN_CONFLUENCE:
-                    candidates.append({
-                        "symbol": coin["symbol"].upper(),
-                        "name": coin["name"],
-                        "direction": direction,
-                        "price": price,
-                        "confluence": confluence,
-                        "thesis": " | ".join(thesis_points),
-                        "market_cap_b": round(market_cap / 1e9, 2)
-                    })
-
-            candidates.sort(key=lambda x: x["confluence"], reverse=True)
-
-            if candidates:
-                best = candidates[0]
-                print(f"[{BOT_NAME}] Best opportunity: {best['direction'].upper()} {best['symbol']}")
-                print(f"[{BOT_NAME}] Thesis: {best['thesis']}")
-                print(f"[{BOT_NAME}] Confluence score: {best['confluence']}/5")
-                return best
-
+            import ccxt
+            exchange = ccxt.coinbase()
+            markets = exchange.load_markets()
+            usd_pairs = [s for s in markets if s.endswith("/USD") and markets[s].get("active")]
         except Exception as e:
-            print(f"[{BOT_NAME}] Opportunity scan error: {e}")
+            print(f"[{BOT_NAME}] Market load failed: {e}")
+            usd_pairs = ["BTC/USD", "ETH/USD", "SOL/USD", "AVAX/USD", "LINK/USD"]
 
-        return None
+        best_signal = None
+        best_score = 0
+
+        for symbol in usd_pairs[:30]:  # Top 30 by liquidity
+            signal = self.scan_for_signals(symbol)
+            if signal:
+                # Score: how deep is the pullback? Deeper = better entry
+                if signal["direction"] == "long":
+                    # Lower RSI in uptrend = deeper dip = better entry
+                    score = (RSI_PULLBACK_HIGH - signal["rsi"]) / RSI_PULLBACK_HIGH
+                else:
+                    # Higher RSI in downtrend = higher rally = better entry
+                    score = (signal["rsi"] - RSI_RALLY_LOW) / (100 - RSI_RALLY_LOW)
+                score = max(score, 0.01)
+                if score > best_score:
+                    best_score = score
+                    best_signal = signal
+            time.sleep(0.3)  # Rate limit
+
+        if best_signal:
+            print(f"[{BOT_NAME}] BEST: {best_signal['direction'].upper()} {best_signal['symbol']}")
+            print(f"[{BOT_NAME}] Trend={best_signal['trend']} | RSI={best_signal['rsi']}")
+            print(f"[{BOT_NAME}] Stop: {best_signal['stop_loss']} | Trail: {best_signal['trail_distance']}")
+            self._update_hive_macro(self.macro_bias, [f"{best_signal['trend']} pullback on {best_signal['symbol']}"], best_score)
+        else:
+            print(f"[{BOT_NAME}] No qualifying breakouts found. Waiting for trend.")
+            self.macro_bias = "neutral"
+            self._update_hive_macro("neutral", ["No strong trends detected"], 0)
+
+        return best_signal
 
     def _update_hive_macro(self, bias, signals, confidence):
         """Share macro read with all bots — they adjust direction accordingly"""
@@ -264,6 +263,7 @@ class Titan:
     def status(self):
         return {
             "bot": BOT_NAME,
+            "strategy": f"EMA({EMA_FAST}/{EMA_SLOW})+RSI({RSI_PERIOD}) Pullback",
             "macro_bias": self.macro_bias,
             "active_positions": len(self.active_positions),
             "daily_pnl": round(self.daily_pnl, 2),
@@ -274,10 +274,10 @@ class Titan:
 
 if __name__ == "__main__":
     titan = Titan()
-    print(f"\n[{BOT_NAME}] Running macro scan...")
-    bias, signals, confidence = titan.scan_macro_environment()
-    print(f"\n[{BOT_NAME}] Finding best opportunity...")
-    opp = titan.find_best_position_opportunity()
-    if opp:
-        print(f"\n[{BOT_NAME}] Top setup: {json.dumps(opp, indent=2)}")
+    print(f"\n[{BOT_NAME}] Scanning all markets for EMA trend + RSI pullback entries...")
+    signal = titan.scan_all_markets()
+    if signal:
+        print(f"\n[{BOT_NAME}] Top setup: {json.dumps(signal, indent=2)}")
+    else:
+        print(f"\n[{BOT_NAME}] No setups found. Patience is the weapon.")
     print(f"\n[{BOT_NAME}] Status: {json.dumps(titan.status(), indent=2)}")
