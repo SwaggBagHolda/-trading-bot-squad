@@ -1,66 +1,6 @@
 [
   {
     "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:37:26.884405"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:42:25.948928"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:45:58.393144"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:47:27.312084"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:50:59.061374"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:52:31.298032"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:56:03.744222"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:57:32.230778"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T22:01:04.561631"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T22:02:34.267087"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T22:06:05.355257"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3041 chars)",
-    "timestamp": "2026-04-09T22:07:39.301360"
-  },
-  {
-    "type": "briefing_push",
     "data": "Updated (3041 chars)",
     "timestamp": "2026-04-09T22:10:30.734801"
   },
@@ -248,5 +188,65 @@
     "type": "briefing_push",
     "data": "Updated (3041 chars)",
     "timestamp": "2026-04-10T00:57:06.675928"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:02:22.488116"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:07:38.323174"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:12:49.129637"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:12:53.730487"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:18:09.403128"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:23:24.958209"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:28:36.536101"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:33:52.037994"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:39:07.499008"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:44:22.910339"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:49:38.366765"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T01:54:54.155747"
   }
 ]
