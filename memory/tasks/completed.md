@@ -430,3 +430,29 @@ Task timed out after 5 minutes.
 
 **Files modified:** `hypertrain.py` (strategy engine), `shared/hive_mind.json` (best params), `memory/bots/APEX.md` (bot profile), `memory/tasks/pending.md` (task status)
 
+---
+## 2026-04-10 04:02 | SUCCESS
+**Task:** Research and wire this free crypto signal source into apex_coingecko.py or sentinel_research-2.py: **MyCryptoSignal** — `https://www.mycryptosignal.com/`
+
+**Output:**
+## MyCryptoSignal wired into `apex_coingecko.py`
+
+**Why APEX, not SENTINEL:** MCS ships live BUY/HOLD/RISK signals for ~60 coins, refreshed every ~30 min. `sentinel_research-2.py` is an offline hypertrainer on 90-day historical candles — no slot for live signals. APEX is the live scalper already running three confluence layers (momentum, FVG, EMA+RSI), so MCS slots in as a fourth.
+
+**API shape (confirmed from their docs):**
+- Base: `https://mycryptosignal.axiopistis-systems.workers.dev`
+- `GET /api/signals` with header `X-API-Key: mcs_...`
+- Free forever, 60 req/min · 10k req/day · 300k/month
+- Key is email-gated, 24–48h approval — code must no-op until Ty has it
+
+**What landed in `apex_coingecko.py`:**
+- `_fetch_mcs_signals()` — 15-min cached bulk fetch, stale-on-error, silent empty dict when `MCS_API_KEY` is missing (apex_coingecko.py:425)
+- `get_mcs_signal(symbol)` — single-symbol lookup
+- `mcs_confluence(symbol, direction)` — score multiplier: +50% max boost when aligned ≥60% confidence, ×(1−conf) suppression when opposed, 1.0 neutral otherwise
+- Wired into all three score sites in `best_signal()` (momentum, FVG, EMA-triple) — apex_coingecko.py:493, 516, 539
+- Each winning signal now carries `mcs_reason` for trade-log observability
+
+**Verified:** `py_compile` clean; smoke-tested agree/oppose/hold/unknown/missing-key branches end-to-end.
+
+**Ty's next step (one action):** request the key at `https://www.mycryptosignal.com/get-access.html`, then add `MCS_API_KEY=mcs_...` to `.env`. Until then APEX runs identically to today — confluence multiplier is always 1.0. Also: if Ty ever surfaces these signals in a UI or Telegram message, MCS requires the literal attribution "Powered by MyCryptoSignal".
+

@@ -1,5 +1,5 @@
 {
-  "balance": 851.57,
+  "balance": 840.81,
   "trades": [
     {
       "timestamp": "2026-04-09T18:49:26.086150",
@@ -741,6 +741,63 @@
       "shares": 16.949152542372882,
       "close_reason": "take_profit",
       "close_time": "2026-04-10T03:50:44.165310"
+    },
+    {
+      "timestamp": "2026-04-10T03:10:38.970200",
+      "market": "Will the price of Bitcoin be between $70,000 and $72,000 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $71,770 (+2.5% vs $70,000) mom -0.08% | YES $0.545 | conv 85%",
+      "edge_pct": 0.45499999999999996,
+      "prices": [
+        0.545,
+        0.455
+      ],
+      "status": "closed",
+      "pnl": 1.6514,
+      "entry_price": 0.545,
+      "shares": 18.34862385321101,
+      "close_reason": "take_profit",
+      "close_time": "2026-04-10T04:00:44.758310"
+    },
+    {
+      "timestamp": "2026-04-10T04:00:49.908525",
+      "market": "Will the price of Bitcoin be between $70,000 and $72,000 on April 10?",
+      "action": "BUY_YES",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "BTC $71,498 (+2.1% vs $70,000) mom -0.25% | YES $0.635 | conv 82%",
+      "edge_pct": 0.365,
+      "prices": [
+        0.635,
+        0.365
+      ],
+      "status": "closed",
+      "pnl": -1.0236,
+      "entry_price": 0.635,
+      "shares": 15.748031496062993,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-10T04:42:33.908059"
+    },
+    {
+      "timestamp": "2026-04-10T04:06:10.009827",
+      "market": "Will the price of Ethereum be above $2,200 on April 10?",
+      "action": "BUY_NO",
+      "bet_size": 10.0,
+      "type": "directional",
+      "reason": "ETH $2,177 (-1.0% vs $2,200) mom -0.04% | NO $0.720 | conv 65%",
+      "edge_pct": 0.28,
+      "prices": [
+        0.28,
+        0.72
+      ],
+      "status": "closed",
+      "pnl": -1.3889,
+      "entry_price": 0.72,
+      "shares": 13.88888888888889,
+      "close_reason": "stop_loss",
+      "close_time": "2026-04-10T04:42:33.908454"
     }
   ]
 }

@@ -422,6 +422,91 @@ def get_ema_rsi_signal(product):
     return None
 
 
+# ── MyCryptoSignal confluence (free tier, attribution required) ──────────────
+# Source:  https://www.mycryptosignal.com  —  "Powered by MyCryptoSignal"
+# API key: email-gated, ~24–48h approval → drop into .env as MCS_API_KEY=mcs_...
+# Quota:   60 req/min, 10k req/day, 300k/month (Beta tier, free forever)
+# Shape:   /api/signals returns ~60 coins × {action: BUY|HOLD|RISK, confidence, ...}
+#          Upstream refreshes roughly every 30 min — we cache 15 min locally.
+# Role:    Confluence ONLY. Never fires an APEX entry on its own; scales the
+#          score of momentum/FVG/EMA signals up when aligned, down when opposed.
+#          Gracefully no-ops when the key is missing or the service is down.
+MCS_API_KEY   = os.getenv("MCS_API_KEY", "")
+MCS_BASE      = "https://mycryptosignal.axiopistis-systems.workers.dev"
+MCS_CACHE_TTL = 900  # seconds
+_mcs_cache    = {"signals": {}, "ts": 0.0}
+
+def _fetch_mcs_signals():
+    """Return {SYMBOL: {action, confidence, explanation}}. Empty dict if unavailable."""
+    now = time.time()
+    if _mcs_cache["signals"] and now - _mcs_cache["ts"] < MCS_CACHE_TTL:
+        return _mcs_cache["signals"]
+    if not MCS_API_KEY:
+        return {}
+    try:
+        r = requests.get(
+            f"{MCS_BASE}/api/signals",
+            headers={"X-API-Key": MCS_API_KEY},
+            timeout=8,
+        )
+        if r.status_code != 200:
+            print(f"[APEX] MyCryptoSignal: HTTP {r.status_code}")
+            return _mcs_cache["signals"]  # stale-on-error is fine — confluence only
+        payload = r.json() or {}
+        raw = payload.get("signals") or payload.get("data") or []
+        mapped = {}
+        for s in raw:
+            sym = (s.get("symbol") or "").upper()
+            if not sym:
+                continue
+            conf = s.get("confidence")
+            try:
+                conf = float(conf) if conf is not None else 0.0
+                if conf > 1:       # API returns percent — normalize to 0–1
+                    conf = conf / 100.0
+            except (TypeError, ValueError):
+                conf = 0.0
+            mapped[sym] = {
+                "action":      (s.get("action") or "HOLD").upper(),
+                "confidence":  conf,
+                "explanation": s.get("explanation", ""),
+            }
+        _mcs_cache["signals"] = mapped
+        _mcs_cache["ts"]      = now
+        return mapped
+    except Exception as e:
+        print(f"[APEX] MyCryptoSignal fetch error: {e}")
+        return _mcs_cache["signals"]
+
+def get_mcs_signal(symbol):
+    """Lookup for a single symbol. Returns None when unknown/unavailable."""
+    return _fetch_mcs_signals().get(symbol.upper())
+
+def mcs_confluence(symbol, direction):
+    """
+    Score multiplier applied to APEX entry candidates.
+      BUY  aligned with MCS BUY  → boost up to +50% at full confidence
+      SELL aligned with MCS RISK → boost up to +50% at full confidence
+      Opposed direction          → score *= (1 - confidence)
+      Neutral / HOLD / unknown / key missing → 1.0
+    Returns (multiplier, human_reason_or_None).
+    """
+    sig = get_mcs_signal(symbol)
+    if not sig:
+        return 1.0, None
+    action = sig["action"]
+    conf   = max(0.0, min(1.0, sig["confidence"]))
+    if conf < 0.60:
+        return 1.0, f"mcs={action}({conf:.0%})"
+    if (direction == "BUY"  and action == "BUY") or \
+       (direction == "SELL" and action == "RISK"):
+        return 1.0 + 0.5 * conf, f"mcs={action}({conf:.0%}) agree"
+    if (direction == "BUY"  and action == "RISK") or \
+       (direction == "SELL" and action == "BUY"):
+        return max(0.0, 1.0 - conf), f"mcs={action}({conf:.0%}) oppose"
+    return 1.0, f"mcs={action}({conf:.0%}) hold"
+
+
 def poll_prices(price_history):
     """Poll all assets in current WATCHLIST, append to rolling windows."""
     current = {}
@@ -490,13 +575,15 @@ def best_signal(price_history, current_prices, min_momentum_override=None):
             if direction == "SELL" and not PAPER_MODE and not LIVE_SHORTS_ENABLED:
                 pass
             else:
-                score = abs(move)
+                mcs_mult, mcs_reason = mcs_confluence(asset["symbol"], direction)
+                score = abs(move) * mcs_mult
                 if score > best_score:
                     best_score = score
                     best_sig = {
                         "symbol": asset["symbol"], "product": product,
                         "price": latest, "momentum": move,
                         "direction": direction, "signal_type": "momentum",
+                        "mcs_reason": mcs_reason,
                     }
 
         # ── Signal 2: FVG retest ────────────────────────────────────────────
@@ -510,7 +597,8 @@ def best_signal(price_history, current_prices, min_momentum_override=None):
                     pass
                 else:
                     gap_size = (fvg_high - fvg_low) / latest
-                    score = gap_size * 0.8  # slightly lower weight than pure momentum
+                    mcs_mult, mcs_reason = mcs_confluence(asset["symbol"], direction)
+                    score = gap_size * 0.8 * mcs_mult  # FVG weighted slightly below momentum
                     if score > best_score:
                         best_score = score
                         best_sig = {
@@ -518,6 +606,7 @@ def best_signal(price_history, current_prices, min_momentum_override=None):
                             "price": latest, "momentum": move,
                             "direction": direction, "signal_type": "fvg",
                             "fvg_zone": f"${fvg_low:.4f}–${fvg_high:.4f}",
+                            "mcs_reason": mcs_reason,
                         }
 
         # ── Signal 3: Triple EMA alignment + RSI midline (83% WR documented) ──
@@ -529,13 +618,15 @@ def best_signal(price_history, current_prices, min_momentum_override=None):
                 pass
             else:
                 # EMA alignment is high-conviction — score it above momentum
-                score = abs(move) + 0.005  # boost above raw momentum
+                mcs_mult, mcs_reason = mcs_confluence(asset["symbol"], ema_direction)
+                score = (abs(move) + 0.005) * mcs_mult
                 if score > best_score:
                     best_score = score
                     best_sig = {
                         "symbol": asset["symbol"], "product": product,
                         "price": latest, "momentum": move,
                         "direction": ema_direction, "signal_type": "ema_triple",
+                        "mcs_reason": mcs_reason,
                     }
 
     return best_sig
