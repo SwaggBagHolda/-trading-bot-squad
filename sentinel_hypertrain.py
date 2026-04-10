@@ -2,7 +2,8 @@
 SENTINEL HYPERTRAINER — 10,000 experiments in compressed time
 "Every rep makes the next rep sharper."
 Runs FTMO-compliant strategy experiments at maximum speed.
-Keeps winners, discards losers, reports to Telegram.
+Keeps winners, discards losers. Only sends final summary to Telegram.
+Max 2 runs per day to prevent infinite loop.
 """
 
 import json
@@ -10,12 +11,15 @@ import random
 import sqlite3
 import requests
 import os
+import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
 BASE = Path.home() / "trading-bot-squad"
+if str(BASE) not in sys.path:
+    sys.path.insert(0, str(BASE))
 load_dotenv(BASE / ".env")
 
 TELEGRAM_TOKEN = os.getenv("NEXUS_TELEGRAM_TOKEN")
@@ -24,16 +28,18 @@ LOG_DB = BASE / "logs" / "sentinel_hypertrain.db"
 LOG_DB.parent.mkdir(parents=True, exist_ok=True)
 RESULTS_FILE = BASE / "memory" / "sentinel_hypertrain_results.json"
 RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+RUN_LOG = BASE / "logs" / "hypertrain_runs.json"
 
 TARGET_EXPERIMENTS = 10000
 ACCOUNT_SIZE = 10000
+MAX_DAILY_RUNS = 2
 
 # FTMO hard limits
 MAX_DAILY_LOSS = 0.05
 MAX_TOTAL_LOSS = 0.10
 PROFIT_TARGET = 0.10
 
-# Strategy parameter space — SENTINEL experiments across all of these
+# Strategy parameter space
 STRATEGIES = [
     "momentum_breakout",
     "mean_reversion",
@@ -47,6 +53,7 @@ STRATEGIES = [
     "session_open",
 ]
 
+# CRYPTO ONLY — no SPY, no GBP/USD, no forex, no commodities. Ever.
 ASSETS = [
     "BTC/USD", "ETH/USD", "SOL/USD", "ADA/USD",
     "AVAX/USD", "LINK/USD", "DOGE/USD", "MATIC/USD",
@@ -54,19 +61,39 @@ ASSETS = [
 
 TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h"]
 
-def send_telegram(msg, force=False):
+
+def _check_daily_limit():
+    """Return True if we can run, False if daily limit hit."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    runs = {}
+    if RUN_LOG.exists():
+        try:
+            runs = json.loads(RUN_LOG.read_text())
+        except Exception:
+            runs = {}
+    today_runs = runs.get(today, 0)
+    if today_runs >= MAX_DAILY_RUNS:
+        print(f"[SENTINEL-HT] Daily limit reached ({today_runs}/{MAX_DAILY_RUNS}). Skipping.")
+        return False
+    runs[today] = today_runs + 1
+    # Clean old entries
+    runs = {k: v for k, v in runs.items() if k >= (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")}
+    RUN_LOG.write_text(json.dumps(runs))
+    return True
+
+
+def send_final_summary(msg):
+    """Send ONLY the final HyperTrain summary to Telegram. Nothing else."""
     if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
         print(msg)
         return
     try:
         from silent_mode import should_send
-        if not should_send(msg, force=force):
-            print(f"[SENTINEL-HT] SILENT_MODE suppressed: {msg[:80]}...")
+        if not should_send(msg, force=False):
+            print(f"[SENTINEL-HT] SILENT_MODE suppressed final summary")
             return
     except ImportError:
-        if not force:
-            print(f"[SENTINEL-HT] SILENT_MODE (fallback block): {msg[:80]}...")
-            return
+        pass  # Final summary is allowed — send it
     try:
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
@@ -75,6 +102,7 @@ def send_telegram(msg, force=False):
         )
     except:
         pass
+
 
 def init_db():
     conn = sqlite3.connect(LOG_DB)
@@ -95,12 +123,8 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 def simulate_trade(strategy, asset, timeframe, direction):
-    """
-    Simulate one FTMO-compliant trade with realistic market behavior.
-    Returns trade result dict.
-    """
-    # Realistic win rates per strategy (from historical data)
     base_win_rates = {
         "momentum_breakout": 0.52,
         "mean_reversion": 0.58,
@@ -114,45 +138,25 @@ def simulate_trade(strategy, asset, timeframe, direction):
         "session_open": 0.53,
     }
 
-    # Add noise to simulate real market randomness
     win_rate = base_win_rates.get(strategy, 0.50) + random.gauss(0, 0.05)
     win_rate = max(0.30, min(0.75, win_rate))
-
     is_win = random.random() < win_rate
 
-    # FTMO-safe risk/reward
-    risk_pct = random.uniform(0.003, 0.005)   # 0.3-0.5% risk per trade
-    reward_ratio = random.uniform(1.5, 3.0)    # 1.5:1 to 3:1 RR
+    risk_pct = random.uniform(0.003, 0.005)
+    reward_ratio = random.uniform(1.5, 3.0)
+    pnl_pct = risk_pct * reward_ratio if is_win else -risk_pct
 
-    if is_win:
-        pnl_pct = risk_pct * reward_ratio
-    else:
-        pnl_pct = -risk_pct
-
-    # Simulate entry/exit prices
     entry = random.uniform(100, 50000)
     exit_price = entry * (1 + pnl_pct if direction == "LONG" else 1 - pnl_pct)
-
-    # Calculate sharpe (simplified)
     sharpe = (pnl_pct / risk_pct) * random.uniform(0.8, 1.2)
-
-    # Max drawdown during trade
     max_dd = random.uniform(0, risk_pct * 1.5)
 
-    # FTMO compliance check
-    ftmo_ok = (
-        risk_pct <= 0.005 and          # Under 0.5% risk
-        max_dd <= MAX_DAILY_LOSS and   # Under daily loss limit
-        "martingale" not in strategy   # No banned strategies
-    )
+    ftmo_ok = (risk_pct <= 0.005 and max_dd <= MAX_DAILY_LOSS and "martingale" not in strategy)
 
     return {
-        "strategy": strategy,
-        "asset": asset,
-        "timeframe": timeframe,
+        "strategy": strategy, "asset": asset, "timeframe": timeframe,
         "direction": direction,
-        "entry": round(entry, 4),
-        "exit": round(exit_price, 4),
+        "entry": round(entry, 4), "exit": round(exit_price, 4),
         "pnl_pct": round(pnl_pct * 100, 4),
         "win": 1 if is_win else 0,
         "sharpe": round(sharpe, 3),
@@ -160,6 +164,7 @@ def simulate_trade(strategy, asset, timeframe, direction):
         "ftmo_compliant": 1 if ftmo_ok else 0,
         "timestamp": datetime.now().isoformat()
     }
+
 
 def save_result(conn, result):
     conn.execute("""INSERT INTO experiments
@@ -172,8 +177,8 @@ def save_result(conn, result):
          result["max_drawdown"], result["ftmo_compliant"], result["timestamp"])
     )
 
+
 def analyze_winners(conn):
-    """Find strategies that pass FTMO criteria."""
     cursor = conn.execute("""
         SELECT strategy, asset, timeframe,
                AVG(win) as win_rate,
@@ -192,27 +197,30 @@ def analyze_winners(conn):
     """)
     return cursor.fetchall()
 
+
 def save_winning_strategies(conn, winners):
     conn.execute("DELETE FROM winning_strategies")
     for w in winners:
         conn.execute("""INSERT INTO winning_strategies
             (strategy, asset, timeframe, win_rate, avg_pnl, sharpe, total_experiments, timestamp)
             VALUES (?,?,?,?,?,?,?,?)""",
-            (w[0], w[1], w[2], round(w[3]*100,2), round(w[4],4),
-             round(w[5],3), w[6], datetime.now().isoformat())
+            (w[0], w[1], w[2], round(w[3]*100, 2), round(w[4], 4),
+             round(w[5], 3), w[6], datetime.now().isoformat())
         )
     conn.commit()
 
+
 def run_hypertrain():
+    # Daily run limit — max 2 per day
+    if not _check_daily_limit():
+        return
+
     print("=" * 60)
     print("SENTINEL HYPERTRAINER — 10,000 EXPERIMENTS")
     print('"Every rep makes the next rep sharper."')
     print("=" * 60)
 
     init_db()
-
-    # No start message — Ty only wants final summary
-
     conn = sqlite3.connect(LOG_DB)
     start_time = time.time()
 
@@ -220,10 +228,8 @@ def run_hypertrain():
     losses = 0
     compliant = 0
     total_pnl = 0.0
-    checkpoint_times = []
 
     for i in range(1, TARGET_EXPERIMENTS + 1):
-        # Random strategy combination
         strategy = random.choice(STRATEGIES)
         asset = random.choice(ASSETS)
         timeframe = random.choice(TIMEFRAMES)
@@ -236,38 +242,15 @@ def run_hypertrain():
             wins += 1
         else:
             losses += 1
-
         if result["ftmo_compliant"]:
             compliant += 1
-
         total_pnl += result["pnl_pct"]
 
-        # Checkpoint every 2500
+        # Console-only checkpoint every 2500 — zero Telegram
         if i % 2500 == 0:
-            elapsed = time.time() - start_time
-            checkpoint_times.append(elapsed)
-            win_rate = (wins / i) * 100
-            avg_pnl = total_pnl / i
-
             conn.commit()
-            winners = analyze_winners(conn)
-
-            msg = (
-                f"📊 SENTINEL CHECKPOINT {i}/{TARGET_EXPERIMENTS}\n"
-                f"━━━━━━━━━━━━━━━━━━━━━\n"
-                f"⏱ Time: {elapsed:.0f}s\n"
-                f"✅ Win Rate: {win_rate:.1f}%\n"
-                f"💰 Avg P&L: {avg_pnl:.4f}%\n"
-                f"🛡 FTMO Compliant: {compliant}/{i}\n"
-                f"🏆 Top Strategies Found: {len(winners)}\n"
-            )
-
-            if winners:
-                msg += f"\nBest: {winners[0][0]} on {winners[0][1]} {winners[0][2]}"
-                msg += f" | WR: {winners[0][3]*100:.1f}% | Avg P&L: {winners[0][4]:.4f}%"
-
-            print(msg)
-            # No checkpoint message — Ty only wants final summary
+            wr = (wins / i) * 100
+            print(f"[SENTINEL-HT] Checkpoint {i}/{TARGET_EXPERIMENTS}: WR={wr:.1f}% elapsed={time.time()-start_time:.0f}s")
 
     # Final analysis
     elapsed = time.time() - start_time
@@ -300,29 +283,21 @@ def run_hypertrain():
     with open(RESULTS_FILE, "w") as f:
         json.dump(results, f, indent=2)
 
-    # Build final report
+    # Plain English final summary — dollars and cents, no jargon
+    best = winners[0] if winners else None
     final_msg = (
-        f"🏁 SENTINEL HYPERTRAINING COMPLETE\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"✅ {TARGET_EXPERIMENTS:,} experiments done in {elapsed:.0f}s\n"
-        f"📈 Win Rate: {win_rate:.1f}%\n"
-        f"💰 Avg P&L: {avg_pnl:.4f}%\n"
-        f"🛡 FTMO Compliant: {compliant:,}/{TARGET_EXPERIMENTS:,}\n"
-        f"🏆 Winning Strategies: {len(winners)}\n\n"
-        f"TOP 3 STRATEGIES:\n"
+        f"HYPERTRAIN COMPLETE — 10,000 experiments in {elapsed:.0f}s\n"
+        f"Win rate: {win_rate:.1f}% across {len(ASSETS)} crypto pairs\n"
+        f"FTMO compliant: {compliant:,} of {TARGET_EXPERIMENTS:,}\n"
+        f"Found {len(winners)} winning strategies\n"
     )
-
-    for i, w in enumerate(winners[:3], 1):
-        final_msg += (
-            f"{i}. {w[0]} | {w[1]} | {w[2]}\n"
-            f"   WR: {w[3]*100:.1f}% | P&L: {w[4]:.4f}% | Sharpe: {w[5]:.2f}\n"
-        )
-
-    final_msg += f"\nResults saved. SENTINEL curriculum advancing. 🎯"
+    if best:
+        final_msg += f"Best: {best[0]} on {best[1]} ({best[2]}) — {best[3]*100:.0f}% WR, avg +${best[4]*ACCOUNT_SIZE/100:.2f}/trade"
 
     print(final_msg)
-    send_telegram(final_msg)
-    print(f"\nTop strategies saved to: {RESULTS_FILE}")
+    send_final_summary(final_msg)
+    print(f"Results saved to: {RESULTS_FILE}")
+
 
 if __name__ == "__main__":
     run_hypertrain()
