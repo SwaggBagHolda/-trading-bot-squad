@@ -2,15 +2,15 @@
   {
     "bot": "APEX",
     "param": "min_momentum",
-    "value": 5e-05,
-    "queued_at": "2026-04-09T22:56:41.478830",
+    "value": 1.25e-05,
+    "queued_at": "2026-04-09T23:59:29.357522",
     "reason": "apex_in_trade"
   },
   {
     "bot": "APEX",
     "param": "cooldown",
     "value": 5,
-    "queued_at": "2026-04-09T22:56:41.479258",
+    "queued_at": "2026-04-09T23:59:29.358324",
     "reason": "apex_in_trade"
   }
 ]
