@@ -51,7 +51,9 @@ def send(chat_id, text, force=False):
             print(f"[NEXUS-L2] SILENT_MODE suppressed: {text[:80]}...")
             return
     except ImportError:
-        pass
+        if not force:
+            print(f"[NEXUS-L2] SILENT_MODE (fallback block): {text[:80]}...")
+            return
     try:
         # Split long messages
         if len(text) > 4000:

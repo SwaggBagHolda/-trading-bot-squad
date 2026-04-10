@@ -104,12 +104,18 @@ def send_telegram(message, urgent=False, force=False):
         print(f"[SCHEDULER] {message}")
         return
     try:
+        import sys
+        if str(BASE) not in sys.path:
+            sys.path.insert(0, str(BASE))
         from silent_mode import should_send
         if not should_send(message, force=force, urgent=urgent):
             print(f"[SCHEDULER] SILENT_MODE suppressed: {message[:80]}...")
             return
     except ImportError:
-        pass
+        # If silent_mode can't load, block everything except force/urgent
+        if not force and not urgent:
+            print(f"[SCHEDULER] SILENT_MODE (fallback block): {message[:80]}...")
+            return
     prefix = "🚨 " if urgent else ""
     try:
         http.post(

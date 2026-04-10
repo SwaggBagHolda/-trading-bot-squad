@@ -106,7 +106,9 @@ def send_telegram(text, force=False):
             print(f"[SENTINEL] SILENT_MODE suppressed: {text[:80]}...")
             return
     except ImportError:
-        pass
+        if not force:
+            print(f"[SENTINEL] SILENT_MODE (fallback block): {text[:80]}...")
+            return
     try:
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",

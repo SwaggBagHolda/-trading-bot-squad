@@ -57,7 +57,9 @@ class Zeus:
                 print(f"[ZEUS] SILENT_MODE suppressed: {message[:80]}...")
                 return
         except ImportError:
-            pass
+            if not force and not urgent:
+                print(f"[ZEUS] SILENT_MODE (fallback block): {message[:80]}...")
+                return
         prefix = "🚨 ZEUS ALERT: " if urgent else "⚡ ZEUS: "
         try:
             requests.post(

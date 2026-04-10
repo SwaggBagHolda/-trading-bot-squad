@@ -82,7 +82,9 @@ def send(chat_id, text, force=False):
             print(f"[ORACLE] SILENT_MODE suppressed: {text[:80]}...")
             return
     except ImportError:
-        pass
+        if not force:
+            print(f"[ORACLE] SILENT_MODE (fallback block): {text[:80]}...")
+            return
     try:
         for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
             requests.post(f"{API}/sendMessage",
