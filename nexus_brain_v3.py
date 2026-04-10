@@ -309,12 +309,18 @@ def smart_send(chat_id, text):
         send(chat_id, text, force=True)
 
 def send(chat_id, text, force=False):
-    """Send Telegram message. In SILENT_MODE, only force=True messages go through.
-    force=True is used for: user replies, CEO Phase 5 reports, trade notifications, WARDEN reports.
-    All autonomous chatter (checkpoints, restarts, threshold changes) uses force=False and gets suppressed."""
-    if SILENT_MODE and not force:
-        print(f"[NEXUS] SILENT_MODE suppressed: {text[:80]}...")
-        return
+    """Send Telegram message. Uses shared silent_mode.py for filtering.
+    force=True: direct reply to Ty — always sends.
+    Otherwise: only sends if message matches Ty's whitelist (P&L, broken, upgrades, HyperTrain final)."""
+    try:
+        from silent_mode import should_send
+        if not should_send(text, force=force):
+            print(f"[NEXUS] SILENT_MODE suppressed: {text[:80]}...")
+            return
+    except ImportError:
+        if SILENT_MODE and not force:
+            print(f"[NEXUS] SILENT_MODE suppressed: {text[:80]}...")
+            return
     try:
         if len(text) > 4000:
             for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
@@ -2171,7 +2177,7 @@ def autonomous_loop():
     if actions_taken:
         report = f"CEO loop ({now.strftime('%H:%M')}) — {len(actions_taken)} action(s):\n"
         report += "\n".join(f"• {a}" for a in actions_taken)
-        send(OWNER_ID, report, force=True)  # CEO consolidated report — always send
+        send(OWNER_ID, report)  # CEO report — filtered by SILENT_MODE like everything else
         act(f"REPORT: Sent {len(actions_taken)} actions to Ty")
     else:
         act("REPORT: All systems green — no actions needed")

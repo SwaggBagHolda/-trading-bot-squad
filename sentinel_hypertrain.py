@@ -54,10 +54,17 @@ ASSETS = [
 
 TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h"]
 
-def send_telegram(msg):
+def send_telegram(msg, force=False):
     if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
         print(msg)
         return
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[SENTINEL-HT] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",

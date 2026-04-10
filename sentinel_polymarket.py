@@ -96,10 +96,17 @@ MAX_YES_PRICE = 0.90                 # Don't buy YES above 90 cents (diminishing
 SCAN_INTERVAL = 30                    # Check every 30 seconds — scalper speed
 
 
-def send_telegram(text):
-    """Send alert to Ty."""
+def send_telegram(text, force=False):
+    """Send alert to Ty. Respects SILENT_MODE."""
     if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
         return
+    try:
+        from silent_mode import should_send
+        if not should_send(text, force=force):
+            print(f"[SENTINEL] SILENT_MODE suppressed: {text[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",

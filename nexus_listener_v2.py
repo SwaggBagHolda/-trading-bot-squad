@@ -44,7 +44,14 @@ last_oracle_check = datetime.now()
 last_proactive = datetime.now()
 conversation_history = []
 
-def send(chat_id, text):
+def send(chat_id, text, force=False):
+    try:
+        from silent_mode import should_send
+        if not should_send(text, force=force):
+            print(f"[NEXUS-L2] SILENT_MODE suppressed: {text[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         # Split long messages
         if len(text) > 4000:

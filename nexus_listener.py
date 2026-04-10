@@ -22,7 +22,14 @@ LOGS.mkdir(parents=True, exist_ok=True)
 
 API = f"https://api.telegram.org/bot{TOKEN}"
 
-def send(chat_id, text):
+def send(chat_id, text, force=False):
+    try:
+        from silent_mode import should_send
+        if not should_send(text, force=force):
+            print(f"[NEXUS-L] SILENT_MODE suppressed: {text[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         requests.post(f"{API}/sendMessage",
                       json={"chat_id": chat_id, "text": text}, timeout=10)

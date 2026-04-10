@@ -74,8 +74,15 @@ GOOD: "Morning Ty. Here's where we are."
 
 # ── Telegram helpers ──────────────────────────────────────────────────────────
 
-def send(chat_id, text):
+def send(chat_id, text, force=False):
     if not TOKEN: return
+    try:
+        from silent_mode import should_send
+        if not should_send(text, force=force):
+            print(f"[ORACLE] SILENT_MODE suppressed: {text[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
             requests.post(f"{API}/sendMessage",

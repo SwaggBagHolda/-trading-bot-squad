@@ -21,7 +21,14 @@ PRIVATE_KEY = os.getenv("APEX_COINBASE_PRIVATE_KEY")
 
 CB_API = "https://api.coinbase.com/api/v3"
 
-def send_telegram(msg):
+def send_telegram(msg, force=False):
+    try:
+        from silent_mode import should_send
+        if not should_send(msg, force=force):
+            print(f"[APEX] SILENT_MODE suppressed: {msg[:80]}...")
+            return
+    except ImportError:
+        pass
     try:
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
                       json={"chat_id": OWNER_CHAT_ID, "text": msg}, timeout=10)

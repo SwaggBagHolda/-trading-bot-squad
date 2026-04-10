@@ -99,20 +99,17 @@ schedule_log = {
     "started": datetime.now().isoformat(),
 }
 
-# SILENT_MODE — blocks all sends except WARDEN reports, daily report, and urgent alerts
-SILENT_MODE = True
-
-# Allowed message prefixes that bypass SILENT_MODE
-_ALLOWED_PREFIXES = ["WARDEN", "Daily", "⚠️", "🚨"]
-
 def send_telegram(message, urgent=False, force=False):
     if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
         print(f"[SCHEDULER] {message}")
         return
-    if SILENT_MODE and not force and not urgent:
-        if not any(message.lstrip().startswith(p) for p in _ALLOWED_PREFIXES):
+    try:
+        from silent_mode import should_send
+        if not should_send(message, force=force, urgent=urgent):
             print(f"[SCHEDULER] SILENT_MODE suppressed: {message[:80]}...")
             return
+    except ImportError:
+        pass
     prefix = "🚨 " if urgent else ""
     try:
         http.post(

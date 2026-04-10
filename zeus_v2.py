@@ -47,10 +47,17 @@ class Zeus:
         print(f"[{BOT_NAME}] Online. All systems under supervision.")
         # No startup noise — Ty only wants actionable messages
 
-    def send_telegram(self, message, urgent=False):
+    def send_telegram(self, message, urgent=False, force=False):
         if not TELEGRAM_TOKEN or not OWNER_CHAT_ID:
             print(f"[ZEUS] {message}")
             return
+        try:
+            from silent_mode import should_send
+            if not should_send(message, force=force, urgent=urgent):
+                print(f"[ZEUS] SILENT_MODE suppressed: {message[:80]}...")
+                return
+        except ImportError:
+            pass
         prefix = "🚨 ZEUS ALERT: " if urgent else "⚡ ZEUS: "
         try:
             requests.post(
