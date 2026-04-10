@@ -2894,3 +2894,30 @@ Heartbeat safety checks: ['AutoResearch callback delivered']
 
 ## [2026-04-09 23:59]
 AutoResearch started PID 6510 at 2026-04-09T23:59:29.355950
+
+## [2026-04-10 00:10]
+AutoResearch started PID 6668 at 2026-04-10T00:10:00.398711
+
+## [2026-04-10 00:20]
+AutoResearch started PID 6798 at 2026-04-10T00:20:31.521723
+
+## [2026-04-10 00:26]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-10 00:26]
+Heartbeat safety checks: ['AutoResearch callback delivered']
+
+## [2026-04-10 00:30]
+AutoResearch started PID 6926 at 2026-04-10T00:30:54.911849
+
+## [2026-04-10 00:41]
+AutoResearch started PID 7043 at 2026-04-10T00:41:25.981680
+
+## [2026-04-10 00:51]
+AutoResearch started PID 7173 at 2026-04-10T00:51:57.017452
+
+## [2026-04-10 00:56]
+AutoResearch callback sent: 4 bots, top=mean_reversion
+
+## [2026-04-10 00:56]
+Heartbeat safety checks: ['AutoResearch callback delivered', 'APEX idle 0.0h (no alert — APEX self-reports)']

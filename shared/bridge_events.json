@@ -1,45 +1,5 @@
 [
   {
-    "type": "test",
-    "data": "Bridge test from Codey",
-    "timestamp": "2026-04-09T21:06:41.775296"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (2762 chars)",
-    "timestamp": "2026-04-09T21:06:48.662532"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (2762 chars)",
-    "timestamp": "2026-04-09T21:07:11.925285"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (2762 chars)",
-    "timestamp": "2026-04-09T21:12:10.057457"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:17:11.024150"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:22:12.061045"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:27:14.508928"
-  },
-  {
-    "type": "briefing_push",
-    "data": "Updated (3197 chars)",
-    "timestamp": "2026-04-09T21:32:14.560632"
-  },
-  {
     "type": "briefing_push",
     "data": "Updated (3197 chars)",
     "timestamp": "2026-04-09T21:37:26.884405"
@@ -228,5 +188,65 @@
     "type": "briefing_push",
     "data": "Updated (3041 chars)",
     "timestamp": "2026-04-09T23:59:29.321184"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:04:44.918118"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:10:00.365480"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:12:47.988664"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:15:15.939438"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:20:31.492019"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:25:46.778549"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:30:54.878728"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:36:10.378820"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:41:25.958041"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:46:41.539770"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:51:56.989889"
+  },
+  {
+    "type": "briefing_push",
+    "data": "Updated (3041 chars)",
+    "timestamp": "2026-04-10T00:57:06.675928"
   }
 ]
